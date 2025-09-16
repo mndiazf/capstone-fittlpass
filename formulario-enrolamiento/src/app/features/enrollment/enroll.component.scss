@@ -1,0 +1,107 @@
+:host {
+  --bg: #0b0d12; --surface: #0f1320; --surface-2: #0c1120; --line: #1f2a44;
+  --text: #e5e7eb; --muted: #94a3b8; --hint: #93a0b5; --primary: #3b82f6;
+  --success: #22c55e; --danger: #ef4444; --accent: #14b8a6;
+  --radius: 16px; --shadow-1: 0 10px 30px rgba(0,0,0,.35); --shadow-2: inset 0 0 30px rgba(0,0,0,.6);
+  --colW: 560px; --colGap: 48px; --rowGap: 16px; --twoMax: 420px; --twoGap: 16px;
+}
+:host { display:block; min-height:100vh; background:var(--bg); color:var(--text); }
+
+.page { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+.title { font-weight:800; font-size:35px; letter-spacing:.2px; margin:0 0 18px; text-shadow:0 2px 14px rgba(0,0,0,.35); color: var(--accent); }
+
+.card { background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)), var(--surface);
+  border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius);
+  box-shadow: var(--shadow-1); padding: 26px; }
+
+.grid{ display:grid; grid-template-columns: repeat(2, minmax(0, var(--colW)));
+  justify-content:center; align-items:start; column-gap:var(--colGap); row-gap:var(--rowGap); }
+@media (max-width:1180px){ .grid{ grid-template-columns:1fr; column-gap:0; } }
+
+.form{ display:flex; flex-direction:column; gap: var(--rowGap); }
+.form .field{ margin-bottom:0; width:100%; }
+.form .field.two{ display:grid; grid-template-columns:1fr 1fr; column-gap:var(--twoGap); }
+@media (max-width:720px){ .form .field.two{ grid-template-columns:1fr; } }
+
+.form label{ display:block; font-size:13.5px; color:var(--muted); margin:2px 0 6px; }
+.form input{ width:90%; background:var(--surface-2); color:var(--text);
+  border:1px solid var(--line); border-radius:12px; padding:12px 14px;
+  outline:none; transition:border-color .15s, box-shadow .15s; }
+.form .field.two .subfield input{ max-width:var(--twoMax); margin-right:auto; }
+.form input::placeholder{ color:#6b7280; }
+.form input:focus{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(59,130,246,.18); }
+.hint{ color:var(--hint); font-size:12px; }
+.form .subfield{ display:flex; flex-direction:column; }
+.form .muted{ color:var(--muted); font-weight:400; }
+.form input.invalid{ border-color:var(--danger); box-shadow:0 0 0 3px rgba(239,68,68,.16); }
+.error{ margin-top:6px; font-size:12.5px; color:#fecaca; }
+/* ===== Inputs compactos (nombres/apellidos) ===== */
+.form .field.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--twoGap);
+}
+
+/* inputs superiores (nombre y apellidos) → más angostos */
+.form .field.two .subfield input {
+  max-width: var(--twoMax);   /* ancho máximo más pequeño */
+  margin-right: auto;         /* se pegan a la izquierda */
+}
+
+/* inputs normales (RUT, email, teléfono) → ancho completo */
+.form .field:not(.two) input {
+  width: 95%;
+  max-width: 100%;
+}
+
+.check{ display:flex; align-items:center; gap:10px; margin:8px 0 6px; }
+.check input{ accent-color:var(--primary); width:18px; height:18px; }
+.actions{ display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap; }
+.actions.right{ justify-content:flex-end; }
+.msg{ color:var(--muted); }
+
+.btn{ background:#131b2c; color:var(--text); border:1px solid var(--line); padding:10px 16px; border-radius:12px; cursor:pointer; transition:transform .06s ease, background .15s ease, border-color .15s; }
+.btn:hover{ transform:translateY(-1px); } .btn:active{ transform:translateY(0); }
+.btn[disabled]{ opacity:.55; cursor:not-allowed; }
+.btn.primary{ background:var(--primary); border-color:var(--primary); color:#081325; font-weight:600; }
+.btn.ghost{ background:transparent; }
+
+/* ====== CÁMARA ====== */
+.media{ display:flex; flex-direction:column; gap: var(--rowGap); }
+
+.camBox{
+  position: relative; isolation: isolate; /* asegura stacking context */
+  width:100%; max-width:100%; aspect-ratio:4/3;
+  border-radius:18px; overflow:hidden;
+  background: radial-gradient(60% 60% at 50% 40%, rgba(255,255,255,.05), rgba(0,0,0,.35)), #0b0e15;
+  border:1px solid var(--line); box-shadow:var(--shadow-2);
+}
+
+.camBox video{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+  z-index:1; display:block; transform: translateZ(0);
+}
+
+.camBox canvas{
+  position:absolute; inset:0; width:100%; height:100%;
+  z-index:2; pointer-events:none; display:block; transform: translateZ(0);
+}
+
+/* 🔥 Aro overlay como DIV (siempre arriba) */
+.ring{
+  position:absolute; left:50%; top:50%;
+  width:0; height:0; /* se setea por TS */
+  border-radius:50%;
+  border: 6px solid #ef4444; /* rojo por defecto */
+  box-shadow: 0 0 16px #ef4444;
+  z-index: 9999; pointer-events:none; transform: translate(-50%, -50%);
+  /* anillo suave */
+  outline: 8px solid rgba(0,0,0,.10); outline-offset: -8px;
+}
+
+.status{ display:flex; align-items:center; gap:10px; color:var(--muted); font-size:14px; margin-top:2px; }
+.dot{ width:10px; height:10px; border-radius:50%; background: var(--danger); box-shadow:0 0 12px rgba(239,68,68,.45); }
+.ok .dot{ background: var(--success); box-shadow:0 0 12px rgba(34,197,94,.45); }
+
+.preview img{ width:260px; border-radius:12px; border:1px solid var(--line); box-shadow:var(--shadow-1); }
+@media (max-width: 720px){ .preview img{ width:100%; max-width:100%; } }

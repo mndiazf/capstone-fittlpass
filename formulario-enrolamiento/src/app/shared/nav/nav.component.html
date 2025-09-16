@@ -1,0 +1,56 @@
+<header class="navbar" role="banner">
+  <div class="navbar__inner">
+    <!-- Brand -->
+    <a routerLink="/" class="brand" aria-label="Ir al inicio">
+      <img class="brand__logo" src="assets/logo-gymhealth.png" alt="GymHealth"/>
+    </a>
+
+    <!-- Hamburguesa (móvil) -->
+    <button class="burger"
+            (click)="toggle()"
+            aria-label="Abrir menú"
+            [attr.aria-expanded]="open()">
+      <span></span><span></span><span></span>
+    </button>
+
+    <!-- Menú central -->
+    <nav class="main-nav" [class.open]="open()" role="navigation">
+      <a *ngFor="let it of itemsToShow"
+         [routerLink]="it.link"
+         routerLinkActive="active"
+         [routerLinkActiveOptions]="{ exact: it.exact ?? (it.link === '/') }">
+        {{ it.label }}
+      </a>
+    </nav>
+
+    <!-- Acciones derecha -->
+    <div class="actions">
+      <a *ngFor="let ac of actionsToShow"
+         class="icon-link"
+         [class.btn-login]="ac.icon === 'user'"
+         [routerLink]="ac.link"
+         [attr.aria-label]="ac.aria || ac.label"
+         [attr.title]="ac.aria || ac.label">
+
+        <ng-container [ngSwitch]="ac.icon">
+          <!-- user -->
+          <svg *ngSwitchCase="'user'" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.24-8 5v1h16v-1c0-2.76-3.6-5-8-5Z"/>
+          </svg>
+
+          <!-- gear -->
+          <svg *ngSwitchCase="'gear'" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19.14 12.94a7.58 7.58 0 0 0 .05-.94 7.58 7.58 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.53 7.53 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 12.94 1h-3.88a.5.5 0 0 0-.49.42l-.36 2.54a7.53 7.53 0 0 0-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L.77 7.04a.5.5 0 0 0 .12.64L2.92 9.26a7.58 7.58 0 0 0-.05.94c0 .32.02.63.05.94L.89 13.72a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.05.7 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.88a.5.5 0 0 0 .49-.42l.36-2.54c.58-.24 1.13-.56 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64ZM11 15a4 4 0 1 1 4-4 4 4 0 0 1-4 4Z"/>
+          </svg>
+
+          <!-- report -->
+          <svg *ngSwitchCase="'report'" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 3h12l4 4v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm11 1v4h4M7 19v-6h2v6H7Zm4 0v-10h2v10h-2Zm4 0v-4h2v4h-2Z"/>
+          </svg>
+        </ng-container>
+
+        <span *ngIf="ac.label">{{ ac.label }}</span>
+      </a>
+    </div>
+  </div>
+</header>

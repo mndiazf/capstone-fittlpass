@@ -1,0 +1,8 @@
+@use './app/styles/variables.scss';
+
+html, body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}

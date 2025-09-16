@@ -1,0 +1,14 @@
+.footer{
+  margin-top: 40px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+}
+.footer-inner{
+  max-width: 1200px; margin: 0 auto; padding: 16px 20px;
+  display:flex; align-items:center; justify-content:space-between; gap: 12px;
+  color: var(--muted); font-size: 14px;
+}
+.right{ opacity:.9; }
+@media (max-width: 880px){
+  .footer-inner{ flex-direction:column; text-align:center; }
+}
