@@ -7,15 +7,14 @@ import {
   FormBuilder, ReactiveFormsModule, Validators,
   AbstractControl, ValidationErrors, FormGroup
 } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
-import { EnrollService } from './services/enroll.service';
+import { EnrollService, OneShotRequest } from './services/enroll.service';
 
 type FaceBox = { x:number; y:number; width:number; height:number };
 
 @Component({
   standalone: true,
   selector: 'app-enroll',
-  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './enroll.component.html',
   styleUrls: ['./enroll.component.scss'],
 })
@@ -76,7 +75,7 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
     const video = this.videoEl.nativeElement;
     video.addEventListener('loadedmetadata', () => {
       this.resizeCanvasToDisplaySize();
-      this.layoutRing(); // 👈 posición/tamaño del círculo
+      this.layoutRing();
     });
     window.addEventListener('resize', () => {
       this.resizeCanvasToDisplaySize();
@@ -144,26 +143,89 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private sendSnapshot(dataUrl: string) {
-    const base64 = dataUrl.split(',')[1] ?? '';
-    const payload = {
-      nombres: {
-        nombre: this.f.value.nombre,
-        segundoNombre: this.f.value.segundoNombre || undefined,
-        apellidoPaterno: this.f.value.apellidoPaterno,
-        apellidoMaterno: this.f.value.apellidoMaterno,
+  private async sendSnapshot(dataUrl: string) {
+    // ⚠️ DEMO: genera embedding placeholder desde la imagen
+    const embedding = this.dataUrlToEmbedding512(dataUrl);
+
+    // heurísticas simples para demo
+    const livenessScore = this.guideOk() ? 0.96 : 0.82;
+    const qualityScore  = this.guideOk() ? 0.93 : 0.85;
+
+    const nombre = (this.f.value.nombre ?? '').toString().trim();
+    const segundoNombre = (this.f.value.segundoNombre ?? '').toString().trim();
+    const apPat = (this.f.value.apellidoPaterno ?? '').toString().trim();
+    const apMat = (this.f.value.apellidoMaterno ?? '').toString().trim();
+
+    const personaNombre = segundoNombre ? `${nombre} ${segundoNombre}` : nombre;
+    const personaApellido = `${apPat} ${apMat}`.trim();
+
+    const telefono = (this.f.value.telefono as string).replace(/\s+/g, '');
+    const rut = (this.f.value.rut as string).replace(/\./g, '');
+
+    const payload: OneShotRequest = {
+      persona: {
+        tipo: 'SOCIO',
+        rut,
+        nombre: personaNombre,
+        apellido: personaApellido,
+        email: this.f.value.email,
+        telefono
       },
-      rut: (this.f.value.rut as string).replace(/\./g, ''),
-      email: this.f.value.email,
-      telefono: (this.f.value.telefono as string).replace(/\s+/g, ''),
-      fotoBase64: base64
+      consentimiento: {
+        versionPolitica: 'v1.2',
+        aceptado: true
+        // ipOrigen lo puede determinar el backend si lo necesita
+      },
+      fuente: 'KIOSKO',
+      sucursalId: 1, // usa la sucursal de prueba; cámbialo si corresponde
+      deviceId: this.buildDeviceId(),
+      embedding,
+      livenessScore,
+      qualityScore,
+      requestId: (crypto as any).randomUUID ? crypto.randomUUID() : String(Date.now())
     };
 
     this.loading.set(true);
-    this.api.send(payload).subscribe({
-      next: () => { this.loading.set(false); this.msg.set('Datos y foto enviados correctamente.'); },
-      error: (e) => { this.loading.set(false); console.error(e); this.msg.set('No se pudo enviar al servidor.'); }
+    this.api.enrollOneShot(payload).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.msg.set('Enrolamiento enviado correctamente.');
+      },
+      error: (e) => {
+        this.loading.set(false);
+        console.error(e);
+        const msg = e?.error?.error ?? 'No se pudo enviar al servidor.';
+        this.msg.set(msg);
+      }
     });
+  }
+
+  // ====== DEMO: embedding placeholder 512-dim desde dataURL ======
+  // Convierte base64 -> bytes -> mapa a [-1,1] -> normaliza L2 (para coseno)
+  private dataUrlToEmbedding512(dataUrl: string): { dims: number; values: number[] } {
+    const base64 = dataUrl.split(',')[1] ?? '';
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+    const D = 512;
+    const vals = new Float32Array(D);
+    // plegado determinista de bytes sobre 512 celdas
+    for (let i = 0; i < bytes.length; i++) {
+      vals[i % D] += (bytes[i] / 127.5) - 1.0; // [0..255] -> [-1..1]
+    }
+    // normalización L2
+    let sumSq = 0;
+    for (let i = 0; i < D; i++) sumSq += vals[i] * vals[i];
+    const norm = Math.sqrt(sumSq) || 1;
+    for (let i = 0; i < D; i++) vals[i] = vals[i] / norm;
+
+    return { dims: D, values: Array.from(vals) };
+  }
+
+  private buildDeviceId(): string {
+    const ua = navigator.userAgent.replace(/\s+/g, '_').slice(0, 64);
+    return `web-${ua}`;
   }
 
   // -------- Ring overlay layout --------
@@ -174,12 +236,11 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
     const radius = Math.min(rect.width, rect.height) * 0.32;
     const size = radius * 2;
 
-    // centra y dimensiona el aro
     ring.style.width  = `${size}px`;
     ring.style.height = `${size}px`;
     ring.style.left   = `50%`;
     ring.style.top    = `50%`;
-    ring.style.transform = `translate(-50%, -50%)`; // centrado perfecto
+    ring.style.transform = `translate(-50%, -50%)`;
   }
 
   // -------- Loop + guía --------
@@ -188,7 +249,6 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
     const ctx = canvas.getContext('2d')!;
     const video = this.videoEl.nativeElement;
 
-    // (opcional) limpiar canvas si lo usas para bbox
     this.resizeCanvasToDisplaySize();
     ctx.resetTransform();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -232,7 +292,6 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
       helpMsg = 'Tu navegador no soporta detección facial; alinéate al círculo.';
     }
 
-    // 🔥 Cambia color del aro (DIV) sin canvas
     const ring = this.ringEl.nativeElement;
     ring.style.borderColor = isCentered ? '#22c55e' : '#ef4444';
     ring.style.boxShadow   = `0 0 16px ${isCentered ? '#22c55e' : '#ef4444'}`;
