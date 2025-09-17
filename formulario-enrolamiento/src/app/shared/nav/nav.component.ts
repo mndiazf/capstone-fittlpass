@@ -24,20 +24,21 @@ export class NavComponent {
   @Input() items: NavItem[] | null = null;
   @Input() actions: NavItem[] | null = null;
 
+  // Desktop
   readonly defaultItems: NavItem[] = [
-    { label: 'Inicio',  link: '/', exact: true },
+    { label: 'Inicio',   link: '/', exact: true },
     { label: 'Reportes', link: '/reports' },
-    { label: 'Enrolar', link: '/enroll' },
-    { label: 'Socios',  link: '/members' },
-    { label: 'Accesos', link: '/access' },
+    { label: 'Enrolar',  link: '/enroll' },
+    { label: 'Socios',   link: '/members' },
+    { label: 'Accesos',  link: '/access' },
   ];
-
   readonly defaultActions: NavItem[] = [
     { label: 'Login', link: '/login', icon: 'user',  aria: 'Iniciar sesión' },
     { link: '/settings', icon: 'gear', aria: 'Configuración' },
     { label: 'Reportes', link: '/reports', icon: 'report', aria: 'Reportería' },
   ];
 
+  // Estado del drawer móvil
   open = signal(false);
   toggle(){ this.open.update(v => !v); }
 

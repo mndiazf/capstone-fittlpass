@@ -1,19 +1,11 @@
 <header class="navbar" role="banner">
   <div class="navbar__inner">
-    <!-- Brand -->
+    <!-- Brand (ESCRITORIO) -->
     <a routerLink="/" class="brand" aria-label="Ir al inicio">
       <img class="brand__logo" src="assets/logo-gymhealth.png" alt="GymHealth"/>
     </a>
 
-    <!-- Hamburguesa (móvil) -->
-    <button class="burger"
-            (click)="toggle()"
-            aria-label="Abrir menú"
-            [attr.aria-expanded]="open()">
-      <span></span><span></span><span></span>
-    </button>
-
-    <!-- Menú central -->
+    <!-- (ESCRITORIO) Menú central -->
     <nav class="main-nav" [class.open]="open()" role="navigation">
       <a *ngFor="let it of itemsToShow"
          [routerLink]="it.link"
@@ -23,7 +15,7 @@
       </a>
     </nav>
 
-    <!-- Acciones derecha -->
+    <!-- (ESCRITORIO) Acciones derecha -->
     <div class="actions">
       <a *ngFor="let ac of actionsToShow"
          class="icon-link"
@@ -53,4 +45,58 @@
       </a>
     </div>
   </div>
+
+  <!-- ===== MENÚ MÓVIL (logo izq + burger der, DENTRO del header) ===== -->
+  <nav class="mobile-nav" aria-label="Menú móvil">
+    <div class="mobile-bar">
+      <a routerLink="/" class="m-brand" aria-label="Ir al inicio">
+        <img class="m-logo" src="assets/logo-gymhealth.png" alt="GymHealth" />
+      </a>
+
+      <button class="m-burger"
+              type="button"
+              (click)="toggle()"
+              [attr.aria-expanded]="open()"
+              aria-label="Abrir menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- Backdrop -->
+    <button class="m-backdrop" [class.open]="open()" aria-hidden="true" (click)="toggle()"></button>
+
+    <!-- Sheet -->
+    <div class="mobile-sheet" [class.open]="open()">
+      <a routerLink="/" routerLinkActive="active" (click)="toggle()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 10h2v8h6v-5h2v5h6v-8h2z"/></svg>
+        <span>Inicio</span>
+      </a>
+      <a routerLink="/reports" routerLinkActive="active" (click)="toggle()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h12l4 4v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm11 1v4h4M7 19v-6h2v6H7Zm4 0v-10h2v10h-2Zm4 0v-4h2v4h-2Z"/></svg>
+        <span>Reportes</span>
+      </a>
+      <a routerLink="/enroll" routerLinkActive="active" (click)="toggle()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg>
+        <span>Enrolar</span>
+      </a>
+      <a routerLink="/members" routerLinkActive="active" (click)="toggle()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0Zm-4 6c-4.4 0-8 2.24-8 5v1h16v-1c0-2.76-3.6-5-8-5Z"/></svg>
+        <span>Socios</span>
+      </a>
+      <a routerLink="/access" routerLinkActive="active" (click)="toggle()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 6a3 3 0 0 1 3 3h-2a1 1 0 1 0-2 0c0 1.5 3 1.25 3 4a3 3 0 0 1-6 0h2a1 1 0 1 0 2 0c0-1.5-3-1.25-3-4a3 3 0 0 1 3-3Z"/></svg>
+        <span>Accesos</span>
+      </a>
+
+      <div class="m-actions">
+        <a class="btn-login" routerLink="/login" (click)="toggle()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.24-8 5v1h16v-1c0-2.76-3.6-5-8-5Z"/></svg>
+          <span>Login</span>
+        </a>
+        <a class="icon-link" routerLink="/settings" (click)="toggle()" aria-label="Configuración">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94a7.6 7.6 0 0 0 .06-.94 7.6 7.6 0 0 0-.06-.94l2.02-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.38.96a7.7 7.7 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 12.94 1h-3.88a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.14.54-1.66.91l-2.39-.95a.5.5 0 0 0-.6.22L.77 7.04a.5.5 0 0 0 .12.64L2.9 9.26c-.04.31-.06.63-.06.94s.02.63.06.94L.89 13.72a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.95c.52.37 1.08.68 1.66.91l.36 2.54a.5.5 0 0 0 .49.42h3.88a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.14-.54 1.66-.91l2.38.95a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64ZM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </nav>
 </header>
