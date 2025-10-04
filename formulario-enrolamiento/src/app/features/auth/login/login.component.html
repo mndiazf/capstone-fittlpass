@@ -1,0 +1,57 @@
+<div class="login-overlay" *ngIf="visible" (click)="onBackdrop($event)" (keydown.escape)="close.emit()">
+  <div class="login-box" role="dialog" aria-modal="true" aria-labelledby="loginTitle" (click)="$event.stopPropagation()">
+    <button class="close" type="button" aria-label="Cerrar" (click)="close.emit()">✕</button>
+
+    <img src="assets/logo-gymhealth.png" alt="Gym Health" class="logo" />
+    <h3 id="loginTitle" class="welcome">Bienvenido/a</h3>
+
+    <div class="yellow-frame">
+      <form [formGroup]="f" (ngSubmit)="onSubmit()" novalidate>
+        
+        <!-- Email -->
+        <input type="email"
+               formControlName="email"
+               placeholder="Ingrese su correo electrónico"
+               [class.invalid]="email?.touched && email?.invalid"
+               [attr.aria-invalid]="email?.touched && email?.invalid ? true : null"
+               autocomplete="username"
+               inputmode="email"
+               autofocus />
+        <div class="error" *ngIf="email?.touched && email?.invalid">
+          <small *ngIf="email?.errors?.['required']">El correo es obligatorio</small>
+          <small *ngIf="email?.errors?.['email']">Formato de correo no válido</small>
+          <small *ngIf="email?.errors?.['pattern']">Debe incluir dominio válido (ej: .com, .cl)</small>
+        </div>
+
+        <!-- Password -->
+        <input type="password"
+               formControlName="password"
+               placeholder="Ingrese su contraseña"
+               [class.invalid]="password?.touched && password?.invalid"
+               [attr.aria-invalid]="password?.touched && password?.invalid ? true : null"
+               autocomplete="current-password" />
+        <div class="error" *ngIf="password?.touched && password?.invalid">
+          <small *ngIf="password?.errors?.['required']">La contraseña es obligatoria</small>
+          <small *ngIf="password?.errors?.['minlength']">Mínimo 6 caracteres</small>
+          <small *ngIf="password?.errors?.['pattern']">Debe incluir mayúscula, minúscula y número</small>
+        </div>
+
+        <!-- Mensaje de error general -->
+        <div class="error" *ngIf="errorMsg">
+          <small>{{ errorMsg }}</small>
+        </div>
+
+        <!-- Botón -->
+        <button type="submit" [disabled]="loading || f.invalid">
+          {{ loading ? 'Ingresando...' : 'Login' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Links extra -->
+    <div class="extra-links">
+      <a (click)="forgot.emit()">¿Olvidó su contraseña?</a><br />
+      <a (click)="register.emit()">¿No estás registrado? Regístrate aquí</a>
+    </div>
+  </div>
+</div>

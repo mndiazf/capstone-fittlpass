@@ -1,19 +1,22 @@
 :root {
-  /* Branding */
-  --primary: #10B981;   /* Verde agua GYM */
+  /* 🎨 Branding */
+  --primary:   #27d5a2; /* Verde agua GYM */
   --secondary: #7C3AED; /* Morado mancuerna */
-  --accent: #F97316;    /* Naranja HEALTH */
+  --accent:    #7a5cff; /* Azul-morado extra */
+  --purple:    #9747FF; /* Púrpura */
+  --orange:    #F97316; /* Naranja HEALTH */
 
-  /* Fondo y texto */
-  --bg: #0B0D12;
-  --surface: #1E293B;
-  --line: #334155;
+  /* 🖼️ Fondo y superficies */
+  --bg:      #0B0D12;  /* Fondo principal */
+  --surface: #182435;  /* Superficie tarjetas */
+  --line:    #283548;  /* Líneas / bordes */
 
-  --text: #F1F5F9;
-  --muted: #94A3B8;
+  /* ✍️ Texto */
+  --text:  #e6eef9;  /* Texto principal */
+  --muted: #a8b3c5;  /* Texto secundario */
 
-  /* Estados */
-  --success: #22C55E;
-  --danger: #EF4444;
-  --warning: #EAB308;
+  /* 🚦 Estados */
+  --success: #22C55E; /* Verde éxito */
+  --danger:  #EF4444; /* Rojo error */
+  --warning: #EAB308; /* Amarillo advertencia */
 }

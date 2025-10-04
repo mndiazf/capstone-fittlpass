@@ -23,7 +23,7 @@
 /* ====== BRAND (desktop) ====== */
 .brand{ display: inline-flex; align-items: center; }
 .brand__logo{
-  height: 140px; /* tu valor de escritorio */
+  height: 60px;
   width: auto; display: block; object-fit: contain;
 }
 
@@ -45,13 +45,121 @@
   padding: 8px 12px; border-radius: 10px;
   color: var(--text); text-decoration: none;
   border: 1px solid var(--line);
+  background: transparent;
   transition: background .2s, border-color .2s, transform .15s;
   line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
 }
-.icon-link:hover{ background:#1f2c40; border-color:#35506e; transform:translateY(-1px); }
+.icon-link:hover{ 
+  background:#1f2c40; 
+  border-color:#35506e; 
+  transform:translateY(-1px); 
+}
 .icon-link svg{ width: 18px; height: 18px; fill: currentColor; }
-.btn-login{ color: var(--surface); background: var(--primary); border: none; font-weight: 600; border-radius: 10px; padding: 8px 16px; }
-.btn-login:hover{ opacity:.95; }
+.btn-login{ 
+  color: var(--surface); 
+  background: var(--primary); 
+  border: none; 
+  font-weight: 600; 
+  border-radius: 10px; 
+  padding: 8px 16px; 
+}
+.btn-login:hover{ 
+  background: #22c794;
+  transform: translateY(-1px);
+}
+
+/* ====== PROFILE DROPDOWN ====== */
+.profile-dropdown {
+  position: relative;
+}
+
+.btn-profile {
+  color: var(--surface);
+  background: var(--primary);
+  border: none;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  
+  .chevron {
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    transition: transform .2s;
+  }
+  
+  &:hover {
+    background: #22c794;
+    transform: translateY(-1px);
+  }
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity .2s, transform .2s;
+  z-index: 100;
+  
+  &.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    
+    ~ .btn-profile .chevron {
+      transform: rotate(180deg);
+    }
+  }
+  
+  a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background .15s, color .15s;
+    font-size: 14px;
+    
+    svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      opacity: 0.8;
+    }
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--primary);
+      
+      svg {
+        opacity: 1;
+      }
+    }
+    
+    &.active {
+      background: rgba(39, 213, 162, 0.12);
+      color: var(--primary);
+      
+      svg {
+        opacity: 1;
+      }
+    }
+  }
+}
 
 /* ====== (Desactivamos el burger antiguo del header) ====== */
 .burger{ display:none; }
@@ -73,6 +181,9 @@
   .main-nav{ gap: 1rem; }
   .actions .btn-login span{ display:none; }
   .actions .btn-login{ padding: 8px; }
+  .actions .btn-profile span:not(.chevron){ display:none; }
+  .actions .btn-profile{ padding: 8px; }
+  .actions .btn-profile .chevron { margin-left: 0; }
 }
 
 /* ====== MOBILE NAV (solo <900px) ====== */
@@ -83,21 +194,54 @@
   /* Ocultamos la vista de escritorio, usamos la barra móvil dentro del mismo header */
   .navbar__inner{ display:none !important; }
 
-  .navbar{ height: var(--navH-mobile); } /* barra del mismo header */
+  .navbar{ height: var(--navH-mobile); }
 
   .mobile-nav{ display:block; }
   .mobile-bar{
     height: var(--navH-mobile);
     display:flex; align-items:center; justify-content:space-between;
-    max-width:1240px; margin:0 auto; padding:0 16px;
+    max-width:1240px; margin:0 auto; padding:20px 16px;
   }
 
   .m-brand{ display:inline-flex; align-items:center; min-width:0; }
   .m-logo{
-    height: 90px;   /* o 80px si quieres aún más grande */
+    height: 40px;
     width:auto; display:block; object-fit:contain;
   }
 
+  .mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .m-profile-btn {
+    position: relative;
+    height: 40px;
+    width: 40px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, transform .15s;
+    
+    svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--surface);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+    
+    &:hover {
+      background: #22c794;
+    }
+  }
 
   .m-burger{
     position:relative; height:40px; width:40px;
@@ -145,22 +289,21 @@
     display:flex; align-items:center; gap:12px;
     padding:12px 10px; border-radius:12px; text-decoration:none;
     color: var(--text);
+    cursor: pointer;
   }
   .mobile-sheet a svg{ width:18px; height:18px; fill: currentColor; opacity:.9; }
   .mobile-sheet a.active{ color: var(--primary); background: rgba(39,213,162,.10); }
   .mobile-sheet a:hover{ background: rgba(255,255,255,.06); }
+  .mobile-sheet .mobile-link{ cursor: pointer; }
 
   .m-actions{
-    margin-top:6px; display:flex; align-items:center; gap:10px; padding:4px 2px 2px;
+    margin-top:6px; display:flex; flex-direction: column; gap:8px; padding:4px 2px 2px;
   }
   .m-actions .btn-login{
-    display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
+    display:inline-flex; align-items:center; justify-content: center; gap:8px; padding:10px 14px;
     border-radius:999px; background:var(--primary); color:#081325; font-weight:600; text-decoration:none;
     box-shadow: 0 6px 18px rgba(39,213,162,.25);
+    border: none;
+    width: 100%;
   }
-  .m-actions .icon-link{
-    display:inline-grid; place-items:center; height:42px; width:42px; border-radius:12px;
-    border:1px solid var(--line); color:var(--text);
-  }
-  .m-actions svg{ width:18px; height:18px; fill: currentColor; }
 }

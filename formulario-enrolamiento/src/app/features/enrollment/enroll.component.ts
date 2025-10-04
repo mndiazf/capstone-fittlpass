@@ -3,10 +3,7 @@ import {
   signal, inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormBuilder, ReactiveFormsModule, Validators,
-  AbstractControl, ValidationErrors, FormGroup
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { EnrollService, OneShotRequest } from './services/enroll.service';
 
 type FaceBox = { x:number; y:number; width:number; height:number };
@@ -35,6 +32,11 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
   guideText = signal('Ajusta tu rostro dentro del marco');
   preview   = signal<string | null>(null);
 
+  // Solo consentimiento
+  f: FormGroup = this.fb.group({
+    acepta: [false, [Validators.requiredTrue]],
+  });
+
   // Media
   private stream: MediaStream | null = null;
   private rafId: number | null = null;
@@ -45,7 +47,7 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
       ? new (window as any).FaceDetector({ fastMode: true, maxDetectedFaces: 1 })
       : null;
 
-  // === HiDPI / DPR helpers (para canvas, si lo usas) ===
+  // === HiDPI / DPR helpers (para canvas) ===
   private dpr = Math.max(1, window.devicePixelRatio || 1);
   private resizeCanvasToDisplaySize() {
     const canvas = this.guideEl.nativeElement;
@@ -57,18 +59,6 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
   private setCtxScale(ctx: CanvasRenderingContext2D) {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
   }
-
-  // -------- Form --------
-  f: FormGroup = this.fb.group({
-    nombre: ['', [Validators.required, this.nameValidator()]],
-    segundoNombre: ['', [this.nameOptionalValidator()]],
-    apellidoPaterno: ['', [Validators.required, this.nameValidator()]],
-    apellidoMaterno: ['', [Validators.required, this.nameValidator()]],
-    rut: ['', [Validators.required, this.rutValidator()]],
-    email: ['', [Validators.required, Validators.email]],
-    telefono: ['', [Validators.required, this.clPhoneValidator()]],
-    acepta: [false, [Validators.requiredTrue]],
-  });
 
   // -------- Lifecycle --------
   ngAfterViewInit(): void {
@@ -135,49 +125,35 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
     const dataUrl = off.toDataURL('image/jpeg', 0.9);
     this.preview.set(dataUrl);
     this.msg.set('Captura lista.');
+  }
 
-    if (this.f.valid && this.f.value.acepta) {
-      this.sendSnapshot(dataUrl);
-    } else {
-      this.msg.set('Captura lista. Completa los datos y acepta la política para enviar.');
+  async onSubmit(): Promise<void> {
+    if (!this.preview()) { this.msg.set('Primero captura una imagen.'); return; }
+    if (this.f.invalid || !this.f.value.acepta) {
+      this.msg.set('Debes aceptar la política biométrica.'); return;
     }
+    await this.sendSnapshot(this.preview()!);
+  }
+
+  resetShot(): void {
+    this.preview.set(null);
+    this.msg.set(null);
   }
 
   private async sendSnapshot(dataUrl: string) {
-    // ⚠️ DEMO: genera embedding placeholder desde la imagen
     const embedding = this.dataUrlToEmbedding512(dataUrl);
-
-    // heurísticas simples para demo
     const livenessScore = this.guideOk() ? 0.96 : 0.82;
     const qualityScore  = this.guideOk() ? 0.93 : 0.85;
 
-    const nombre = (this.f.value.nombre ?? '').toString().trim();
-    const segundoNombre = (this.f.value.segundoNombre ?? '').toString().trim();
-    const apPat = (this.f.value.apellidoPaterno ?? '').toString().trim();
-    const apMat = (this.f.value.apellidoMaterno ?? '').toString().trim();
-
-    const personaNombre = segundoNombre ? `${nombre} ${segundoNombre}` : nombre;
-    const personaApellido = `${apPat} ${apMat}`.trim();
-
-    const telefono = (this.f.value.telefono as string).replace(/\s+/g, '');
-    const rut = (this.f.value.rut as string).replace(/\./g, '');
-
+    // ⚠️ Ajusta estos campos según tu backend.
     const payload: OneShotRequest = {
       persona: {
         tipo: 'SOCIO',
-        rut,
-        nombre: personaNombre,
-        apellido: personaApellido,
-        email: this.f.value.email,
-        telefono
+        rut: '', nombre: '', apellido: '', email: '', telefono: ''
       },
-      consentimiento: {
-        versionPolitica: 'v1.2',
-        aceptado: true
-        // ipOrigen lo puede determinar el backend si lo necesita
-      },
+      consentimiento: { versionPolitica: 'v1.2', aceptado: true },
       fuente: 'KIOSKO',
-      sucursalId: 1, // usa la sucursal de prueba; cámbialo si corresponde
+      sucursalId: 1,
       deviceId: this.buildDeviceId(),
       embedding,
       livenessScore,
@@ -200,8 +176,7 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  // ====== DEMO: embedding placeholder 512-dim desde dataURL ======
-  // Convierte base64 -> bytes -> mapa a [-1,1] -> normaliza L2 (para coseno)
+  // ====== Embedding placeholder 512 ======
   private dataUrlToEmbedding512(dataUrl: string): { dims: number; values: number[] } {
     const base64 = dataUrl.split(',')[1] ?? '';
     const bin = atob(base64);
@@ -210,13 +185,8 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
 
     const D = 512;
     const vals = new Float32Array(D);
-    // plegado determinista de bytes sobre 512 celdas
-    for (let i = 0; i < bytes.length; i++) {
-      vals[i % D] += (bytes[i] / 127.5) - 1.0; // [0..255] -> [-1..1]
-    }
-    // normalización L2
-    let sumSq = 0;
-    for (let i = 0; i < D; i++) sumSq += vals[i] * vals[i];
+    for (let i = 0; i < bytes.length; i++) vals[i % D] += (bytes[i] / 127.5) - 1.0;
+    let sumSq = 0; for (let i = 0; i < D; i++) sumSq += vals[i] * vals[i];
     const norm = Math.sqrt(sumSq) || 1;
     for (let i = 0; i < D; i++) vals[i] = vals[i] / norm;
 
@@ -232,7 +202,7 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
   private layoutRing() {
     const ring = this.ringEl.nativeElement;
     const canvas = this.guideEl.nativeElement;
-    const rect = canvas.getBoundingClientRect(); // mismo tamaño que el video
+    const rect = canvas.getBoundingClientRect();
     const radius = Math.min(rect.width, rect.height) * 0.32;
     const size = radius * 2;
 
@@ -279,9 +249,10 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
           isCentered = sizeOk && centerOk;
 
           if (!sizeOk)      helpMsg = fwidth < radius * 1.1 ? 'Acércate un poco' : 'Aléjate un poco';
-          else if (!centerOk) helpMsg = (fx < cx) ? 'Muévete a la derecha'
-                                   : (fx > cx) ? 'Muévete a la izquierda'
-                                   : (fy < cy) ? 'Baja un poco' : 'Sube un poco';
+          else if (!centerOk) helpMsg =
+              (fx < cx) ? 'Muévete a la derecha' :
+              (fx > cx) ? 'Muévete a la izquierda' :
+              (fy < cy) ? 'Baja un poco' : 'Sube un poco';
         } else {
           helpMsg = 'Acércate a la cámara';
         }
@@ -307,108 +278,6 @@ export class EnrollComponent implements AfterViewInit, OnDestroy {
     this.guideText.set('Ajusta tu rostro dentro del marco');
     ctx.resetTransform();
     ctx.clearRect(0, 0, this.guideEl.nativeElement.width, this.guideEl.nativeElement.height);
-  }
-
-  // -------- Validaciones --------
-  isInvalid(ctrl: string): boolean {
-    const c = this.f.get(ctrl);
-    return !!c && c.invalid && (c.dirty || c.touched);
-  }
-  rutErrorMsg(): string {
-    const c = this.f.get('rut');
-    if (!c) return 'RUT inválido';
-    if (c.hasError('required')) return 'El RUT es obligatorio.';
-    if (c.hasError('rutFormat')) return 'Formato inválido. Usa 12.345.678-9 o 12345678-9.';
-    if (c.hasError('rutDv')) return 'Dígito verificador incorrecto.';
-    return 'RUT inválido.';
-  }
-
-  private nameRegex = /^[A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+)*$/;
-  private nameValidator() {
-    return (c: AbstractControl): ValidationErrors | null => {
-      const v = (c.value ?? '').toString().trim();
-      if (v.length < 2 || v.length > 50) return { nameLen: true };
-      if (!this.nameRegex.test(v)) return { nameChars: true };
-      return null;
-    };
-  }
-  private nameOptionalValidator() {
-    return (c: AbstractControl): ValidationErrors | null => {
-      const v = (c.value ?? '').toString().trim();
-      if (!v) return null;
-      if (v.length < 2 || v.length > 50) return { nameLen: true };
-      if (!this.nameRegex.test(v)) return { nameChars: true };
-      return null;
-    };
-  }
-  private clPhoneValidator() {
-    const reg = /^(?:\+56\s?9\s?\d{8}|0?9\d{8}|9\d{8})$/;
-    return (c: AbstractControl): ValidationErrors | null => {
-      const raw = (c.value ?? '').toString().replace(/\s+/g, '');
-      if (!reg.test(raw)) return { clPhone: true };
-      return null;
-    };
-  }
-  private rutValidator() {
-    return (c: AbstractControl): ValidationErrors | null => {
-      const raw = (c.value ?? '').toString().trim();
-      const clean = raw.replace(/\./g, '').replace(/–/g, '-');
-      if (!/^\d{1,8}-[\dkK]$/.test(clean)) return { rutFormat: true };
-      const [numStr, dv] = clean.split('-');
-      const dvCalc = this.computeDv(numStr);
-      if (dvCalc.toLowerCase() !== dv.toLowerCase()) return { rutDv: true };
-      return null;
-    };
-  }
-  private computeDv(numStr: string): string {
-    let sum = 0, mul = 2;
-    for (let i = numStr.length - 1; i >= 0; i--) {
-      sum += parseInt(numStr[i], 10) * mul;
-      mul = (mul === 7) ? 2 : mul + 1;
-    }
-    const res = 11 - (sum % 11);
-    if (res === 11) return '0';
-    if (res === 10) return 'K';
-    return String(res);
-  }
-
-  formatRut(): void {
-    const c = this.f.get('rut'); if (!c) return;
-    let v = (c.value ?? '').toString().trim();
-    v = v.replace(/\./g, '').replace(/–/g, '-').replace(/k$/, 'K');
-    const m = v.match(/^(\d{1,8})-([\dkK])$/);
-    if (!m) { c.updateValueAndValidity(); return; }
-    const numFmt = m[1].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    c.setValue(`${numFmt}-${m[2].toUpperCase()}`, { emitEvent: false });
-    c.updateValueAndValidity();
-  }
-
-  normalizePhone(): void {
-    const c = this.f.get('telefono'); if (!c) return;
-    let v = (c.value ?? '').toString().replace(/\s+/g, '');
-    const digits = v.replace(/\D/g, '');
-    let local = digits.startsWith('56') ? digits.slice(2) : digits;
-    if (local.startsWith('0')) local = local.slice(1);
-    if (!local.startsWith('9')) local = '9' + local.replace(/^9?/, '');
-    local = local.slice(0, 9);
-    if (local.length === 9) c.setValue(`+56 9 ${local.slice(1)}`, { emitEvent: false });
-    c.updateValueAndValidity();
-  }
-
-  onSubmit(): void {
-    if (this.f.invalid || !this.preview()) {
-      this.msg.set('Revisa los campos y captura una imagen.');
-      return;
-    }
-    if (this.preview() && this.f.valid && this.f.value.acepta) {
-      this.sendSnapshot(this.preview()!);
-    }
-  }
-
-  reset(): void {
-    this.f.reset({ acepta: false });
-    this.preview.set(null);
-    this.msg.set(null);
   }
 
   guideMsg() { return this.guideText(); }

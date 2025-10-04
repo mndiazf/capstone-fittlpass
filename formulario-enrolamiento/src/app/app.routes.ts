@@ -7,7 +7,7 @@ export const routes: Routes = [
       import('./layouts/main-layout/main-layout.component')
         .then(m => m.MainLayoutComponent),
     children: [
-      // 👉 Página de inicio
+      // Home
       {
         path: '',
         loadComponent: () =>
@@ -15,29 +15,75 @@ export const routes: Routes = [
             .then(m => m.HomeComponent)
       },
 
-      // 👉 Enrolar socio
+      // ===== Perfil con subrutas =====
       {
-        path: 'enroll',
+        path: 'profile',
         loadComponent: () =>
-          import('./features/enrollment/enroll.component')
-            .then(m => m.EnrollComponent)
+          import('./features/profile/profile.component')
+            .then(m => m.ProfileComponent),
+        children: [
+          { path: '', redirectTo: 'datos', pathMatch: 'full' },
+          {
+            path: 'datos',
+            loadComponent: () =>
+              import('./features/profile/datos/datos.component')
+                .then(m => m.DatosComponent)
+          },
+          // TODO: Descomentar cuando AccountComponent exista
+          // {
+          //   path: 'account',
+          //   loadComponent: () =>
+          //     import('./features/profile/account.component')
+          //       .then(m => m.AccountComponent)
+          // },
+          // TODO: Descomentar cuando EnrollComponent exista
+          // {
+          //   path: 'enrollment',
+          //   loadComponent: () =>
+          //     import('./features/enrollment/enroll.component')
+          //       .then(m => m.EnrollComponent)
+          // }
+        ]
       },
-
-      // 👉 Rutas pendientes (placeholders)
+      {
+        path: 'checkout',
+        loadComponent: () =>
+          import('./features/auth/checkout/checkout.component')
+            .then(m => m.CheckoutComponent)
+      },
+      // Otras rutas / placeholders
       {
         path: 'members',
         loadComponent: () =>
-          import('./shared/placeholder')
-            .then(m => m.PlaceholderComponent)
+          import('./shared/placeholder').then(m => m.PlaceholderComponent)
       },
       {
         path: 'access',
         loadComponent: () =>
-          import('./shared/placeholder')
-            .then(m => m.PlaceholderComponent)
+          import('./shared/placeholder').then(m => m.PlaceholderComponent)
       },
 
-      // 👉 Redirección por defecto
+      // Auth (si usas pantallas dedicadas)
+      {
+        path: 'login',
+        loadComponent: () =>
+          import('./features/auth/login/login.component')
+            .then(m => m.LoginComponent)
+      },
+      {
+        path: 'forgot-password',
+        loadComponent: () =>
+          import('./features/auth/forgotpassword/forgot-password.component')
+            .then(m => m.ForgotPasswordComponent)
+      },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component')
+            .then(m => m.DashboardComponent)
+      },
+
+      // Catch-all
       { path: '**', redirectTo: '' }
     ]
   }

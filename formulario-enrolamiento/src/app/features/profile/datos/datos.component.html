@@ -1,0 +1,168 @@
+<div class="datos-container">
+  <div class="datos-header">
+    <div class="header-content">
+      <div class="icon-wrapper">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Datos Personales</h1>
+        <p>Administra tu información personal</p>
+      </div>
+    </div>
+    <button type="button" 
+            class="btn-edit" 
+            (click)="toggleEdit()"
+            [class.editing]="isEditing">
+      <svg *ngIf="!isEditing" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+      </svg>
+      <svg *ngIf="isEditing" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+      </svg>
+      <span>{{ isEditing ? 'Cancelar' : 'Editar' }}</span>
+    </button>
+  </div>
+
+  <!-- Mensajes -->
+  <div class="message success" *ngIf="successMessage">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+    </svg>
+    {{ successMessage }}
+  </div>
+
+  <div class="message error" *ngIf="errorMessage">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+    </svg>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Formulario -->
+  <form [formGroup]="datosForm" (ngSubmit)="onSubmit()" class="datos-form">
+    <div class="form-section">
+      <h2>Información Básica</h2>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="nombre">Nombre</label>
+          <input 
+            id="nombre" 
+            type="text" 
+            formControlName="nombre"
+            [class.invalid]="isFieldInvalid('nombre')"
+            placeholder="Ingresa tu nombre">
+          <span class="error-text" *ngIf="isFieldInvalid('nombre')">
+            {{ getErrorMessage('nombre') }}
+          </span>
+        </div>
+
+        <div class="form-field">
+          <label for="apellido">Apellido</label>
+          <input 
+            id="apellido" 
+            type="text" 
+            formControlName="apellido"
+            [class.invalid]="isFieldInvalid('apellido')"
+            placeholder="Ingresa tu apellido">
+          <span class="error-text" *ngIf="isFieldInvalid('apellido')">
+            {{ getErrorMessage('apellido') }}
+          </span>
+        </div>
+
+        <div class="form-field">
+          <label for="documento">Documento de Identidad</label>
+          <input 
+            id="documento" 
+            type="text" 
+            formControlName="documento"
+            [class.invalid]="isFieldInvalid('documento')"
+            placeholder="12345678">
+          <span class="error-text" *ngIf="isFieldInvalid('documento')">
+            {{ getErrorMessage('documento') }}
+          </span>
+        </div>
+
+        <div class="form-field">
+          <label for="fechaNacimiento">Fecha de Nacimiento</label>
+          <input 
+            id="fechaNacimiento" 
+            type="date" 
+            formControlName="fechaNacimiento"
+            [class.invalid]="isFieldInvalid('fechaNacimiento')">
+          <span class="error-text" *ngIf="isFieldInvalid('fechaNacimiento')">
+            {{ getErrorMessage('fechaNacimiento') }}
+          </span>
+        </div>
+
+        <div class="form-field full-width">
+          <label for="genero">Género</label>
+          <select 
+            id="genero" 
+            formControlName="genero"
+            [class.invalid]="isFieldInvalid('genero')">
+            <option value="">Seleccionar</option>
+            <option value="masculino">Masculino</option>
+            <option value="femenino">Femenino</option>
+            <option value="otro">Otro</option>
+            <option value="prefiero-no-decir">Prefiero no decir</option>
+          </select>
+          <span class="error-text" *ngIf="isFieldInvalid('genero')">
+            {{ getErrorMessage('genero') }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Información de Contacto</h2>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input 
+            id="email" 
+            type="email" 
+            formControlName="email"
+            [class.invalid]="isFieldInvalid('email')"
+            placeholder="tu@email.com">
+          <span class="error-text" *ngIf="isFieldInvalid('email')">
+            {{ getErrorMessage('email') }}
+          </span>
+        </div>
+
+        <div class="form-field">
+          <label for="telefono">Teléfono</label>
+          <input 
+            id="telefono" 
+            type="tel" 
+            formControlName="telefono"
+            [class.invalid]="isFieldInvalid('telefono')"
+            placeholder="912345678">
+          <span class="error-text" *ngIf="isFieldInvalid('telefono')">
+            {{ getErrorMessage('telefono') }}
+          </span>
+        </div>
+
+        <div class="form-field full-width">
+          <label for="direccion">Dirección</label>
+          <input 
+            id="direccion" 
+            type="text" 
+            formControlName="direccion"
+            placeholder="Av. Principal 123, Santiago">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions" *ngIf="isEditing">
+      <button type="button" class="btn-cancel" (click)="toggleEdit()">
+        Cancelar
+      </button>
+      <button type="submit" class="btn-save" [disabled]="loading">
+        <span *ngIf="!loading">Guardar Cambios</span>
+        <span *ngIf="loading" class="loading-spinner">Guardando...</span>
+      </button>
+    </div>
+  </form>
+</div>

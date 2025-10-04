@@ -1,152 +1,51 @@
 <section class="page">
-  <h1 class="title">Enrolar socio</h1>
+  <h1 class="title">Enrolar</h1>
 
-  <div class="card">
-    <form class="grid" [formGroup]="f" (ngSubmit)="onSubmit()">
-      <!-- Columna izquierda -->
-      <div class="form">
-        <!-- Nombres -->
-        <div class="field two">
-          <div class="subfield">
-            <label>Nombre</label>
-            <input type="text"
-                   formControlName="nombre"
-                   placeholder="Nombre"
-                   autocomplete="given-name"
-                   [class.invalid]="isInvalid('nombre')">
-            <div class="error" *ngIf="isInvalid('nombre')">
-              El nombre es obligatorio (2–50 letras).
-            </div>
-          </div>
+  <div class="card enroll-card">
+    <!-- Cámara -->
+    <div class="camBox">
+      <video #video autoplay playsinline muted></video>
+      <canvas #guide></canvas>
+      <div #ring class="ring"></div>
+    </div>
 
-          <div class="subfield">
-            <label>Segundo nombre <span class="muted"></span></label>
-            <input type="text"
-                   formControlName="segundoNombre"
-                   placeholder="Segundo nombre"
-                   autocomplete="additional-name"
-                   [class.invalid]="isInvalid('segundoNombre')">
-            <div class="error" *ngIf="isInvalid('segundoNombre')">
-              Solo letras y espacios (2–50).
-            </div>
-          </div>
-        </div>
+    <!-- Barra inferior -->
+    <div class="bar">
+      <!-- Consentimiento -->
+      <label class="check">
+        <input type="checkbox" formControlName="acepta">
+        <span>He leído y acepto las
+          <a href="/politica-biometrica" target="_blank">políticas biométricas</a>
+        </span>
+      </label>
 
-        <!-- Apellidos -->
-        <div class="field two">
-          <div class="subfield">
-            <label>Apellido paterno</label>
-            <input type="text"
-                   formControlName="apellidoPaterno"
-                   placeholder="Apellido paterno"
-                   autocomplete="family-name"
-                   [class.invalid]="isInvalid('apellidoPaterno')">
-            <div class="error" *ngIf="isInvalid('apellidoPaterno')">
-              El apellido paterno es obligatorio (2–50 letras).
-            </div>
-          </div>
-
-          <div class="subfield">
-            <label>Apellido materno</label>
-            <input type="text"
-                   formControlName="apellidoMaterno"
-                   placeholder="Apellido materno"
-                   autocomplete="additional-name"
-                   [class.invalid]="isInvalid('apellidoMaterno')">
-            <div class="error" *ngIf="isInvalid('apellidoMaterno')">
-              El apellido materno es obligatorio (2–50 letras).
-            </div>
-          </div>
-        </div>
-
-        <!-- RUT -->
-        <div class="field">
-          <label>RUT</label>
-          <input type="text"
-                 formControlName="rut"
-                 placeholder="12.345.678-9"
-                 inputmode="text"
-                 autocomplete="off"
-                 (blur)="formatRut()"
-                 [class.invalid]="isInvalid('rut')">
-          <small class="hint">Formato chileno con dígito verificador</small>
-          <div class="error" *ngIf="isInvalid('rut')">
-            {{ rutErrorMsg() }}
-          </div>
-        </div>
-
-        <!-- Email -->
-        <div class="field">
-          <label>Email</label>
-          <input type="email"
-                 formControlName="email"
-                 placeholder="correo@dominio.com"
-                 autocomplete="email"
-                 [class.invalid]="isInvalid('email')">
-          <div class="error" *ngIf="isInvalid('email')">
-            Ingresa un correo válido.
-          </div>
-        </div>
-
-        <!-- Teléfono -->
-        <div class="field">
-          <label>Teléfono</label>
-          <input type="tel"
-                 formControlName="telefono"
-                 placeholder="+56 9 XXXXXXXX"
-                 inputmode="tel"
-                 autocomplete="tel-national"
-                 (blur)="normalizePhone()"
-                 [class.invalid]="isInvalid('telefono')">
-          <div class="error" *ngIf="isInvalid('telefono')">
-            Teléfono chileno válido: +56 9 XXXXXXXX.
-          </div>
-        </div>
-
-        <!-- Aceptación política -->
-        <label class="check">
-          <input type="checkbox" formControlName="acepta">
-          <span>Acepto la <a href="/politica-biometrica" target="_blank">política biométrica</a></span>
-        </label>
-        <div class="error" *ngIf="isInvalid('acepta')">
-          Debes aceptar la política biométrica.
-        </div>
-
-        <div class="actions">
-          <button class="btn primary" type="submit" [disabled]="loading() || f.invalid || !preview()">
-            Enviar
-          </button>
-          <button class="btn ghost" type="button" (click)="reset()">Limpiar</button>
-          <span class="msg" *ngIf="msg()">{{ msg() }}</span>
-        </div>
+      <!-- Acciones cámara -->
+      <div class="buttons">
+        <button class="btn violet" type="button" (click)="startCam()" [disabled]="camReady()">Activar cámara</button>
+        <button class="btn violet" type="button" (click)="capture()" [disabled]="!camReady() || !guideOk()">Capturar</button>
+        <button class="btn violet ghost" type="button" (click)="resetShot()" [disabled]="!preview()">Limpiar</button>
       </div>
 
-      <!-- Columna derecha -->
-      <div class="media">
-        <div class="camBox">
-          <video #video autoplay playsinline muted></video>
+      <!-- CTA principal -->
+      <button class="btn teal wide"
+              type="button"
+              (click)="onSubmit()"
+              [disabled]="loading() || !preview() || f.invalid">
+        Enrolar
+      </button>
+    </div>
 
-          <!-- Canvas (lo dejamos por si lo usas luego para debug) -->
-          <canvas #guide></canvas>
+    <!-- Estado -->
+    <div [class.ok]="guideOk()" class="status" aria-live="polite">
+      <span class="dot"></span>
+      <span>{{ guideMsg() }}</span>
+    </div>
 
-          <!-- 🔥 CÍRCULO OVERLAY (div), SIEMPRE ENCIMA DEL VIDEO -->
-          <div #ring class="ring"></div>
-        </div>
+    <!-- (Opcional) mini preview si quieres mostrarla -->
+    <div *ngIf="preview()" class="preview">
+      <img [src]="preview()!" alt="captura" />
+    </div>
 
-        <div class="actions right">
-          <button class="btn" type="button" (click)="startCam()">Activar cámara</button>
-          <button class="btn" type="button" (click)="capture()" [disabled]="!camReady() || !guideOk()">Capturar</button>
-        </div>
-
-        <div [class.ok]="guideOk()" class="status" aria-live="polite">
-          <span class="dot"></span>
-          <span>{{ guideMsg() }}</span>
-        </div>
-
-        <div *ngIf="preview()" class="preview">
-          <img [src]="preview()!" alt="captura">
-        </div>
-      </div>
-    </form>
+    <div class="msg" *ngIf="msg()">{{ msg() }}</div>
   </div>
 </section>

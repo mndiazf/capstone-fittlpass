@@ -1,9 +1,17 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { NavComponent, NavItem } from '../../shared/nav/nav.component';
+import { NavComponent } from '../../shared/nav/nav.component';
 import { FooterComponent } from '../../shared/footer/footer.component';
 
-@Component({  
+type NavItem = {
+  label?: string;
+  link: string;
+  exact?: boolean;
+  icon?: 'user' | 'gear' | 'report';
+  aria?: string;
+};
+
+@Component({
   standalone: true,
   selector: 'app-main-layout',
   imports: [RouterModule, NavComponent, FooterComponent],
@@ -11,17 +19,14 @@ import { FooterComponent } from '../../shared/footer/footer.component';
   styleUrls: ['./main-layout.component.scss']
 })
 export class MainLayoutComponent {
-menu = [
-  { label: 'Inicio',   link: '/', exact: true },
-  { label: 'Reportes', link: '/reports' },   // ← aquí, al lado de Inicio
-  { label: 'Enrolar',  link: '/enroll' },
-  { label: 'Socios',   link: '/members' },
-  { label: 'Accesos',  link: '/access' },
-];
+  menu = [
+    { label: 'Inicio', link: '/', exact: true },
+    { label: 'Servicios', link: '/#servicios' },
+    { label: 'Membresías', link: '/#membresias' },
+    { label: 'Clases', link: '/#clases' },
+  ];
 
-actions: NavItem[] = [
-  { label: 'Login', link: '/login', icon: 'user', aria: 'Iniciar sesión' },
-  { link: '/settings', icon: 'gear', aria: 'Configuración' },
-
-];
+  actions: NavItem[] = [
+    { label: 'Login', link: '/login', icon: 'user', aria: 'Iniciar sesión' },
+  ];
 }
