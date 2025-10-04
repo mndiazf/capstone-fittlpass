@@ -1,7 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+  AbstractControl,
+  ValidationErrors
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService, UserProfile } from '../../../core/services/auth.service';
 
 function samePassword(group: AbstractControl): ValidationErrors | null {
   const p1 = group.get('password')?.value;
@@ -75,7 +83,8 @@ export class CheckoutComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private auth: AuthService
   ) {
     this.f = this.fb.group({
       firstName: ['', [Validators.required]],
@@ -121,7 +130,6 @@ export class CheckoutComponent implements OnInit {
       this.router.navigate(['/']);
     }
 
-    // Formateo automático del RUT
     this.f.get('rut')?.valueChanges.subscribe(value => {
       if (value) {
         const formatted = this.formatRut(value);
@@ -131,7 +139,6 @@ export class CheckoutComponent implements OnInit {
       }
     });
 
-    // Formateo automático de tarjeta
     this.paymentForm.get('cardNumber')?.valueChanges.subscribe(value => {
       if (value) {
         const formatted = this.formatCardNumber(value);
@@ -141,7 +148,6 @@ export class CheckoutComponent implements OnInit {
       }
     });
 
-    // Formateo automático de fecha de expiración
     this.paymentForm.get('expiryDate')?.valueChanges.subscribe(value => {
       if (value) {
         const formatted = this.formatExpiryDate(value);
@@ -168,16 +174,11 @@ export class CheckoutComponent implements OnInit {
 
   formatRut(value: string): string {
     const clean = value.replace(/[^0-9kK]/g, '');
-    
     if (clean.length === 0) return '';
-    
     const body = clean.slice(0, -1);
     const dv = clean.slice(-1).toUpperCase();
-    
     if (body.length === 0) return dv;
-    
-    let formatted = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    
+    const formatted = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return `${formatted}-${dv}`;
   }
 
@@ -200,12 +201,10 @@ export class CheckoutComponent implements OnInit {
       this.f.markAllAsTouched();
       return;
     }
-
     this.registrationData = {
       ...this.f.value,
       membership: this.selectedMembership
     };
-
     this.step = 'payment';
   }
 
@@ -214,9 +213,7 @@ export class CheckoutComponent implements OnInit {
       this.paymentForm.markAllAsTouched();
       return;
     }
-
     this.step = 'processing';
-
     setTimeout(() => {
       this.step = 'success';
     }, 3000);
@@ -230,12 +227,56 @@ export class CheckoutComponent implements OnInit {
     this.step = 'register';
   }
 
+  private computeNextPaymentISO(from: Date = new Date()): string {
+    const next = new Date(from);
+    next.setMonth(next.getMonth() + 1);
+    return next.toISOString();
+  }
+
   finishCheckout() {
+    // Perfil completo desde el formulario + plan seleccionado
+    const reg = this.registrationData || {};
+    const plan = this.selectedMembership;
+
+    const profile: UserProfile = {
+      firstName: reg.firstName,
+      middleName: reg.middleName || '',
+      lastName: reg.lastName,
+      secondLastName: reg.secondLastName || '',
+      email: reg.email,
+      phone: reg.phone,
+      rut: reg.rut,
+      membershipId: plan?.id,
+      membership: plan?.name,
+      membershipPrice: plan?.monthlyPrice,
+      membershipDiscount: plan?.discount,
+      membershipFeatures: plan?.features || [],
+      joinDate: new Date().toISOString(),
+      nextPayment: this.computeNextPaymentISO(),
+      status: 'active'
+    };
+
+    // ✅ Persistir perfil + crear sesión con TTL/idle timeout
+    this.auth.loginWithProfile(profile);
+
+    // ⚠️ Guardar contraseña SIN hash (para tu flujo de demo/login local)
+    //    Ten en cuenta que esto NO es seguro para producción.
+    const plainPassword: string | undefined = reg?.passwordGroup?.password;
+    if (typeof plainPassword === 'string') {
+      localStorage.setItem('userPassword', plainPassword);
+    }
+
+    // (opcional) guarda también el email normalizado para cualquier uso posterior en login
+    const emailNorm = (reg.email || '').toString().trim().toLowerCase();
+    localStorage.setItem('loginEmail', emailNorm);
+
+    // Para el modal de bienvenida en Dashboard (opcional)
     localStorage.setItem('userFirstLogin', 'true');
-    localStorage.setItem('userName', `${this.registrationData?.firstName} ${this.registrationData?.lastName}`);
-    localStorage.setItem('userMembership', this.selectedMembership?.name || '');
-    localStorage.setItem('token', 'simulated-token-' + Date.now());
-    
+
+    // Compatibilidad con código existente (opcional)
+    localStorage.setItem('userName', `${profile.firstName} ${profile.lastName}`);
+    localStorage.setItem('userMembership', profile.membership || '');
+
     this.router.navigate(['/dashboard']);
   }
 }

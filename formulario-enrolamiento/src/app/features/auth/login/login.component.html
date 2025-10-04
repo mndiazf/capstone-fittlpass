@@ -7,51 +7,55 @@
 
     <div class="yellow-frame">
       <form [formGroup]="f" (ngSubmit)="onSubmit()" novalidate>
-        
         <!-- Email -->
-        <input type="email"
-               formControlName="email"
-               placeholder="Ingrese su correo electrónico"
-               [class.invalid]="email?.touched && email?.invalid"
-               [attr.aria-invalid]="email?.touched && email?.invalid ? true : null"
-               autocomplete="username"
-               inputmode="email"
-               autofocus />
-        <div class="error" *ngIf="email?.touched && email?.invalid">
+        <input
+          id="login-email"
+          type="email"
+          formControlName="email"
+          placeholder="Ingrese su correo electrónico"
+          [class.invalid]="email?.touched && email?.invalid"
+          [attr.aria-invalid]="email?.touched && email?.invalid ? true : null"
+          [attr.aria-describedby]="email?.touched && email?.invalid ? 'email-error' : null"
+          autocomplete="username"
+          inputmode="email"
+          autofocus
+        />
+        <div class="error" *ngIf="email?.touched && email?.invalid" id="email-error" aria-live="polite">
           <small *ngIf="email?.errors?.['required']">El correo es obligatorio</small>
           <small *ngIf="email?.errors?.['email']">Formato de correo no válido</small>
           <small *ngIf="email?.errors?.['pattern']">Debe incluir dominio válido (ej: .com, .cl)</small>
         </div>
 
         <!-- Password -->
-        <input type="password"
-               formControlName="password"
-               placeholder="Ingrese su contraseña"
-               [class.invalid]="password?.touched && password?.invalid"
-               [attr.aria-invalid]="password?.touched && password?.invalid ? true : null"
-               autocomplete="current-password" />
-        <div class="error" *ngIf="password?.touched && password?.invalid">
+        <input
+          id="login-password"
+          type="password"
+          formControlName="password"
+          placeholder="Ingrese su contraseña"
+          [class.invalid]="password?.touched && password?.invalid"
+          [attr.aria-invalid]="password?.touched && password?.invalid ? true : null"
+          [attr.aria-describedby]="password?.touched && password?.invalid ? 'password-error' : null"
+          autocomplete="current-password"
+        />
+        <div class="error" *ngIf="password?.touched && password?.invalid" id="password-error" aria-live="polite">
           <small *ngIf="password?.errors?.['required']">La contraseña es obligatoria</small>
           <small *ngIf="password?.errors?.['minlength']">Mínimo 6 caracteres</small>
           <small *ngIf="password?.errors?.['pattern']">Debe incluir mayúscula, minúscula y número</small>
         </div>
-
         <!-- Mensaje de error general -->
-        <div class="error" *ngIf="errorMsg">
+        <div class="error" *ngIf="errorMsg" aria-live="assertive">
           <small>{{ errorMsg }}</small>
         </div>
 
-        <!-- Botón -->
-        <button type="submit" [disabled]="loading || f.invalid">
+        <!-- Botón (debajo del enlace) -->
+        <button type="submit" [disabled]="loading || f.invalid" [attr.aria-busy]="loading ? 'true' : null">
           {{ loading ? 'Ingresando...' : 'Login' }}
         </button>
       </form>
     </div>
-
-    <!-- Links extra -->
-    <div class="extra-links">
-      <a (click)="forgot.emit()">¿Olvidó su contraseña?</a><br />
-      <a (click)="register.emit()">¿No estás registrado? Regístrate aquí</a>
+        <!-- Olvidaste tu contraseña (debajo del password, alineado a la izquierda) -->
+    <div class="extra-links extra-links--inline">
+      <a class="forgot-link" (click)="forgot.emit()">¿Olvidó su contraseña?</a>
     </div>
   </div>
 </div>

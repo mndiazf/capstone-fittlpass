@@ -37,28 +37,57 @@ export class DashboardComponent implements OnInit {
   constructor(private router: Router) {}
 
   ngOnInit() {
-    // Verificar si es primera vez
+    // Modal de bienvenida solo la primera vez
     const firstLogin = localStorage.getItem('userFirstLogin');
     if (firstLogin === 'true') {
       this.showWelcomeModal = true;
       localStorage.removeItem('userFirstLogin');
     }
 
-    // Cargar datos del usuario
     this.loadUserData();
     this.loadRecentAccess();
   }
 
+  /** Carga el perfil real desde localStorage ('userProfile') guardado en el checkout.
+   *  Si no existe o hay error, cae a un fallback con datos mínimos. */
   loadUserData() {
+    const raw = localStorage.getItem('userProfile');
+
+    if (raw) {
+      try {
+        const p = JSON.parse(raw);
+
+        // Unir apellidos si vienen separados
+        const lastName = [p.lastName, p.secondLastName].filter(Boolean).join(' ').trim();
+
+        this.userData = {
+          firstName: p.firstName || 'Usuario',
+          lastName: lastName || '',
+          email: p.email || 'usuario@email.com',
+          phone: p.phone || '+56 9 1234 5678',
+          rut: p.rut || '12.345.678-9',
+          membership: p.membership || 'Plan Básico',
+          membershipPrice: p.membershipPrice || this.getMembershipPrice(p.membership),
+          joinDate: p.joinDate ? new Date(p.joinDate) : new Date(),
+          nextPayment: p.nextPayment ? new Date(p.nextPayment) : this.calculateNextPayment(),
+          status: (p.status as UserData['status']) || 'active'
+        };
+
+        return;
+      } catch {
+        // continúa al fallback
+      }
+    }
+
+    // Fallback si no hubo perfil o falló el parseo: usa los keys antiguos
     const userName = localStorage.getItem('userName') || 'Usuario';
     const userMembership = localStorage.getItem('userMembership') || 'Plan Básico';
-    
-    const [firstName, ...lastNameParts] = userName.split(' ');
-    const lastName = lastNameParts.join(' ');
+    const [firstName, ...lnParts] = userName.split(' ');
+    const lastName = lnParts.join(' ');
 
     this.userData = {
-      firstName: firstName,
-      lastName: lastName,
+      firstName,
+      lastName,
       email: 'usuario@email.com',
       phone: '+56 9 1234 5678',
       rut: '12.345.678-9',
@@ -71,7 +100,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getMembershipPrice(membership: string): string {
-    const prices: { [key: string]: string } = {
+    const prices: Record<string, string> = {
       'Plan Anual MultiClub': '$14.667',
       'Plan Anual OneClub': '$14.000',
       'Plan Mensual Cargo Automático': '$21.000'
@@ -86,34 +115,14 @@ export class DashboardComponent implements OnInit {
   }
 
   loadRecentAccess() {
-  // Datos simulados de accesos recientes
-  this.recentAccess = [
-    {
-      date: new Date(2025, 9, 1), // 1 de octubre 2025
-      time: '08:30',
-      location: 'Sucursal Centro',
-      type: 'entry'
-    },
-    {
-      date: new Date(2025, 9, 1), // 1 de octubre 2025
-      time: '10:15',
-      location: 'Sucursal Centro',
-      type: 'exit'
-    },
-    {
-      date: new Date(2025, 8, 29), // 29 de septiembre 2025
-      time: '18:45',
-      location: 'Sucursal Providencia',
-      type: 'entry'
-    },
-    {
-      date: new Date(2025, 8, 29), // 29 de septiembre 2025
-      time: '20:00',
-      location: 'Sucursal Providencia',
-      type: 'exit'
-    }
-  ];
-}
+    // Datos simulados de accesos recientes
+    this.recentAccess = [
+      { date: new Date(2025, 9, 1), time: '08:30', location: 'Sucursal Centro',       type: 'entry' },
+      { date: new Date(2025, 9, 1), time: '10:15', location: 'Sucursal Centro',       type: 'exit'  },
+      { date: new Date(2025, 8, 29), time: '18:45', location: 'Sucursal Providencia', type: 'entry' },
+      { date: new Date(2025, 8, 29), time: '20:00', location: 'Sucursal Providencia', type: 'exit'  }
+    ];
+  }
 
   closeWelcomeModal() {
     this.showWelcomeModal = false;
@@ -130,7 +139,9 @@ export class DashboardComponent implements OnInit {
   getDaysUntilPayment(): number {
     if (!this.userData) return 0;
     const today = new Date();
-    const nextPayment = this.userData.nextPayment;
+    const nextPayment = this.userData.nextPayment instanceof Date
+      ? this.userData.nextPayment
+      : new Date(this.userData.nextPayment);
     const diff = nextPayment.getTime() - today.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
