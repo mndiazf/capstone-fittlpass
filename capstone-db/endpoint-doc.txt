@@ -1,0 +1,173 @@
+Aquí tienes una guía corta para probar **sin variables** en Postman los endpoints de tu backend:
+
+---
+
+## 0) Requisitos
+
+* Backend corriendo en: `http://localhost:8080`
+* Base de datos accesible y con conexión OK.
+
+---
+
+## 1) Crear colección (opcional, pero ordena)
+
+* Abre Postman → **New** → **Collection** → nombre: `FitPass Auth`.
+
+---
+
+## 2) Registro de usuario
+
+**Request**
+
+* Método: **POST**
+* URL: `http://localhost:8080/api/auth/register`
+* Headers:
+
+  * `Content-Type: application/json`
+* Body → raw → JSON:
+
+```json
+{
+  "firstName": "Jose",
+  "middleName": "Andrés",
+  "lastName": "Zuñiga",
+  "secondLastName": "P.",
+  "email": "jose@example.com",
+  "phone": "+56912345678",
+  "rut": "18027668-8",
+  "password": "Secreta123!",
+  "status": "active"
+}
+```
+
+**Respuestas esperadas**
+
+* **201 Created**
+
+```json
+{
+  "profile": {
+    "id": "UUID",
+    "firstName": "Jose",
+    "middleName": "Andrés",
+    "lastName": "Zuñiga",
+    "secondLastName": "P.",
+    "email": "jose@example.com",
+    "phone": "+56912345678",
+    "rut": "18027668-8",
+    "status": "active"
+  },
+  "session": {
+    "sessionId": "sess-xxxxxxxx",
+    "issuedAt": 1730850000000,
+    "expiresAt": 1730857200000,
+    "ttlMinutes": 120
+  }
+}
+```
+
+* **409 Conflict** (email o RUT ya registrados)
+
+```json
+{ "code": "conflict", "message": "Email ya registrado" }
+```
+
+* **400 Bad Request** (faltan campos o formato inválido)
+
+```json
+{ "code": "bad_request", "message": "..." }
+```
+
+---
+
+## 3) Login
+
+**Request**
+
+* Método: **POST**
+* URL: `http://localhost:8080/api/auth/login`
+* Headers:
+
+  * `Content-Type: application/json`
+* Body → raw → JSON:
+
+```json
+{
+  "email": "jose@example.com",
+  "password": "Secreta123!"
+}
+```
+
+**Respuestas esperadas**
+
+* **200 OK**
+
+```json
+{
+  "profile": {
+    "id": "UUID",
+    "firstName": "Jose",
+    "middleName": "Andrés",
+    "lastName": "Zuñiga",
+    "secondLastName": "P.",
+    "email": "jose@example.com",
+    "phone": "+56912345678",
+    "rut": "18027668-8",
+    "status": "active"
+  },
+  "session": {
+    "sessionId": "sess-xxxxxxxx",
+    "issuedAt": 1730850000000,
+    "expiresAt": 1730857200000,
+    "ttlMinutes": 120
+  }
+}
+```
+
+* **401 Unauthorized** (credenciales inválidas)
+
+```json
+{ "code": "unauthorized", "message": "Credenciales inválidas" }
+```
+
+---
+
+## 4) Verifica encabezados y formato
+
+* Asegúrate de tener **Body → raw → JSON** (no `form-data`).
+* **Headers** deben incluir `Content-Type: application/json`.
+* No uses variables: pega las URLs y payloads tal cual.
+
+---
+
+## 5) Pruebas rápidas en la pestaña **Tests** (opcional)
+
+En cada request puedes añadir (pestaña **Tests**) para validar estado y estructura:
+
+```js
+pm.test("Status code OK/Created", function () {
+  pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+});
+
+pm.test("Tiene profile y session", function () {
+  const json = pm.response.json();
+  pm.expect(json).to.have.property("profile");
+  pm.expect(json).to.have.property("session");
+  pm.expect(json.session).to.have.property("sessionId");
+  pm.expect(json.session).to.have.property("issuedAt");
+  pm.expect(json.session).to.have.property("expiresAt");
+  pm.expect(json.session).to.have.property("ttlMinutes");
+});
+```
+
+---
+
+## 6) Errores comunes a revisar si falla
+
+* **401/409**: datos ya existentes o credenciales incorrectas.
+* **500**: revisa logs de backend (DB caída, credenciales DB mal configuradas).
+* **CORS** no afecta en Postman (solo en navegador).
+
+---
+
+Si quieres, te preparo un **archivo de colección de Postman (.json)** con estas requests para que lo importes directo.

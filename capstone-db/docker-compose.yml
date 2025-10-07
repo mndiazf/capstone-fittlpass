@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: capstone-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: capstonedb
+      POSTGRES_USER: capstone
+      POSTGRES_PASSWORD: capstone123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata
+
+volumes:
+  postgres_data:
