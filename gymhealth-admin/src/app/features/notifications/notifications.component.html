@@ -1,0 +1,71 @@
+
+<div class="notifications">
+  <!-- Header -->
+  <div class="notifications__header">
+    <div>
+      <h1 class="notifications__title">Notificaciones</h1>
+      <p class="notifications__subtitle">
+        <span *ngIf="unreadCount > 0">{{ unreadCount }} notificaciones sin leer</span>
+        <span *ngIf="unreadCount === 0">Todas las notificaciones leídas</span>
+      </p>
+    </div>
+    <button 
+      mat-flat-button 
+      class="btn-primary" 
+      (click)="markAllAsRead()"
+      *ngIf="unreadCount > 0">
+      <mat-icon>done_all</mat-icon>
+      Marcar todas como leídas
+    </button>
+  </div>
+
+  <!-- Notifications List -->
+  <div class="notifications__content">
+    <mat-card 
+      *ngFor="let notification of notifications" 
+      class="notification-card"
+      [class.notification-card--unread]="!notification.read"
+      [class.notification-card--info]="notification.type === 'info'"
+      [class.notification-card--success]="notification.type === 'success'"
+      [class.notification-card--warning]="notification.type === 'warning'"
+      [class.notification-card--error]="notification.type === 'error'">
+      
+      <!-- Icon -->
+      <div class="notification-card__icon">
+        <mat-icon>{{ notification.icon }}</mat-icon>
+      </div>
+
+      <!-- Content -->
+      <div class="notification-card__content">
+        <h3 class="notification-card__title">{{ notification.title }}</h3>
+        <p class="notification-card__message">{{ notification.message }}</p>
+        <span class="notification-card__time">{{ notification.time }}</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="notification-card__actions">
+        <button 
+          mat-icon-button 
+          class="notification-card__action"
+          [matTooltip]="notification.read ? 'Marcar como no leída' : 'Marcar como leída'"
+          (click)="markAsRead(notification.id)">
+          <mat-icon>{{ notification.read ? 'mail' : 'drafts' }}</mat-icon>
+        </button>
+        <button 
+          mat-icon-button 
+          class="notification-card__action notification-card__action--delete"
+          matTooltip="Eliminar"
+          (click)="deleteNotification(notification.id)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </mat-card>
+
+    <!-- Empty State -->
+    <div *ngIf="notifications.length === 0" class="empty-state">
+      <mat-icon>notifications_none</mat-icon>
+      <h3>No hay notificaciones</h3>
+      <p>Cuando tengas nuevas notificaciones, aparecerán aquí</p>
+    </div>
+  </div>
+</div>

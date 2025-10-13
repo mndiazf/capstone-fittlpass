@@ -1,0 +1,469 @@
+// ============================================
+// VARIABLES
+// ============================================
+$purple-primary: #8b5cf6;
+$purple-light: #a78bfa;
+$cyan-primary: #06b6d4;
+$cyan-light: #22d3ee;
+$green-success: #10b981;
+$yellow-warning: #f59e0b;
+$red-error: #ef4444;
+$slate-text: #94a3b8;
+$slate-dark: #1e293b;
+
+// Modo claro
+$light-purple: #8B35FF;
+$light-cyan: #00B8AC;
+$light-orange: #EA580C;
+$light-text: #0F172A;
+$light-text-secondary: #475569;
+$light-bg: #FFFFFF;
+$light-border: #E2E8F0;
+
+// ============================================
+// NOTIFICATIONS LAYOUT
+// ============================================
+.notifications {
+  max-width: 1200px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 0.5rem 0;
+  }
+
+  &__subtitle {
+    color: $slate-text;
+    font-size: 1rem;
+    margin: 0;
+
+    span {
+      display: inline-block;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+// ============================================
+// PRIMARY BUTTON
+// ============================================
+.btn-primary {
+  background: linear-gradient(135deg, $cyan-primary, $purple-primary) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.3s ease;
+  
+  mat-icon {
+    margin-right: 0.5rem;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba($cyan-primary, 0.3);
+  }
+}
+
+// ============================================
+// NOTIFICATION CARD
+// ============================================
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: rgba($slate-dark, 0.5) !important;
+  border: 1px solid rgba($purple-primary, 0.2);
+  border-left: 4px solid $purple-primary;
+  border-radius: 0.75rem !important;
+  padding: 1.5rem !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateX(4px);
+    border-color: rgba($purple-primary, 0.4);
+    box-shadow: 0 4px 12px rgba($purple-primary, 0.15);
+  }
+
+  // Unread state
+  &--unread {
+    background: rgba($purple-primary, 0.1) !important;
+    border-left-width: 4px;
+    
+    .notification-card__title {
+      font-weight: 700;
+    }
+  }
+
+  // Type variants
+  &--info {
+    border-left-color: $cyan-primary;
+
+    .notification-card__icon {
+      background: linear-gradient(135deg, $cyan-primary, $cyan-light);
+    }
+  }
+
+  &--success {
+    border-left-color: $green-success;
+
+    .notification-card__icon {
+      background: linear-gradient(135deg, $green-success, #34d399);
+    }
+  }
+
+  &--warning {
+    border-left-color: $yellow-warning;
+
+    .notification-card__icon {
+      background: linear-gradient(135deg, $yellow-warning, #fbbf24);
+    }
+  }
+
+  &--error {
+    border-left-color: $red-error;
+
+    .notification-card__icon {
+      background: linear-gradient(135deg, $red-error, #f87171);
+    }
+  }
+
+  // Icon
+  &__icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, $purple-primary, $cyan-primary);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba($purple-primary, 0.3);
+
+    mat-icon {
+      color: white;
+      font-size: 1.5rem;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+  }
+
+  // Content
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+  }
+
+  &__message {
+    font-size: 0.9375rem;
+    color: $slate-text;
+    line-height: 1.6;
+    margin: 0 0 0.5rem 0;
+  }
+
+  &__time {
+    font-size: 0.8125rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  // Actions
+  &__actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  &__action {
+    color: $purple-light !important;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba($purple-primary, 0.2) !important;
+      transform: scale(1.1);
+    }
+
+    &--delete {
+      color: $red-error !important;
+
+      &:hover {
+        background: rgba($red-error, 0.2) !important;
+      }
+    }
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+  }
+}
+
+// ============================================
+// EMPTY STATE
+// ============================================
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: $slate-text;
+  background: rgba($slate-dark, 0.3);
+  border: 1px dashed rgba($purple-primary, 0.3);
+  border-radius: 1rem;
+  backdrop-filter: blur(10px);
+
+  mat-icon {
+    font-size: 4rem;
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+    color: $purple-light;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 0.5rem 0;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1rem;
+  }
+}
+
+// ============================================
+// MODO CLARO - LIGHT THEME
+// ============================================
+:host-context([data-theme="light"]) {
+  .notifications__title {
+    color: $light-orange !important;
+  }
+
+  .notifications__subtitle {
+    color: $light-text-secondary !important;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, $light-cyan, $light-purple) !important;
+    box-shadow: 0 2px 8px rgba($light-purple, 0.3);
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba($light-purple, 0.4);
+    }
+  }
+
+  // Cards leídas - fondo blanco
+  .notification-card {
+    background: $light-bg !important;
+    border-color: $light-border;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-color: rgba($light-purple, 0.3);
+    }
+
+    // Cards NO leídas - fondo morado vivo
+    &--unread {
+      background: linear-gradient(135deg, rgba(139, 53, 255, 0.12), rgba(139, 53, 255, 0.08)) !important;
+      border-left-color: $light-purple;
+      border-color: rgba($light-purple, 0.3);
+      box-shadow: 0 2px 8px rgba($light-purple, 0.15);
+
+      &:hover {
+        background: linear-gradient(135deg, rgba(139, 53, 255, 0.15), rgba(139, 53, 255, 0.1)) !important;
+        box-shadow: 0 4px 12px rgba($light-purple, 0.2);
+      }
+    }
+
+    // Type variants en modo claro
+    &--info {
+      border-left-color: $light-cyan;
+
+      .notification-card__icon {
+        background: linear-gradient(135deg, $light-cyan, #00D2D2);
+      }
+
+      &.notification-card--unread {
+        background: linear-gradient(135deg, rgba(0, 184, 172, 0.12), rgba(0, 184, 172, 0.08)) !important;
+        border-color: rgba($light-cyan, 0.3);
+      }
+    }
+
+    &--success {
+      border-left-color: $green-success;
+
+      &.notification-card--unread {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.08)) !important;
+        border-color: rgba($green-success, 0.3);
+      }
+    }
+
+    &--warning {
+      border-left-color: $yellow-warning;
+
+      &.notification-card--unread {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.08)) !important;
+        border-color: rgba($yellow-warning, 0.3);
+      }
+    }
+
+    &--error {
+      border-left-color: $red-error;
+
+      &.notification-card--unread {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.08)) !important;
+        border-color: rgba($red-error, 0.3);
+      }
+    }
+
+    &__icon {
+      box-shadow: 0 2px 8px rgba($light-purple, 0.2);
+    }
+
+    &__title {
+      color: $light-text !important;
+    }
+
+    &__message {
+      color: $light-text-secondary !important;
+    }
+
+    &__time {
+      color: #64748B !important;
+    }
+
+    &__action {
+      color: $light-purple !important;
+
+      &:hover {
+        background: rgba($light-purple, 0.1) !important;
+      }
+
+      &--delete {
+        color: $red-error !important;
+
+        &:hover {
+          background: rgba($red-error, 0.1) !important;
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    background: rgba($light-border, 0.3);
+    border-color: rgba($light-purple, 0.2);
+
+    mat-icon {
+      color: $light-purple;
+      opacity: 0.4;
+    }
+
+    h3 {
+      color: $light-text !important;
+    }
+
+    p {
+      color: $light-text-secondary !important;
+    }
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .notifications {
+    &__header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__title {
+      font-size: 1.5rem;
+    }
+  }
+
+  .btn-primary {
+    width: 100%;
+  }
+
+  .notification-card {
+    flex-wrap: wrap;
+    padding: 1rem !important;
+
+    &__icon {
+      width: 2.5rem;
+      height: 2.5rem;
+
+      mat-icon {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+
+    &__content {
+      flex: 1;
+      min-width: calc(100% - 3.5rem);
+    }
+
+    &__title {
+      font-size: 1rem;
+    }
+
+    &__message {
+      font-size: 0.875rem;
+    }
+
+    &__actions {
+      width: 100%;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+  }
+
+  .empty-state {
+    padding: 3rem 1.5rem;
+
+    mat-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+    }
+
+    p {
+      font-size: 0.875rem;
+    }
+  }
+}

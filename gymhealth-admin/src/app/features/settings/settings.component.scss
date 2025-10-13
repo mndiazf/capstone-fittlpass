@@ -1,0 +1,202 @@
+// src/app/features/settings/settings.component.scss
+
+.settings {
+  padding: 2rem;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.settings__header {
+  margin-bottom: 2rem;
+}
+
+.settings__title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #F97316;
+  margin-bottom: 0.5rem;
+}
+
+.settings__subtitle {
+  font-size: 1.125rem;
+  color: #22d3ee;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.settings__actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.settings-card {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(151, 71, 255, 0.2) !important;
+  border-radius: 1rem !important;
+  padding: 2rem !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.setting-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(151, 71, 255, 0.2);
+}
+
+.setting-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #22d3ee, #9747FF);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+  
+  mat-icon {
+    color: white;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.setting-content {
+  flex: 1;
+}
+
+.setting-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.25rem;
+}
+
+.setting-description {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: transparent;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(30, 41, 59, 0.4);
+  }
+}
+
+.setting-item__info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.setting-item__icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+  color: #22d3ee;
+}
+
+.setting-item__text {
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.25rem;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+}
+
+// ============================================
+// MODO CLARO - LIGHT THEME
+// ============================================
+:host-context([data-theme="light"]) {
+  .settings {
+    background: transparent;
+  }
+
+  .settings__title {
+    color: #EA580C !important;
+  }
+
+  .settings__subtitle {
+    color: #00B8AC !important;
+  }
+
+  .settings-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .setting-section {
+    border-bottom-color: #E2E8F0 !important;
+  }
+
+  .setting-icon {
+    background: linear-gradient(135deg, #00B8AC, #8B35FF);
+    box-shadow: 0 2px 8px rgba(0, 184, 172, 0.2);
+  }
+
+  .setting-title {
+    color: #0F172A !important;
+  }
+
+  .setting-description {
+    color: #64748B !important;
+  }
+
+  .setting-item {
+    &:hover {
+      background: #F8FAFC !important;
+    }
+  }
+
+  .setting-item__text h3 {
+    color: #0F172A !important;
+  }
+
+  .setting-item__text p {
+    color: #64748B !important;
+  }
+
+  .setting-item__icon {
+    color: #00B8AC !important;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .settings {
+    padding: 1rem;
+  }
+
+  .settings__title {
+    font-size: 2rem;
+  }
+
+  .setting-section {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+}

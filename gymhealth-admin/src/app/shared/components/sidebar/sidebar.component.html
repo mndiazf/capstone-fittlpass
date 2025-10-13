@@ -1,0 +1,167 @@
+<!-- src/app/shared/components/sidebar/sidebar.component.html -->
+
+<aside class="sidebar" [class.sidebar--collapsed]="!isOpen">
+  <!-- Header -->
+  <div class="sidebar__header">
+    <div class="sidebar__logo">
+      <div class="logo-icon">
+        <mat-icon>fitness_center</mat-icon>
+      </div>
+      <div class="logo-text" *ngIf="isOpen">
+        <span class="logo-text__gym">GYM</span>
+        <span class="logo-text__health">HEALTH</span>
+      </div>
+    </div>
+    <button 
+      mat-icon-button 
+      class="sidebar__toggle"
+      (click)="toggleSidebar()"
+      [matTooltip]="isOpen ? 'Contraer' : 'Expandir'"
+      matTooltipPosition="right">
+      <mat-icon>{{ isOpen ? 'close' : 'menu' }}</mat-icon>
+    </button>
+  </div>
+
+  <!-- Main Menu -->
+  <nav class="sidebar__main-menu">
+    <ul class="menu-list">
+      <li 
+        *ngFor="let item of mainMenuItems" 
+        class="menu-item"
+        [class.menu-item--active]="isActiveItem(item.id)"
+        [class.menu-item--expanded]="isExpanded(item.id)">
+        <button 
+          class="menu-item__button"
+          (click)="onMenuItemClick(item)"
+          [matTooltip]="!isOpen ? item.label : ''"
+          matTooltipPosition="right">
+          
+          <span class="menu-item__indicator" *ngIf="isActiveItem(item.id) && !item.children"></span>
+          
+          <mat-icon class="menu-item__icon">{{ item.icon }}</mat-icon>
+          
+          <span class="menu-item__label" *ngIf="isOpen">{{ item.label }}</span>
+          
+          <span 
+            *ngIf="item.badge && isOpen" 
+            class="menu-item__badge"
+            [class.menu-item__badge--primary]="item.badgeColor === 'primary'"
+            [class.menu-item__badge--accent]="item.badgeColor === 'accent'"
+            [class.menu-item__badge--warn]="item.badgeColor === 'warn'">
+            {{ item.badge }}
+          </span>
+
+          <mat-icon 
+            class="menu-item__expand-icon" 
+            *ngIf="item.children && isOpen">
+            {{ isExpanded(item.id) ? 'expand_less' : 'expand_more' }}
+          </mat-icon>
+          
+          <span 
+            *ngIf="item.badge && !isOpen" 
+            class="menu-item__badge-dot"
+            [class.menu-item__badge-dot--primary]="item.badgeColor === 'primary'"
+            [class.menu-item__badge-dot--accent]="item.badgeColor === 'accent'"
+            [class.menu-item__badge-dot--warn]="item.badgeColor === 'warn'">
+            {{ item.badge }}
+          </span>
+        </button>
+
+        <!-- Sub-menu -->
+        <ul class="submenu-list" *ngIf="item.children && isExpanded(item.id) && isOpen">
+          <li 
+            *ngFor="let child of item.children"
+            class="submenu-item"
+            [class.submenu-item--active]="isActiveItem(child.id)">
+            <button 
+              class="submenu-item__button"
+              (click)="onMenuItemClick(child)">
+              <mat-icon class="submenu-item__icon">{{ child.icon }}</mat-icon>
+              <span class="submenu-item__label">{{ child.label }}</span>
+            </button>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Bottom Menu -->
+  <div class="sidebar__bottom">
+    <nav class="sidebar__bottom-menu">
+      <ul class="menu-list">
+        <li 
+          *ngFor="let item of bottomMenuItems" 
+          class="menu-item"
+          [class.menu-item--active]="isActiveItem(item.id)">
+          <button 
+            class="menu-item__button"
+            (click)="onMenuItemClick(item)"
+            [matTooltip]="!isOpen ? item.label : ''"
+            matTooltipPosition="right">
+            
+            <mat-icon class="menu-item__icon">{{ item.icon }}</mat-icon>
+            
+            <span class="menu-item__label" *ngIf="isOpen">{{ item.label }}</span>
+            
+            <span 
+              *ngIf="item.badge && isOpen" 
+              class="menu-item__badge menu-item__badge--warn">
+              {{ item.badge }}
+            </span>
+            
+            <span 
+              *ngIf="item.badge && !isOpen" 
+              class="menu-item__badge-dot menu-item__badge-dot--warn">
+              {{ item.badge }}
+            </span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- User Profile expandible -->
+    <div class="sidebar__profile-menu" *ngIf="isOpen">
+      <div 
+        class="menu-item menu-item--profile"
+        [class.menu-item--expanded]="isExpanded('user-menu')">
+        <button 
+          class="menu-item__button"
+          (click)="toggleUserMenu()">
+          
+          <div class="profile-avatar">
+            <span class="profile-avatar__text">AD</span>
+          </div>
+          
+          <div class="profile-info">
+            <p class="profile-info__name">Admin</p>
+            <p class="profile-info__email">admin@gymhealth.com</p>
+          </div>
+
+          <mat-icon class="menu-item__expand-icon">
+            {{ isExpanded('user-menu') ? 'expand_less' : 'expand_more' }}
+          </mat-icon>
+        </button>
+
+        <!-- Sub-menu del usuario -->
+        <ul class="submenu-list" *ngIf="isExpanded('user-menu')">
+          <li class="submenu-item">
+            <button 
+              class="submenu-item__button"
+              (click)="onSettingsClick()">
+              <mat-icon class="submenu-item__icon">settings</mat-icon>
+              <span class="submenu-item__label">Configuración</span>
+            </button>
+          </li>
+          <li class="submenu-item submenu-item--logout">
+            <button 
+              class="submenu-item__button"
+              (click)="onLogout()">
+              <mat-icon class="submenu-item__icon">logout</mat-icon>
+              <span class="submenu-item__label">Cerrar sesión</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</aside>

@@ -1,0 +1,46 @@
+<!-- src/app/features/settings/settings.component.html -->
+
+<div class="settings">
+  <div class="settings__header">
+    <h1 class="settings__title">Configuración</h1>
+    <p class="settings__subtitle">Personaliza tu experiencia en GymHealth</p>
+    
+    <div class="settings__actions">
+      <button 
+        mat-raised-button 
+        color="primary"
+        class="save-btn"
+        (click)="saveChanges()">
+        <mat-icon>save</mat-icon>
+        Guardar Cambios
+      </button>
+    </div>
+  </div>
+
+  <mat-card class="settings-card">
+    <div class="setting-section">
+      <div class="setting-icon">
+        <mat-icon>palette</mat-icon>
+      </div>
+      <div class="setting-content">
+        <h2 class="setting-title">Apariencia</h2>
+        <p class="setting-description">Personaliza el tema visual del sistema</p>
+      </div>
+    </div>
+
+    <div class="setting-item">
+      <div class="setting-item__info">
+        <mat-icon class="setting-item__icon">{{ isDarkMode ? 'dark_mode' : 'light_mode' }}</mat-icon>
+        <div class="setting-item__text">
+          <h3>Modo {{ isDarkMode ? 'Oscuro' : 'Claro' }}</h3>
+          <p>Tema {{ isDarkMode ? 'oscuro' : 'claro' }} activado para mejor visualización</p>
+        </div>
+      </div>
+      <mat-slide-toggle
+        [(ngModel)]="isDarkMode"
+        (change)="onThemeChange()"
+        color="primary">
+      </mat-slide-toggle>
+    </div>
+  </mat-card>
+</div>

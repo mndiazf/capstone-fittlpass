@@ -1,0 +1,411 @@
+// src/styles.scss - Estilos con temas funcionando correctamente
+
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+// ============================================
+// RESET Y BASE
+// ============================================
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+// ============================================
+// TEMA OSCURO (DEFAULT)
+// ============================================
+:root {
+  --calipso: #00D2C6;
+  --calipso-light: #00E5D7;
+  --purple-primary: #9747FF;
+  --purple-light: #B47CFF;
+  --orange-accent: #F97316;
+  
+  --bg-primary: #0B0D12;
+  --bg-secondary: #182435;
+  --bg-card: rgba(26, 35, 50, 0.8);
+  
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  
+  --border-color: rgba(0, 210, 198, 0.2);
+  --border-hover: rgba(0, 210, 198, 0.4);
+  
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] {
+  --calipso: #00D2C6;
+  --calipso-light: #00E5D7;
+  --purple-primary: #9747FF;
+  --purple-light: #B47CFF;
+  --orange-accent: #F97316;
+  
+  --bg-primary: #0B0D12;
+  --bg-secondary: #182435;
+  --bg-card: rgba(26, 35, 50, 0.8);
+  
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  
+  --border-color: rgba(0, 210, 198, 0.2);
+  --border-hover: rgba(0, 210, 198, 0.4);
+  
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+// ============================================
+// TEMA CLARO
+// ============================================
+[data-theme="light"] {
+  --calipso: #00B8AC;
+  --calipso-light: #00D2C6;
+  --purple-primary: #8B35FF;
+  --purple-light: #A366FF;
+  --orange-accent: #EA580C;
+  
+  --bg-primary: #F1F5F9;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  
+  --border-color: #E2E8F0;
+  --border-hover: #CBD5E1;
+  
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+}
+
+// ============================================
+// BODY
+// ============================================
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+// ============================================
+// MODO CLARO - FORZAR ESTILOS
+// ============================================
+[data-theme="light"] {
+  
+  body {
+    background: #F1F5F9 !important;
+    color: #0F172A !important;
+  }
+
+  // Contenedores principales
+  .dashboard,
+  .settings,
+  .enrollment,
+  app-dashboard,
+  app-settings,
+  app-enrollment {
+    background: #F1F5F9 !important;
+    color: #0F172A !important;
+  }
+
+  // Cards de Material
+  .mat-mdc-card {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  // Settings card específico
+  .settings-card {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    border: 1px solid #E2E8F0 !important;
+  }
+
+  // Stat cards
+  .stat-card,
+  .stats-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .stat-value {
+    color: #0F172A !important;
+  }
+
+  .stat-label {
+    color: #475569 !important;
+  }
+
+  // Activity
+  .activity-card,
+  .activity-item {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+  }
+
+  .activity-section {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+  }
+
+  .activity-title {
+    color: #0F172A !important;
+  }
+
+  .activity-time {
+    color: #64748B !important;
+  }
+
+  // Textos
+  h1, h2, h3, h4, h5, h6 {
+    color: #0F172A !important;
+  }
+
+  p, span {
+    color: #475569 !important;
+  }
+
+  // Sidebar
+  .sidebar {
+    background: #FFFFFF !important;
+    border-right: 1px solid #E2E8F0 !important;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .menu-item__button {
+    color: #475569 !important;
+  }
+
+  .menu-item__icon {
+    color: #64748B !important;
+  }
+
+  .menu-item__button:hover {
+    background: #F1F5F9 !important;
+    color: #00B8AC !important;
+  }
+
+  .menu-item__button:hover .menu-item__icon {
+    color: #00B8AC !important;
+  }
+
+  .menu-item--active .menu-item__button {
+    background: rgba(0, 184, 172, 0.1) !important;
+    color: #00B8AC !important;
+  }
+
+  .menu-item--active .menu-item__icon {
+    color: #00B8AC !important;
+  }
+
+  .profile-info__name {
+    color: #0F172A !important;
+  }
+
+  .profile-info__email {
+    color: #64748B !important;
+  }
+
+  .sidebar__profile {
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+  }
+
+  // Form fields
+  .mat-mdc-form-field {
+    input, textarea {
+      color: #0F172A !important;
+    }
+    
+    label, .mat-mdc-floating-label {
+      color: #64748B !important;
+    }
+  }
+
+  .mat-mdc-text-field-wrapper {
+    background: #F8FAFC !important;
+  }
+
+  // Setting items
+  .setting-item {
+    background: transparent !important;
+  }
+
+  .setting-item h3 {
+    color: #0F172A !important;
+  }
+
+  .setting-item p {
+    color: #64748B !important;
+  }
+
+  .setting-title {
+    color: #0F172A !important;
+  }
+
+  .setting-description {
+    color: #64748B !important;
+  }
+
+  // Headers específicos
+  .settings__title,
+  .dashboard__title {
+    color: #EA580C !important;
+  }
+
+  .settings__subtitle,
+  .dashboard__subtitle {
+    color: #00B8AC !important;
+  }
+}
+
+// ============================================
+// ESTILOS GENERALES (ambos temas)
+// ============================================
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+.mat-mdc-card {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.stat-card,
+.stats-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.stat-value {
+  color: var(--text-primary);
+  font-weight: 800;
+  font-size: 2rem;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.activity-card,
+.activity-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.activity-title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.activity-time {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.sidebar {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+}
+
+.menu-item__button {
+  color: var(--text-secondary);
+}
+
+.menu-item__button:hover {
+  color: var(--calipso);
+}
+
+.menu-item--active .menu-item__button {
+  color: var(--calipso);
+  font-weight: 600;
+}
+
+.profile-info__name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.profile-info__email {
+  color: var(--text-secondary);
+}
+
+.logo-text__gym {
+  color: var(--calipso);
+  font-weight: 800;
+}
+
+.logo-text__health {
+  color: var(--orange-accent);
+  font-weight: 800;
+}
+
+.dashboard__title,
+.enrollment__title {
+  color: var(--orange-accent);
+  font-weight: 800;
+}
+
+.dashboard__subtitle,
+.enrollment__subtitle {
+  color: var(--calipso);
+  font-weight: 600;
+}
+
+.mat-mdc-form-field {
+  input,
+  textarea {
+    color: var(--text-primary) !important;
+  }
+}
+
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary {
+  background: var(--purple-primary) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}

@@ -1,0 +1,63 @@
+<!-- src/app/features/dashboard/dashboard.component.html -->
+
+<div class="dashboard-wrapper">
+  <div class="dashboard">
+    <!-- Header -->
+    <div class="dashboard__header">
+      <h1 class="dashboard__title">Bienvenido a GymHealth Admin</h1>
+      <p class="dashboard__subtitle">Sistema de administración de gimnasio - Panel de control</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="dashboard__stats">
+      <mat-card 
+        *ngFor="let stat of stats" 
+        class="stat-card"
+        [ngClass]="'stat-card--' + stat.color">
+        <div class="stat-card__header">
+          <mat-icon class="stat-card__icon">{{ stat.icon }}</mat-icon>
+          <span class="stat-card__badge">{{ stat.badge }}</span>
+        </div>
+        <h3 class="stat-card__value">{{ stat.value }}</h3>
+        <p class="stat-card__label">{{ stat.label }}</p>
+      </mat-card>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="dashboard__content">
+      <mat-card class="content-card">
+        <h2 class="content-card__title">Actividad Reciente</h2>
+        <p class="content-card__text">
+          Aquí se mostrará la actividad reciente del gimnasio, como nuevos miembros registrados, 
+          pagos recibidos, clases completadas y más.
+        </p>
+        
+        <div class="activity-list">
+          <div class="activity-item">
+            <mat-icon class="activity-item__icon">person_add</mat-icon>
+            <div class="activity-item__content">
+              <p class="activity-item__title">Nuevo miembro registrado</p>
+              <p class="activity-item__time">Hace 5 minutos</p>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <mat-icon class="activity-item__icon">payment</mat-icon>
+            <div class="activity-item__content">
+              <p class="activity-item__title">Pago recibido - $80</p>
+              <p class="activity-item__time">Hace 15 minutos</p>
+            </div>
+          </div>
+
+          <div class="activity-item">
+            <mat-icon class="activity-item__icon">fitness_center</mat-icon>
+            <div class="activity-item__content">
+              <p class="activity-item__title">Clase de Yoga completada</p>
+              <p class="activity-item__time">Hace 1 hora</p>
+            </div>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+</div>
