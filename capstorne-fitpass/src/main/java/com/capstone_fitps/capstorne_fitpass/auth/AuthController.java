@@ -1,5 +1,7 @@
+// =======================================
+// AuthController (AJUSTADO)
+// =======================================
 package com.capstone_fitps.capstorne_fitpass.auth;
-
 
 import com.capstone_fitps.capstorne_fitpass.dto.auth.LoginRequest;
 import com.capstone_fitps.capstorne_fitpass.dto.auth.RegisterRequest;

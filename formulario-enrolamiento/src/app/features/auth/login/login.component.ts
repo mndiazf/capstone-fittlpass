@@ -1,8 +1,10 @@
+// src/app/features/auth/login/login.component.ts
 import { Component, EventEmitter, Input, Output, inject, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { AuthService, UserProfile } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { finalize } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -33,9 +35,9 @@ export class LoginComponent implements OnChanges {
       ]],
       password: ['', [
         Validators.required,
-        Validators.minLength(6)
-        // Si quieres password fuerte, descomenta:
-        // Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
+        Validators.minLength(8),
+        // Descomenta si quieres password fuerte:
+        // Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]+$/)
       ]]
     });
   }
@@ -49,51 +51,28 @@ export class LoginComponent implements OnChanges {
     }
   }
 
-  async onSubmit() {
+  onSubmit() {
     this.errorMsg = null;
-    if (this.f.invalid) { this.f.markAllAsTouched(); return; }
+    if (this.f.invalid) {
+      this.f.markAllAsTouched();
+      return;
+    }
+
+    const { email, password } = this.f.getRawValue() as { email: string; password: string };
 
     this.loading = true;
-    const { email, password } = this.f.getRawValue() as { email: string; password: string };
-    const emailNorm = (email || '').trim().toLowerCase();
-
-    try {
-      // 1) Cargar perfil guardado (del checkout)
-      const profile = this.loadStoredProfile();
-      if (!profile || !profile.email) {
-        this.errorMsg = 'No encontramos una cuenta registrada. Por favor regístrate primero.';
-        return;
-      }
-
-      const storedEmailNorm = String(profile.email).trim().toLowerCase();
-
-      // 2) Validar correo
-      if (emailNorm !== storedEmailNorm) {
-        this.errorMsg = 'El correo ingresado no está registrado.';
-        return;
-      }
-
-      // 3) Validar contraseña (usa la guardada en texto plano para este flujo demo)
-      const storedPlain = localStorage.getItem('userPassword');
-      if (storedPlain === null) {
-        this.errorMsg = 'Tu cuenta no tiene contraseña guardada. Restablece tu contraseña o regístrate nuevamente.';
-        return;
-      }
-      if (storedPlain !== password) {
-        this.errorMsg = 'La contraseña es incorrecta.';
-        return;
-      }
-
-      // 4) Crear sesión real con el perfil almacenado
-      this.auth.loginWithProfile(profile);
-      this.auth.touch();
-      this.close.emit();
-      this.router.navigate(['/dashboard']);
-    } catch {
-      this.errorMsg = 'Ocurrió un problema al iniciar sesión. Intenta nuevamente.';
-    } finally {
-      this.loading = false;
-    }
+    this.auth.login(email, password)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: () => {
+          this.auth.touch();
+          this.close.emit();
+          this.router.navigate(['/dashboard']);
+        },
+        error: (err) => {
+          this.errorMsg = err?.error?.message || err?.message || 'Error al iniciar sesión. Verifica tus credenciales.';
+        }
+      });
   }
 
   onBackdrop(ev: MouseEvent) {
@@ -102,34 +81,7 @@ export class LoginComponent implements OnChanges {
     }
   }
 
+  // Getters de conveniencia
   get email()    { return this.f.get('email'); }
   get password() { return this.f.get('password'); }
-
-  // ===== Helpers =====
-
-  private loadStoredProfile(): UserProfile | null {
-    // Perfil creado en el checkout
-    const raw = localStorage.getItem('userProfile');
-    if (raw) {
-      try { return JSON.parse(raw) as UserProfile; } catch { /* ignore */ }
-    }
-
-    // Compatibilidad con un posible guardado anterior (fitpass_user demo)
-    const rawUser = localStorage.getItem('fitpass_user');
-    if (rawUser) {
-      try {
-        const u = JSON.parse(rawUser);
-        const [firstName, ...rest] = (u.name || 'Usuario').split(' ');
-        return {
-          firstName: firstName || 'Usuario',
-          lastName:  rest.join(' '),
-          email: u.email,
-          phone: '',
-          rut: '',
-          status: 'active'
-        } as UserProfile;
-      } catch { /* ignore */ }
-    }
-    return null;
-  }
 }

@@ -3,8 +3,6 @@ package com.capstone_fitps.capstorne_fitpass.dto.auth;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-import java.util.List;
-
 public record RegisterRequest(
         @NotBlank String firstName,
         String middleName,
@@ -15,13 +13,9 @@ public record RegisterRequest(
         @NotBlank String rut,
         @NotBlank String password,
 
-        // opcionales de membresía (si registras con producto)
-        String membership,
-        String membershipId,
-        String membershipPrice,
-        String membershipDiscount,
-        List<String> membershipFeatures,
-        String joinDate,      // yyyy-MM-dd (opcional)
-        String nextPayment,   // yyyy-MM-dd (opcional)
-        String status         // active | pending | inactive (default active)
+        // obligatorio: MULTICLUB_ANUAL | ONECLUB_ANUAL | ONECLUB_MENSUAL
+        @NotBlank String membershipType,
+
+        // status usuario (default "active" si no viene)
+        String status
 ) {}

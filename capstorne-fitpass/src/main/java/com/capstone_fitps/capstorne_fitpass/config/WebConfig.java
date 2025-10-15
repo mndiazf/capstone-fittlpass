@@ -1,4 +1,4 @@
-package com.capstonefitps.fitpass.config;
+package com.capstone_fitps.capstorne_fitpass.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

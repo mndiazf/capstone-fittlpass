@@ -39,14 +39,26 @@ public class User {
     private String phone;
 
     @Column(nullable = false, length = 20)
-    private String rut; // normaliza como necesites
+    private String rut;
 
     // credenciales
     @Column(nullable = false)
     private String passwordHash;
 
     @Column(length = 16)
-    private String status;           // active | pending | inactive
+    private String status; // active | pending | inactive
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "access_status", nullable = false, length = 16)
+    @Builder.Default
+    private AccessStatus accessStatus = AccessStatus.NO_ENROLADO; // se activará tras enrolar
+
+    // Relaciones “1 a 1” (lado propietario aquí para facilitar)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserMembership membership;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private FaceEnrollment faceEnrollment;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
