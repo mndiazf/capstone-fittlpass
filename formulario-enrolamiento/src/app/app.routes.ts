@@ -7,37 +7,6 @@ export const routes: Routes = [
           import('./features/home/home.component')
             .then(m => m.HomeComponent)
       },
-
-      // ===== Perfil con subrutas =====
-      {
-        path: 'profile',
-        loadComponent: () =>
-          import('./features/profile/profile.component')
-            .then(m => m.ProfileComponent),
-        children: [
-          { path: '', redirectTo: 'datos', pathMatch: 'full' },
-          {
-            path: 'datos',
-            loadComponent: () =>
-              import('./features/profile/datos/datos.component')
-                .then(m => m.DatosComponent)
-          },
-          // TODO: Descomentar cuando AccountComponent exista
-          // {
-          //   path: 'account',
-          //   loadComponent: () =>
-          //     import('./features/profile/account.component')
-          //       .then(m => m.AccountComponent)
-          // },
-          // TODO: Descomentar cuando EnrollComponent exista
-          // {
-          //   path: 'enrollment',
-          //   loadComponent: () =>
-          //     import('./features/enrollment/enroll.component')
-          //       .then(m => m.EnrollComponent)
-          // }
-        ]
-      },
       {
         path: 'checkout',
         loadComponent: () =>

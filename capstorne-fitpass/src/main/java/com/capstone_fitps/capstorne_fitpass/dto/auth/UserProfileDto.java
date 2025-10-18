@@ -1,11 +1,6 @@
-// =======================================
-// UserProfileDto (AJUSTADO)
-// =======================================
+// src/main/java/com/capstone_fitps/capstorne_fitpass/dto/auth/UserProfileDto.java
 package com.capstone_fitps.capstorne_fitpass.dto.auth;
 
-/**
- * Perfil extendido para exponer datos de membresía, enrolamiento y acceso.
- */
 public record UserProfileDto(
         String id,
         String firstName,
@@ -15,15 +10,18 @@ public record UserProfileDto(
         String email,
         String phone,
         String rut,
-        String status,                 // active | pending | inactive
+        String status,
 
-        // ===== Membresía =====
-        String membershipType,         // MULTICLUB_ANUAL | ONECLUB_ANUAL | ONECLUB_MENSUAL
-        String membershipStatus,       // ACTIVE | EXPIRED
-        String membershipStart,        // ISO yyyy-MM-dd
-        String membershipEnd,          // ISO yyyy-MM-dd
+        String membershipType,
+        String membershipStatus,
+        String membershipStart,
+        String membershipEnd,
 
-        // ===== Acceso / Enrolamiento =====
-        String accessStatus,           // NO_ENROLADO | ACTIVO | BLOQUEADO
-        String enrollmentStatus        // NOT_ENROLLED | ENROLLED
+        String accessStatus,
+        String enrollmentStatus,
+
+        // NUEVO
+        String membershipBranchId,
+        String membershipBranchName,
+        String membershipBranchCode
 ) {}

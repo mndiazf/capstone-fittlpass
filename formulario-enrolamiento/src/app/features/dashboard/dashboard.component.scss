@@ -46,14 +46,8 @@
 }
 
 @keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-30px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .modal-close {
@@ -67,9 +61,7 @@
   cursor: pointer;
   transition: color 0.2s;
 
-  &:hover {
-    color: var(--text);
-  }
+  &:hover { color: var(--text); }
 }
 
 .modal-icon {
@@ -78,15 +70,9 @@
   margin: 0 auto;
   background: linear-gradient(135deg, var(--accent), var(--primary));
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
 
-  svg {
-    width: 40px;
-    height: 40px;
-    fill: white;
-  }
+  svg { width: 40px; height: 40px; fill: white; }
 }
 
 .modal-membership {
@@ -94,53 +80,26 @@
   font-size: 16px;
   color: var(--muted);
 
-  strong {
-    color: var(--primary);
-    font-weight: 700;
-  }
+  strong { color: var(--primary); font-weight: 700; }
 }
 
 .modal-notice {
-  display: flex;
-  gap: 12px;
-  padding: 20px;
+  display: flex; gap: 12px; padding: 20px;
   background: rgba(122, 92, 255, 0.1);
   border: 1px solid rgba(122, 92, 255, 0.3);
-  border-radius: 12px;
-  margin-bottom: 32px;
-  text-align: left;
+  border-radius: 12px; margin-bottom: 32px; text-align: left;
 
-  svg {
-    width: 24px;
-    height: 24px;
-    fill: var(--accent);
-    flex-shrink: 0;
-    margin-top: 2px;
-  }
-
-  p {
-    margin: 0;
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.6;
-  }
+  svg { width: 24px; height: 24px; fill: var(--accent); flex-shrink: 0; margin-top: 2px; }
+  p   { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.6; }
 }
 
 .modal-btn {
-  width: 100%;
-  padding: 14px 24px;
+  width: 100%; padding: 14px 24px;
   background: linear-gradient(135deg, var(--accent), var(--primary));
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.2s;
+  color: white; border: none; border-radius: 12px;
+  font-size: 16px; font-weight: 700; cursor: pointer; transition: transform 0.2s;
 
-  &:hover {
-    transform: translateY(-2px);
-  }
+  &:hover { transform: translateY(-2px); }
 }
 
 /* ===== Dashboard Container ===== */
@@ -151,52 +110,21 @@
 }
 
 .dashboard-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 40px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--line);
 
-  h1 {
-    margin: 0 0 8px;
-    font-size: 32px;
-    font-weight: 800;
-    color: var(--text);
-  }
-
-  p {
-    margin: 0;
-    font-size: 16px;
-    color: var(--muted);
-  }
+  h1 { margin: 0 0 8px; font-size: 32px; font-weight: 800; color: var(--text); }
+  p  { margin: 0; font-size: 16px; color: var(--muted); }
 }
 
 .logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+  background: transparent; border: 1px solid var(--line); border-radius: 10px;
+  color: var(--text); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.2s;
 
-  svg {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-  }
+  svg { width: 20px; height: 20px; fill: currentColor; }
 
-  &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: var(--primary);
-    color: var(--primary);
-  }
+  &:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); color: var(--primary); }
 }
 
 /* ===== Dashboard Grid ===== */
@@ -213,285 +141,132 @@
   padding: 24px;
   transition: transform 0.2s, border-color 0.2s;
 
-  &:hover {
-    transform: translateY(-4px);
-    border-color: rgba(39, 213, 162, 0.5);
-  }
+  &:hover { transform: translateY(-4px); border-color: rgba(39, 213, 162, 0.5); }
 }
 
 .card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
 
-  h3 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  svg {
-    width: 24px;
-    height: 24px;
-    fill: var(--primary);
-  }
+  h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); }
+  svg { width: 24px; height: 24px; fill: var(--primary); }
 }
 
-.card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+.card-body { display: flex; flex-direction: column; gap: 12px; }
 
 /* ===== Info Card ===== */
 .info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(39, 213, 162, 0.1);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid rgba(39, 213, 162, 0.1);
 
-  &:last-child {
-    border-bottom: none;
-  }
+  &:last-child { border-bottom: none; }
 
-  .label {
-    font-size: 14px;
-    color: var(--muted);
-  }
-
-  .value {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-  }
+  .label { font-size: 14px; color: var(--muted); }
+  .value { font-size: 15px; font-weight: 600; color: var(--text); }
 }
 
 /* ===== Membership Card ===== */
 .membership-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
   background: rgba(39, 213, 162, 0.15);
   border: 1px solid rgba(39, 213, 162, 0.3);
-  border-radius: 20px;
-  margin-bottom: 16px;
-  align-self: flex-start;
+  border-radius: 20px; margin-bottom: 16px; align-self: flex-start;
 
-  .badge-icon {
-    font-size: 14px;
-  }
-
-  .badge-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--primary);
-    text-transform: uppercase;
-  }
+  .badge-icon { font-size: 14px; }
+  .badge-text { font-size: 13px; font-weight: 600; color: var(--primary); text-transform: uppercase; }
 }
 
 .membership-name {
-  margin: 0 0 20px;
+  margin: 0 0 8px;
   font-size: 22px;
   font-weight: 800;
   color: var(--primary);
 }
 
-.membership-details {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.membership-extra {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--muted);
 }
 
+.membership-details { display: flex; flex-direction: column; gap: 12px; }
+
 .detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  background: rgba(39, 213, 162, 0.05);
-  border-radius: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px; background: rgba(39, 213, 162, 0.05); border-radius: 8px;
 
-  .detail-label {
-    font-size: 14px;
-    color: var(--muted);
-  }
-
-  .detail-value {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-  }
+  .detail-label { font-size: 14px; color: var(--muted); }
+  .detail-value { font-size: 15px; font-weight: 600; color: var(--text); }
 }
 
 /* ===== Payment Card ===== */
 .payment-date {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
+  display: flex; align-items: center; gap: 16px; padding: 20px;
   background: linear-gradient(135deg, var(--accent), var(--primary));
-  border-radius: 12px;
-  margin-bottom: 16px;
+  border-radius: 12px; margin-bottom: 16px;
 
-  .payment-day {
-    font-size: 48px;
-    font-weight: 800;
-    color: white;
-    line-height: 1;
-  }
-
-  .payment-month {
-    display: flex;
-    flex-direction: column;
-    color: white;
-    font-size: 14px;
-    text-transform: uppercase;
-    font-weight: 600;
-  }
+  .payment-day { font-size: 48px; font-weight: 800; color: white; line-height: 1; }
+  .payment-month { display: flex; flex-direction: column; color: white; font-size: 14px; text-transform: uppercase; font-weight: 600; }
 }
 
 .payment-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: flex; justify-content: space-between; align-items: center;
 
-  .payment-amount {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--primary);
-  }
-
-  .payment-days {
-    margin: 0;
-    font-size: 14px;
-    color: var(--muted);
-  }
+  .payment-amount { margin: 0; font-size: 28px; font-weight: 800; color: var(--primary); }
+  .payment-days   { margin: 0; font-size: 14px; color: var(--muted); }
 }
 
 /* ===== Access Card ===== */
-.access-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+.access-list { display: flex; flex-direction: column; gap: 12px; }
 
 .access-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: rgba(24, 36, 53, 0.4);
-  border-radius: 10px;
-  transition: background 0.2s;
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  background: rgba(24, 36, 53, 0.4); border-radius: 10px; transition: background 0.2s;
 
-  &:hover {
-    background: rgba(24, 36, 53, 0.6);
-  }
+  &:hover { background: rgba(24, 36, 53, 0.6); }
 }
 
 .access-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
 
-  &.entry {
-    background: rgba(39, 213, 162, 0.15);
-    svg {
-      width: 20px;
-      height: 20px;
-      fill: var(--primary);
-    }
+  &.entry { background: rgba(39, 213, 162, 0.15);
+    svg { width: 20px; height: 20px; fill: var(--primary); }
   }
 
-  &.exit {
-    background: rgba(255, 140, 66, 0.15);
-    svg {
-      width: 20px;
-      height: 20px;
-      fill: #ff8c42;
-    }
+  &.exit { background: rgba(255, 140, 66, 0.15);
+    svg { width: 20px; height: 20px; fill: #ff8c42; }
   }
 }
 
 .access-details {
   flex: 1;
 
-  .access-location {
-    margin: 0 0 4px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-  }
-
-  .access-time {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
-  }
+  .access-location { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: var(--text); }
+  .access-time     { margin: 0; font-size: 13px; color: var(--muted); }
 }
 
 .access-type {
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
+  padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase;
 
-  &.entry {
-    background: rgba(39, 213, 162, 0.15);
-    color: var(--primary);
-  }
-
-  &.exit {
-    background: rgba(255, 140, 66, 0.15);
-    color: #ff8c42;
-  }
+  &.entry { background: rgba(39, 213, 162, 0.15); color: var(--primary); }
+  &.exit  { background: rgba(255, 140, 66, 0.15); color: #ff8c42; }
 }
 
-.no-access {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--muted);
-  font-size: 15px;
-}
+.no-access { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 15px; }
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .dashboard-container {
-    padding: 24px 16px;
-  }
+  .dashboard-container { padding: 24px 16px; }
 
   .dashboard-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-
-    h1 {
-      font-size: 26px;
-    }
-
-    .logout-btn {
-      width: 100%;
-      justify-content: center;
-    }
+    flex-direction: column; align-items: flex-start; gap: 16px;
+    h1 { font-size: 26px; }
+    .logout-btn { width: 100%; justify-content: center; }
   }
 
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
+  .dashboard-grid { grid-template-columns: 1fr; }
 
-  .modal-content {
-    padding: 32px 24px;
-
-    h2 {
-      font-size: 24px;
-    }
+  .modal-content { padding: 32px 24px;
+    h2 { font-size: 24px; }
   }
 }

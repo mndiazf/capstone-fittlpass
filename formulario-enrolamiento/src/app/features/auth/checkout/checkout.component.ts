@@ -1,4 +1,4 @@
-// src/app/features/checkout/checkout.component.ts
+// src/app/features/auth/checkout/checkout.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -7,10 +7,11 @@ import {
   ReactiveFormsModule,
   Validators,
   AbstractControl,
-  ValidationErrors
+  ValidationErrors,
+  FormControl
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, RegisterPayload } from '../../../core/services/auth.service';
 
 function samePassword(group: AbstractControl): ValidationErrors | null {
   const p1 = group.get('password')?.value;
@@ -27,6 +28,13 @@ interface Membership {
   features: string[];
 }
 
+interface BranchVM {
+  id: string;
+  code: string;
+  name: string;
+  address: string;
+}
+
 @Component({
   standalone: true,
   selector: 'app-checkout',
@@ -39,9 +47,17 @@ export class CheckoutComponent implements OnInit {
   paymentForm: FormGroup;
   selectedMembership: Membership | null = null;
 
-  // ⚠️ incluye 'payment' porque el template lo usa
   step: 'register' | 'payment' | 'processing' | 'success' = 'register';
   errorMsg: string | null = null;
+
+  // Sucursales fijas (coinciden con seeder backend)
+  branches: BranchVM[] = [
+    { id: '11111111-1111-1111-1111-111111111111', code: 'PROVIDENCIA',     name: 'Providencia',      address: 'Av. Providencia 1234, Providencia' },
+    { id: '22222222-2222-2222-2222-222222222222', code: 'NUNOA',           name: 'Ñuñoa',            address: 'Irarrázaval 5678, Ñuñoa' },
+    { id: '33333333-3333-3333-3333-333333333333', code: 'MAIPU',           name: 'Maipú',            address: 'Av. Pajaritos 1111, Maipú' },
+    { id: '44444444-4444-4444-4444-444444444444', code: 'LAS_CONDES',      name: 'Las Condes',       address: 'Av. Apoquindo 4321, Las Condes' },
+    { id: '55555555-5555-5555-5555-555555555555', code: 'SANTIAGO_CENTRO', name: 'Santiago Centro',  address: 'Alameda 1001, Santiago' },
+  ];
 
   memberships: Record<Membership['id'], Membership> = {
     'anual-multiclub': {
@@ -105,10 +121,12 @@ export class CheckoutComponent implements OnInit {
           Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]+$/)
         ]],
         confirm: ['', [Validators.required]]
-      }, { validators: samePassword })
+      }, { validators: samePassword }),
+      // branchId (requerido SOLO para ONECLUB)
+      branchId: new FormControl<string | null>(null)
     });
 
-    // Form de pago (lo usa el template)
+    // Form de pago
     this.paymentForm = this.fb.group({
       cardNumber: ['', [Validators.required, Validators.minLength(16)]],
       cardName: ['', [Validators.required, Validators.minLength(3)]],
@@ -121,6 +139,7 @@ export class CheckoutComponent implements OnInit {
     const membershipId = this.route.snapshot.queryParams['plan'] as Membership['id'];
     if (membershipId && this.memberships[membershipId]) {
       this.selectedMembership = this.memberships[membershipId];
+      this.applyBranchValidator();
     } else {
       this.router.navigate(['/']);
     }
@@ -163,14 +182,40 @@ export class CheckoutComponent implements OnInit {
   get phone() { return this.f.get('phone'); }
   get passGroup() { return this.f.get('passwordGroup'); }
   get password() { return this.f.get('passwordGroup.password'); }
+  get branchId() { return this.f.get('branchId'); }
 
-  // ===== Getters de pago (los usa el HTML) =====
+  // ===== Getters de pago =====
   get cardNumber() { return this.paymentForm.get('cardNumber'); }
   get cardName() { return this.paymentForm.get('cardName'); }
   get expiryDate() { return this.paymentForm.get('expiryDate'); }
   get cvv() { return this.paymentForm.get('cvv'); }
 
-  /** Mapea id del plan UI al enum del backend */
+  /** ¿El plan seleccionado es tipo ONECLUB? */
+  get isOneClubSelected(): boolean {
+    if (!this.selectedMembership) return false;
+    return this.selectedMembership.id === 'anual-oneclub' || this.selectedMembership.id === 'mensual-cargo';
+  }
+
+  /** Nombre de sucursal por id */
+  branchName(id?: string | null): string {
+    if (!id) return 'Selecciona una';
+    const b = this.branches.find(x => x.id === id);
+    return b ? b.name : '—';
+  }
+
+  /** Activa validación requerida de branchId solo en ONECLUB */
+  private applyBranchValidator(): void {
+    const ctrl = this.branchId!;
+    if (this.isOneClubSelected) {
+      ctrl.addValidators([Validators.required]);
+    } else {
+      ctrl.clearValidators();
+      ctrl.setValue(null);
+    }
+    ctrl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  /** Mapea id del plan UI al enum del backend (MAYÚSCULAS) */
   private mapMembershipType(id: Membership['id']):
     'MULTICLUB_ANUAL' | 'ONECLUB_ANUAL' | 'ONECLUB_MENSUAL' {
     switch (id) {
@@ -204,32 +249,54 @@ export class CheckoutComponent implements OnInit {
     return clean;
   }
 
-  /** Enviar registro -> si OK pasamos a 'payment' (el template lo espera) */
+  /** Enviar registro -> si OK pasamos a 'payment' */
   submit() {
-    if (this.f.invalid || !this.selectedMembership) {
+    if (!this.selectedMembership) {
+      this.errorMsg = 'Selecciona un plan válido.';
+      return;
+    }
+
+    // ONECLUB: asegurar sucursal válida y ENVIAR solo branchId (sin duplicados)
+    let branchIdVal: string | null = null;
+    if (this.isOneClubSelected) {
+      const raw = this.branchId?.value;
+      const normalized = raw && String(raw).trim().length > 0 ? String(raw) : null;
+      if (!normalized) {
+        this.branchId?.markAsTouched();
+        this.errorMsg = 'Debes seleccionar una sucursal para planes ONECLUB.';
+        return;
+      }
+      branchIdVal = normalized;
+      this.branchId?.setValue(normalized, { emitEvent: false });
+    }
+
+    if (this.f.invalid) {
       this.f.markAllAsTouched();
       return;
     }
+
     this.errorMsg = null;
 
-    const payload = {
-      firstName: this.firstName?.value,
-      middleName: this.f.get('middleName')?.value || null,
-      lastName: this.lastName?.value,
-      secondLastName: this.f.get('secondLastName')?.value || null,
-      email: this.email?.value,
-      phone: this.phone?.value,
+    // Payload final TIPADO: **solo** camelCase `branchId` cuando aplique
+    const payload: RegisterPayload = {
+      firstName: (this.firstName?.value || '').toString().trim(),
+      middleName: (this.f.get('middleName')?.value || null),
+      lastName: (this.lastName?.value || '').toString().trim(),
+      secondLastName: (this.f.get('secondLastName')?.value || null),
+      email: (this.email?.value || '').toString().trim(),
+      phone: (this.phone?.value || '').toString().trim(),
       rut: (this.rut?.value || '').toString().trim(),
-      password: this.password?.value,
+      password: (this.password?.value || '').toString(),
       membershipType: this.mapMembershipType(this.selectedMembership.id),
-      status: 'active' as const
+      status: 'active',
+      ...(branchIdVal ? { branchId: branchIdVal } : {})
     };
 
-    this.auth.register(payload).subscribe({
-      next: () => {
-        // Registro OK: backend devolvió profile+session; pasamos a pago
-        this.step = 'payment';
-      },
+    // 👇 Esto evita mutaciones o “mixins” accidentales antes de enviar
+    const cleanPayload: RegisterPayload = JSON.parse(JSON.stringify(payload));
+
+    this.auth.register(cleanPayload).subscribe({
+      next: () => { this.step = 'payment'; },
       error: (err) => {
         this.step = 'register';
         this.errorMsg = (err?.error?.message || err?.message || 'Error al registrar').toString();
@@ -250,12 +317,12 @@ export class CheckoutComponent implements OnInit {
     }, 1200);
   }
 
-  /** Botón atrás en el template cuando step === 'payment' */
+  /** Botón atrás cuando step === 'payment' */
   goBackToRegister() {
     this.step = 'register';
   }
 
-  /** Compat con (click)="finishCheckout()" del template */
+  /** Compat con (click)="finishCheckout()" */
   finishCheckout() {
     if (this.step === 'payment') {
       this.submitPayment();

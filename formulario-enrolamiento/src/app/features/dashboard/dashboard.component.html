@@ -10,7 +10,19 @@
           </svg>
         </div>
         <h2>¡Bienvenido, {{ userData?.firstName }} {{ userData?.lastName }}!</h2>
-        <p class="modal-membership">Tu membresía: <strong>{{ userData?.membership }}</strong></p>
+
+        <!-- Membresía + sucursal si es ONECLUB -->
+        <p class="modal-membership">
+          Tu membresía:
+          <strong>{{ userData?.membership }}</strong>
+          <ng-container *ngIf="isOneClub">
+            — <strong>Sucursal: {{ userData?.membershipBranchName || '—' }}</strong>
+          </ng-container>
+          <ng-container *ngIf="!isOneClub && userData?.membershipType === 'MULTICLUB_ANUAL'">
+            — <strong>MultiClub Free Pass</strong>
+          </ng-container>
+        </p>
+
         <div class="modal-notice">
           <svg viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
@@ -72,9 +84,21 @@
         <div class="card-body">
           <div class="membership-badge">
             <span class="badge-icon">⭐</span>
-            <span class="badge-text">Activo</span>
+            <span class="badge-text">
+              {{ userData?.membershipStatus === 'ACTIVE' ? 'Activo' : (userData?.membershipStatus === 'EXPIRED' ? 'Vencido' : '—') }}
+            </span>
           </div>
+
           <h4 class="membership-name">{{ userData?.membership }}</h4>
+
+          <!-- Línea de sucursal / MultiClub -->
+          <p class="membership-extra" *ngIf="isOneClub">
+            Sucursal: <strong>{{ userData?.membershipBranchName || '—' }}</strong>
+          </p>
+          <p class="membership-extra" *ngIf="!isOneClub && userData?.membershipType === 'MULTICLUB_ANUAL'">
+            <strong>MultiClub Free Pass</strong>
+          </p>
+
           <div class="membership-details">
             <div class="detail-item">
               <span class="detail-label">Precio mensual</span>

@@ -1,3 +1,4 @@
+// src/main/java/com/capstone_fitps/capstorne_fitpass/dto/auth/RegisterRequest.java
 package com.capstone_fitps.capstorne_fitpass.dto.auth;
 
 import jakarta.validation.constraints.Email;
@@ -13,9 +14,12 @@ public record RegisterRequest(
         @NotBlank String rut,
         @NotBlank String password,
 
-        // obligatorio: MULTICLUB_ANUAL | ONECLUB_ANUAL | ONECLUB_MENSUAL
+        // MULTICLUB_ANUAL | ONECLUB_ANUAL | ONECLUB_MENSUAL
         @NotBlank String membershipType,
 
         // status usuario (default "active" si no viene)
-        String status
+        String status,
+
+        // OBLIGATORIO cuando membershipType empieza con "ONECLUB_"
+        String branchId
 ) {}
