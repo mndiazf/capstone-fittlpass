@@ -13,6 +13,7 @@ import { MatChipsModule } from '@angular/material/chips';
 
 import { RutService } from '../../../core/services/rut.service';
 import { RutFormatDirective } from '../../../shared/directives/rut-format.directive';
+import { EnrollmentService, MemberUiModel } from '../../../core/services/enrollment-service';
 
 @Component({
   selector: 'app-enrollment',
@@ -37,6 +38,7 @@ import { RutFormatDirective } from '../../../shared/directives/rut-format.direct
 })
 export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   private rutService = inject(RutService);
+  private enrollmentSvc = inject(EnrollmentService);
 
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
@@ -50,7 +52,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   isSearching = false;
   searchError = '';
 
-  memberData: any = null;
+  memberData: MemberUiModel | null = null;
   operationType: 'new' | 'update' = 'new';
 
   faceDetected = false;
@@ -67,10 +69,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   unlockError = '';
 
   ngOnInit(): void {
-    // Obtener tema inicial del documento
     this.currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-    
-    // Observar cambios en el tema del documento
     this.observeThemeChanges();
   }
 
@@ -91,8 +90,12 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // =========================
+  // BUSCAR POR RUT (BACKEND)
+  // =========================
   searchMember(): void {
     this.searchError = '';
+
     const rutError = this.rutService.getErrorMessage(this.searchRut);
     if (rutError) {
       this.searchError = rutError;
@@ -100,24 +103,26 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.isSearching = true;
-    setTimeout(() => {
-      this.memberData = {
-        rut: this.searchRut,
-        firstName: 'Juan',
-        middleName: 'Carlos',
-        lastName: 'Pérez',
-        secondLastName: 'González',
-        email: 'juan.perez@example.com',
-        membership: 'Premium',
-        membershipStatus: 'active',
-        enrollmentStatus: 'not-enrolled',
-        enrollmentLocked: false,
-        lastEnrollment: null
-      };
-      this.operationType = this.memberData.enrollmentStatus === 'enrolled' ? 'update' : 'new';
-      this.currentView = 'member-info';
-      this.isSearching = false;
-    }, 1000);
+
+    // ✅ Enviar SIEMPRE el RUT formateado xx.xxx.xxx-X
+    const formattedRut = this.rutService.formatRut(this.searchRut);
+    this.searchRut = formattedRut; // reflejar formato en el input
+
+    this.enrollmentSvc.getProfileByRut(formattedRut).subscribe({
+      next: (member) => {
+        // Asegurar que lo que mostramos también esté formateado
+        member.rut = this.rutService.formatRut(member.rut);
+        this.memberData = member;
+
+        this.operationType = member.enrollmentStatus === 'enrolled' ? 'update' : 'new';
+        this.currentView = 'member-info';
+        this.isSearching = false;
+      },
+      error: (err: Error) => {
+        this.searchError = err.message || 'Error al buscar.';
+        this.isSearching = false;
+      }
+    });
   }
 
   async startEnrollment(): Promise<void> {
@@ -164,18 +169,33 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentView = 'review';
   }
 
+  // ======================================
+  // ENROLAR (POST imagen al endpoint FACE)
+  // ======================================
   confirmEnrollment(): void {
+    if (!this.memberData?.id || !this.capturedImage) {
+      this.errorMessage = 'Falta la imagen o el usuario.';
+      this.currentView = 'error';
+      return;
+    }
+
     this.currentView = 'processing';
     this.processingMessage = 'Procesando imagen facial...';
 
-    setTimeout(() => {
-      console.log('Datos a enviar:', {
-        rut: this.rutService.cleanRut(this.searchRut),
-        imageSize: this.capturedImage.length
-      });
-      this.successMessage = this.operationType === 'new' ? '¡Enrolamiento exitoso!' : '¡Actualización exitosa!';
-      this.currentView = 'success';
-    }, 2000);
+    const blob = this.enrollmentSvc.dataUrlToBlob(this.capturedImage);
+
+    this.enrollmentSvc.enrollFace(this.memberData.id, blob).subscribe({
+      next: () => {
+        this.successMessage = this.operationType === 'new'
+          ? '¡Enrolamiento exitoso!'
+          : '¡Actualización de enrolamiento exitosa!';
+        this.currentView = 'success';
+      },
+      error: (err: Error) => {
+        this.errorMessage = err.message || 'Error al enrolar.';
+        this.currentView = 'error';
+      }
+    });
   }
 
   retakePhoto(): void {
@@ -225,13 +245,14 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
       this.unlockError = 'Todos los campos son requeridos';
       return;
     }
+    // Aquí podrías llamar a un endpoint de desbloqueo si existe.
     setTimeout(() => {
-      this.memberData.enrollmentLocked = false;
+      if (this.memberData) this.memberData.enrollmentLocked = false;
       this.closeUnlockDialog();
     }, 1000);
   }
 
-  getMembershipStatusClass(status: string): string {
+  getMembershipStatusClass(status: MemberUiModel['membershipStatus'] | string): string {
     switch (status) {
       case 'active': return 'status--active';
       case 'inactive': return 'status--inactive';
@@ -240,7 +261,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  getEnrollmentStatusClass(status: string): string {
+  getEnrollmentStatusClass(status: MemberUiModel['enrollmentStatus'] | string): string {
     switch (status) {
       case 'enrolled': return 'status--enrolled';
       case 'locked': return 'status--locked';
@@ -250,7 +271,6 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopCamera();
-    // Limpiar el observer
     if (this.themeObserver) {
       this.themeObserver.disconnect();
     }

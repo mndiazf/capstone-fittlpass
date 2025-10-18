@@ -124,15 +124,6 @@
           Enrolar
         </button>
 
-        <button 
-          mat-raised-button 
-          color="accent"
-          *ngIf="operationType === 'update'"
-          [disabled]="!canEnroll()"
-          (click)="startEnrollment()">
-          <mat-icon>update</mat-icon>
-          Actualizar Enrolamiento
-        </button>
       </div>
     </div>
   </mat-card>
