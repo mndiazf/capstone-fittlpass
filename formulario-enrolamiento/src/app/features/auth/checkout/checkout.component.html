@@ -1,3 +1,4 @@
+<!-- src/app/features/auth/checkout/checkout.component.html -->
 <div class="checkout-page">
   <div class="checkout-container">
     <!-- Header con botón volver -->
@@ -87,10 +88,32 @@
               }
             </div>
 
+            <!-- Sucursal (SOLO para ONECLUB) -->
+            @if (isOneClubSelected) {
+              <div class="field">
+                <label>Sucursal *</label>
+                <select formControlName="branchId" [class.invalid]="branchId?.touched && branchId?.invalid">
+                  <!-- placeholder: ngValue null (no value="") -->
+                  <option [ngValue]="null">Selecciona una sucursal</option>
+                  @for (b of branches; track b.id) {
+                    <option [ngValue]="b.id">{{ b.name }} — {{ b.address }}</option>
+                  }
+                </select>
+                @if (branchId?.touched && branchId?.invalid) {
+                  <div class="error">Selecciona una sucursal</div>
+                }
+                <small class="hint">Tu plan ONECLUB quedará asociado a esta sucursal.</small>
+              </div>
+            }
+
             <!-- Botón -->
             <button type="submit" class="submit-btn" [disabled]="f.invalid">
               Continuar con el pago
             </button>
+
+            @if (errorMsg) {
+              <div class="error" style="margin-top:12px">{{ errorMsg }}</div>
+            }
           </form>
         </div>
 
@@ -118,6 +141,14 @@
               </div>
 
               <div class="pricing-summary">
+                @if (isOneClubSelected) {
+                  <div class="price-row">
+                    <span class="label">Sucursal:</span>
+                    <span class="value">
+                      {{ branchId?.value ? branchName(branchId?.value) : 'Selecciona una' }}
+                    </span>
+                  </div>
+                }
                 <div class="price-row">
                   <span class="label">Precio mensual:</span>
                   <span class="value">{{ selectedMembership.monthlyPrice }}</span>
@@ -216,17 +247,19 @@
     }
 
     <!-- STEP 4: ÉXITO -->
- @if (step === 'success') {
-  <div class="success-container">
-    <div class="success-icon">
-      <svg viewBox="0 0 24 24">
-        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-      </svg>
-    </div>
-    <h2>¡Pago procesado correctamente!</h2>
-    <p>Tu membresía ha sido activada</p>
-    <button class="submit-btn" (click)="finishCheckout()">
-      Continuar
-    </button>
+    @if (step === 'success') {
+      <div class="success-container">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+        </div>
+        <h2>¡Pago procesado correctamente!</h2>
+        <p>Tu membresía ha sido activada</p>
+        <button class="submit-btn" (click)="finishCheckout()">
+          Continuar
+        </button>
+      </div>
+    }
   </div>
-}
+</div>

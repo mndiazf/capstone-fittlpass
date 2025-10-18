@@ -1,4 +1,3 @@
-// src/app/features/dashboard/dashboard.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -10,11 +9,15 @@ interface UserData {
   phone: string;
   rut: string;
 
-  /** Campos que espera tu HTML (compatibilidad) */
-  membership: string;        // label legible del plan
-  membershipPrice: string;   // precio mostrado
-  joinDate: Date;            // usamos membershipStart del backend
-  nextPayment: Date;         // usamos membershipEnd del backend
+  /** Campos usados por la UI */
+  membership: string;          // label legible del plan
+  membershipType: 'MULTICLUB_ANUAL' | 'ONECLUB_ANUAL' | 'ONECLUB_MENSUAL' | 'BASIC' | string;
+  membershipBranchName?: string | null; // sucursal (ONECLUB)
+  membershipStatus?: 'ACTIVE' | 'EXPIRED' | null;
+
+  membershipPrice: string;     // precio mostrado
+  joinDate: Date;              // membershipStart (backend)
+  nextPayment: Date;           // membershipEnd o cálculo
 
   status: 'active' | 'pending' | 'inactive';
 }
@@ -50,6 +53,11 @@ export class DashboardComponent implements OnInit {
 
     this.loadUserData();
     this.loadRecentAccess();
+  }
+
+  /** TRUE si el plan es ONECLUB_* */
+  get isOneClub(): boolean {
+    return (this.userData?.membershipType || '').startsWith('ONECLUB');
   }
 
   /** Mapea membershipType (backend) a texto para UI */
@@ -91,9 +99,9 @@ export class DashboardComponent implements OnInit {
         // Unir apellidos si vienen separados
         const lastName = [p.lastName, p.secondLastName].filter(Boolean).join(' ').trim();
 
-        // Derivar campos nuevos -> antiguos (para que tu HTML no cambie)
+        // Derivar label y fechas
         const membershipLabel = this.membershipTypeToLabel(p.membershipType);
-        const joinDate  = p.membershipStart ? new Date(p.membershipStart) : new Date();  // backend: yyyy-MM-dd
+        const joinDate  = p.membershipStart ? new Date(p.membershipStart) : new Date();
         const nextPay   = p.membershipEnd   ? new Date(p.membershipEnd)   : this.calculateNextPayment();
 
         this.userData = {
@@ -102,7 +110,12 @@ export class DashboardComponent implements OnInit {
           email: p.email || 'usuario@email.com',
           phone: p.phone || '+56 9 1234 5678',
           rut: p.rut || '12.345.678-9',
+
           membership: membershipLabel,
+          membershipType: p.membershipType || 'BASIC',
+          membershipBranchName: p.membershipBranchName || null,
+          membershipStatus: p.membershipStatus || null,
+
           membershipPrice: this.getMembershipPrice(membershipLabel),
           joinDate,
           nextPayment: nextPay,
@@ -114,7 +127,7 @@ export class DashboardComponent implements OnInit {
       }
     }
 
-    // Fallback si no hubo perfil o falló el parseo: usa los keys antiguos
+    // Fallback si no hubo perfil o falló el parseo
     const userName = localStorage.getItem('userName') || 'Usuario';
     const userMembership = localStorage.getItem('userMembership') || 'Plan Básico';
     const [firstName, ...lnParts] = userName.split(' ');
@@ -126,7 +139,12 @@ export class DashboardComponent implements OnInit {
       email: 'usuario@email.com',
       phone: '+56 9 1234 5678',
       rut: '12.345.678-9',
+
       membership: userMembership,
+      membershipType: 'BASIC',
+      membershipBranchName: null,
+      membershipStatus: 'ACTIVE',
+
       membershipPrice: this.getMembershipPrice(userMembership),
       joinDate: new Date(),
       nextPayment: this.calculateNextPayment(),
@@ -137,10 +155,7 @@ export class DashboardComponent implements OnInit {
   loadRecentAccess() {
     // Datos simulados de accesos recientes
     this.recentAccess = [
-      { date: new Date(2025, 9, 1), time: '08:30', location: 'Sucursal Centro',       type: 'entry' },
-      { date: new Date(2025, 9, 1), time: '10:15', location: 'Sucursal Centro',       type: 'exit'  },
-      { date: new Date(2025, 8, 29), time: '18:45', location: 'Sucursal Providencia', type: 'entry' },
-      { date: new Date(2025, 8, 29), time: '20:00', location: 'Sucursal Providencia', type: 'exit'  }
+
     ];
   }
 

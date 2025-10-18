@@ -113,7 +113,9 @@
     color: var(--text);
   }
 
-  input {
+  /* ===== inputs & selects con el mismo estilo ===== */
+  input,
+  select {
     width: 100%;
     height: 48px;
     padding: 0 16px;
@@ -143,6 +145,30 @@
       &:focus {
         box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
       }
+    }
+  }
+
+  /* ===== select: caret y comportamiento ===== */
+  select {
+    appearance: none; /* quita caret nativo */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 42px; /* espacio para caret */
+    background-image:
+      linear-gradient(135deg, rgba(39, 213, 162, 0.2), rgba(122, 92, 255, 0.2)),
+      /* caret SVG */
+      url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat, no-repeat;
+    background-position: left top, right 12px center;
+    background-size: auto, 16px;
+
+    option {
+      color: #0d1620;
+    }
+
+    &:disabled {
+      opacity: .6;
+      cursor: not-allowed;
     }
   }
 
@@ -357,9 +383,7 @@
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 /* ===== Success State ===== */
@@ -425,14 +449,8 @@
 }
 
 @keyframes scaleIn {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
 
 .welcome-message {
@@ -508,14 +526,8 @@
   .form-section {
     padding: 32px 20px;
 
-    .title {
-      font-size: 26px;
-    }
-
-    .subtitle {
-      font-size: 15px;
-      margin-bottom: 32px;
-    }
+    .title { font-size: 26px; }
+    .subtitle { font-size: 15px; margin-bottom: 32px; }
 
     .row-2 {
       grid-template-columns: 1fr;
@@ -523,42 +535,23 @@
     }
   }
 
-  .summary-section {
-    padding: 32px 20px;
-  }
-
-  .summary-title {
-    font-size: 20px;
-  }
-
-  .plan-name {
-    font-size: 22px;
-  }
+  .summary-section { padding: 32px 20px; }
+  .summary-title { font-size: 20px; }
+  .plan-name { font-size: 22px; }
 
   .welcome-message {
     max-width: 100%;
     padding: 24px;
 
-    .welcome-text {
-      font-size: 16px;
-    }
-
-    .membership-info {
-      font-size: 15px;
-    }
-
-    .enrollment-notice {
-      font-size: 14px;
-      padding: 14px;
-    }
+    .welcome-text { font-size: 16px; }
+    .membership-info { font-size: 15px; }
+    .enrollment-notice { font-size: 14px; padding: 14px; }
   }
 
   .processing-container,
   .success-container {
     padding: 32px 20px;
 
-    h2 {
-      font-size: 24px;
-    }
+    h2 { font-size: 24px; }
   }
 }

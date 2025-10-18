@@ -1,8 +1,10 @@
 // =======================================
-// AuthService (AJUSTADO)
+// AuthService (AJUSTADO, compatibilidad con UserProfileDto de 18 campos)
 // =======================================
 package com.capstone_fitps.capstorne_fitpass.auth;
 
+import com.capstone_fitps.capstorne_fitpass.branch.Branch;
+import com.capstone_fitps.capstorne_fitpass.branch.BranchRepository;
 import com.capstone_fitps.capstorne_fitpass.dto.auth.LoginRequest;
 import com.capstone_fitps.capstorne_fitpass.dto.auth.RegisterRequest;
 import com.capstone_fitps.capstorne_fitpass.dto.auth.SessionDto;
@@ -12,9 +14,9 @@ import com.capstone_fitps.capstorne_fitpass.repository.UserMembershipRepository;
 import com.capstone_fitps.capstorne_fitpass.repository.UserRepository;
 import com.capstone_fitps.capstorne_fitpass.user.AccessStatus;
 import com.capstone_fitps.capstorne_fitpass.user.EnrollmentStatus;
+import com.capstone_fitps.capstorne_fitpass.user.FaceEnrollment;
 import com.capstone_fitps.capstorne_fitpass.user.MembershipStatus;
 import com.capstone_fitps.capstorne_fitpass.user.MembershipType;
-import com.capstone_fitps.capstorne_fitpass.user.FaceEnrollment;
 import com.capstone_fitps.capstorne_fitpass.user.User;
 import com.capstone_fitps.capstorne_fitpass.user.UserMembership;
 import com.capstone_fitps.capstorne_fitpass.util.TimeUtil;
@@ -35,40 +37,71 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserMembershipRepository userMembershipRepository;
     private final FaceEnrollmentRepository faceEnrollmentRepository;
+    private final BranchRepository branchRepository; // <-- NUEVO
 
     @Value("${app.auth.session-ttl-minutes:120}")
     private int sessionTtlMinutes;
 
     @Transactional
     public AuthResponse register(RegisterRequest req) {
-        if (userRepository.existsByEmail(req.email()))
+        // Normalizaciones defensivas
+        final String email = req.email() == null ? null : req.email().trim().toLowerCase();
+        final String rut   = req.rut() == null ? null : req.rut().trim();
+        final String status = (req.status() != null && !req.status().isBlank()) ? req.status().trim() : "active";
+        final String membershipTypeRaw = req.membershipType() == null ? "" : req.membershipType().trim().toUpperCase();
+
+        if (email == null || email.isBlank()) throw new ConflictException("Email es obligatorio");
+        if (rut == null || rut.isBlank())     throw new ConflictException("RUT es obligatorio");
+        if (membershipTypeRaw.isBlank())      throw new ConflictException("membershipType es obligatorio");
+
+        if (userRepository.existsByEmail(email))
             throw new ConflictException("Email ya registrado");
-        if (userRepository.existsByRut(req.rut()))
+        if (userRepository.existsByRut(rut))
             throw new ConflictException("RUT ya registrado");
 
         // Validar membresía obligatoria
         final MembershipType membershipType;
         try {
-            membershipType = MembershipType.valueOf(req.membershipType().trim().toUpperCase());
+            membershipType = MembershipType.valueOf(membershipTypeRaw);
         } catch (Exception e) {
             throw new ConflictException("membershipType inválido. Use: MULTICLUB_ANUAL | ONECLUB_ANUAL | ONECLUB_MENSUAL");
         }
 
+        // Hash de contraseña
+        if (req.password() == null || req.password().isBlank()) {
+            throw new ConflictException("Password es obligatorio");
+        }
         String hash = BCrypt.hashpw(req.password(), BCrypt.gensalt());
 
+        // Crear usuario
         User user = User.builder()
                 .firstName(req.firstName())
                 .middleName(req.middleName())
                 .lastName(req.lastName())
                 .secondLastName(req.secondLastName())
-                .email(req.email())
+                .email(email)
                 .phone(req.phone())
-                .rut(req.rut())
+                .rut(rut)
                 .passwordHash(hash)
-                .status(req.status() != null ? req.status() : "active")
+                .status(status)
                 .accessStatus(AccessStatus.NO_ENROLADO) // por defecto hasta enrolar rostro
                 .build();
         user = userRepository.save(user);
+
+        // Resolver branch si corresponde
+        boolean isOneClub = (membershipType == MembershipType.ONECLUB_ANUAL || membershipType == MembershipType.ONECLUB_MENSUAL);
+        Branch assignedBranch = null;
+        if (isOneClub) {
+            String branchId = req.branchId();
+            if (branchId == null || branchId.isBlank()) {
+                throw new ConflictException("branchId es obligatorio para membresías ONECLUB_*");
+            }
+            assignedBranch = branchRepository.findById(branchId.trim())
+                    .orElseThrow(() -> new ConflictException("branchId no existe: " + branchId));
+            if (!assignedBranch.isActive()) {
+                throw new ConflictException("La sucursal indicada no está activa");
+            }
+        }
 
         // Fechas de membresía
         LocalDate start = LocalDate.now();
@@ -78,13 +111,14 @@ public class AuthService {
         };
         MembershipStatus mstatus = end.isBefore(LocalDate.now()) ? MembershipStatus.EXPIRED : MembershipStatus.ACTIVE;
 
-        // Crear registro de membresía
+        // Crear registro de membresía (con branch si aplica)
         UserMembership membership = UserMembership.builder()
                 .user(user)
                 .type(membershipType)
                 .status(mstatus)
                 .startDate(start)
                 .endDate(end)
+                .assignedBranch(assignedBranch) // <-- CLAVE
                 .build();
         userMembershipRepository.save(membership);
 
@@ -96,16 +130,21 @@ public class AuthService {
                 .build();
         faceEnrollmentRepository.save(enrollment);
 
-        // armar respuesta
+        // Respuesta
         return buildAuthResponse(attach(user, membership, enrollment));
     }
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest req) {
-        User user = userRepository.findByEmail(req.email())
+        final String email = req.email() == null ? null : req.email().trim().toLowerCase();
+        if (email == null || email.isBlank()) {
+            throw new UnauthorizedException("Credenciales inválidas");
+        }
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("Credenciales inválidas"));
 
-        if (!BCrypt.checkpw(req.password(), user.getPasswordHash())) {
+        if (req.password() == null || !BCrypt.checkpw(req.password(), user.getPasswordHash())) {
             throw new UnauthorizedException("Credenciales inválidas");
         }
         return buildAuthResponse(user);
@@ -128,10 +167,19 @@ public class AuthService {
                 sessionTtlMinutes
         );
 
-        // Cargar relaciones si están en LAZY (según tu configuración)
+        // Cargar relaciones (si están LAZY)
         UserMembership m = user.getMembership();
         FaceEnrollment e = user.getFaceEnrollment();
 
+        // Poblar datos de sucursal si existen
+        String branchId = null, branchName = null, branchCode = null;
+        if (m != null && m.getAssignedBranch() != null) {
+            branchId = m.getAssignedBranch().getId();
+            branchName = m.getAssignedBranch().getName();
+            branchCode = m.getAssignedBranch().getCode();
+        }
+
+        // IMPORTANTE: UserProfileDto espera 18 parámetros
         UserProfileDto profile = new UserProfileDto(
                 user.getId(),
                 user.getFirstName(),
@@ -147,7 +195,10 @@ public class AuthService {
                 m != null ? m.getStartDate().toString() : null,
                 m != null ? m.getEndDate().toString() : null,
                 user.getAccessStatus() != null ? user.getAccessStatus().name() : null,
-                e != null ? e.getStatus().name() : null
+                e != null ? e.getStatus().name() : null,
+                branchId,   // ahora poblado cuando corresponda
+                branchName,
+                branchCode
         );
 
         return new AuthResponse(profile, session);
