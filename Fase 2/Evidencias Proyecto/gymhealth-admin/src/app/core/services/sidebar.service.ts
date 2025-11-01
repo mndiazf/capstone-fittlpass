@@ -34,8 +34,29 @@ export class SidebarService {
           route: '/enrollment'
         }
       ]
+    },
+    
+   { 
+      id: 'management', 
+      icon: 'settings', 
+      label: 'Mantenedor',
+      children: [
+        {
+          id: 'management-users',
+          icon: 'person',
+          label: 'Mantenedor de Usuarios',
+          route: '/management/users'
+        },
+        {
+          id: 'management-profiles',
+          icon: 'admin_panel_settings',
+          label: 'Mantenedor de Perfiles',
+          route: '/management/profiles'
+        }
+      ]
     }
   ];
+  
 
   // ← SOLO NOTIFICACIONES - Configuración ahora está en el perfil de usuario
   bottomMenuItems: MenuItem[] = [

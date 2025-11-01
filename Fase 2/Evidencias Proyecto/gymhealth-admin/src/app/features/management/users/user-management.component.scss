@@ -1,0 +1,1115 @@
+.page-container {
+  min-height: 100vh;
+  width: 100%;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+// ============================================
+// HEADER
+// ============================================
+.page-header {
+  margin-bottom: 2rem;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    mat-icon {
+      font-size: 2.5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      color: #9747FF;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #f97316;
+      margin: 0;
+    }
+
+    p {
+      color: #22d3ee;
+      font-size: 0.938rem;
+      margin: 0.25rem 0 0;
+    }
+  }
+}
+
+:host([data-theme="light"]) .page-header {
+  .header-title {
+    mat-icon {
+      color: #8B35FF;
+    }
+
+    h1 {
+      color: #EA580C !important;
+    }
+
+    p {
+      color: #00B8AC !important;
+    }
+  }
+}
+
+// ============================================
+// SEARCH CARD
+// ============================================
+.search-card {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(151, 71, 255, 0.3) !important;
+  border-radius: 1rem !important;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+
+  .search-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+
+    .search-field {
+      flex: 1;
+      
+      ::ng-deep {
+        .mat-mdc-icon-button.mat-mdc-button-base {
+          width: 36px;
+          height: 36px;
+          padding: 6px;
+          
+          .mat-icon {
+            color: #94a3b8;
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+
+          &:hover .mat-icon {
+            color: #f87171;
+          }
+        }
+      }
+    }
+
+    .btn-clear {
+      margin-top: 4px;
+      height: 56px;
+      min-width: 56px;
+      padding: 0 1rem;
+      background: linear-gradient(135deg, #f97316, #ea580c) !important;
+      color: white !important;
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+      transition: all 0.3s ease;
+
+      mat-icon {
+        margin: 0;
+      }
+
+      &:hover {
+        box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4) !important;
+        transform: translateY(-2px);
+      }
+    }
+
+    button[type="button"]:not(.btn-clear) {
+      margin-top: 4px;
+      height: 56px;
+    }
+  }
+}
+
+:host([data-theme="light"]) .search-card {
+  background: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+
+  .search-form {
+    .search-field {
+      ::ng-deep {
+        .mat-mdc-icon-button .mat-icon {
+          color: #64748B;
+
+          &:hover {
+            color: #EF4444;
+          }
+        }
+      }
+    }
+
+    .btn-clear {
+      background: linear-gradient(135deg, #EA580C, #DC2626) !important;
+      box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25) !important;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35) !important;
+      }
+    }
+  }
+}
+
+// ============================================
+// FORM CARD
+// ============================================
+.form-card {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(151, 71, 255, 0.2) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+
+  mat-card-header {
+    padding: 1.5rem 1.5rem 1rem;
+
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: white;
+      margin: 0;
+
+      mat-icon {
+        color: #9747FF;
+        font-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+      }
+    }
+  }
+
+  mat-card-content {
+    padding: 1.5rem;
+  }
+}
+
+:host([data-theme="light"]) .form-card {
+  background: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+
+  mat-card-title {
+    color: #0F172A !important;
+
+    mat-icon {
+      color: #8B35FF !important;
+    }
+  }
+}
+
+/// ============================================
+// FORM FIELDS
+// ============================================
+::ng-deep {
+  .mat-mdc-form-field {
+    &.mat-form-field-appearance-fill {
+      .mat-mdc-text-field-wrapper {
+        background-color: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(151, 71, 255, 0.4) !important;
+        border-radius: 8px !important;
+      }
+
+      .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+        background-color: transparent !important;
+      }
+
+      input, textarea {
+        color: #e2e8f0 !important;
+        caret-color: #9747FF !important;
+      }
+
+      label, .mat-mdc-floating-label {
+        color: #a78bfa !important;
+      }
+
+      .mat-mdc-form-field-focus-overlay {
+        background-color: rgba(151, 71, 255, 0.1) !important;
+      }
+
+      &.mat-focused {
+        .mat-mdc-text-field-wrapper {
+          border-color: #9747FF !important;
+          box-shadow: 0 0 0 2px rgba(151, 71, 255, 0.2) !important;
+        }
+
+        label {
+          color: #c4b5fd !important;
+        }
+      }
+    }
+  }
+
+  // ✅ ARREGLO: Texto de SELECT visible
+  .mat-mdc-select-value {
+    color: #e2e8f0 !important;
+  }
+
+  .mat-mdc-select-arrow {
+    color: #a78bfa !important;
+  }
+
+  // Opciones del dropdown
+  .mat-mdc-option {
+    &.mdc-list-item--selected {
+      .mdc-list-item__primary-text {
+        color: #9747FF !important;
+      }
+    }
+
+    .mdc-list-item__primary-text {
+      color: #1e293b !important;
+    }
+  }
+
+  [data-theme="light"] {
+    .mat-mdc-form-field {
+      &.mat-form-field-appearance-fill {
+        .mat-mdc-text-field-wrapper {
+          background-color: #F8FAFC !important;
+          border: 1px solid #CBD5E1 !important;
+        }
+
+        input, textarea {
+          color: #0F172A !important;
+          caret-color: #8B35FF !important;
+        }
+
+        label, .mat-mdc-floating-label {
+          color: #64748B !important;
+        }
+
+        &.mat-focused {
+          .mat-mdc-text-field-wrapper {
+            border-color: #8B35FF !important;
+            box-shadow: 0 0 0 2px rgba(139, 53, 255, 0.1) !important;
+          }
+
+          label {
+            color: #8B35FF !important;
+          }
+        }
+      }
+    }
+
+    .mat-mdc-select-value {
+      color: #0F172A !important;
+    }
+
+    .mat-mdc-select-arrow {
+      color: #64748B !important;
+    }
+  }
+}
+// ============================================
+// FORM
+// ============================================
+.user-form {
+  .form-section {
+    margin-bottom: 2rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #a78bfa;
+      margin: 0 0 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid rgba(151, 71, 255, 0.3);
+
+      mat-icon {
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  .info-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.4);
+    border-radius: 12px;
+    color: #67e8f9;
+    font-size: 0.875rem;
+
+    mat-icon {
+      color: #22d3ee;
+      flex-shrink: 0;
+    }
+  }
+}
+
+:host([data-theme="light"]) .user-form {
+  .form-section {
+    .section-title {
+      color: #8B35FF !important;
+      border-bottom-color: #E9D5FF !important;
+    }
+  }
+
+  .info-box {
+    background: #ECFEFF !important;
+    border-color: #A5F3FC !important;
+    color: #0891B2 !important;
+
+    mat-icon {
+      color: #00B8AC !important;
+    }
+  }
+}
+
+// ============================================
+// STATUS CONTAINER
+// ============================================
+.status-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(151, 71, 255, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(151, 71, 255, 0.3);
+}
+
+.custom-checkbox {
+  .checkbox-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
+
+    strong {
+      font-size: 0.938rem;
+      color: white;
+      font-weight: 600;
+    }
+
+    span {
+      font-size: 0.813rem;
+      color: #94a3b8;
+    }
+  }
+}
+
+.enrollment-status {
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(249, 115, 22, 0.1);
+    border: 2px solid rgba(249, 115, 22, 0.3);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+
+    mat-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: #fb923c;
+      flex-shrink: 0;
+    }
+
+    .status-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      strong {
+        font-size: 0.938rem;
+        color: white;
+        font-weight: 600;
+      }
+
+      span {
+        font-size: 0.813rem;
+        color: #94a3b8;
+      }
+    }
+
+    &--enrolled {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.4);
+
+      mat-icon {
+        color: #4ade80;
+      }
+    }
+  }
+}
+
+:host([data-theme="light"]) .status-container {
+  background: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+
+  .custom-checkbox {
+    .checkbox-content {
+      strong {
+        color: #0F172A !important;
+      }
+
+      span {
+        color: #64748B !important;
+      }
+    }
+  }
+
+  .enrollment-status {
+    .status-badge {
+      background: #FFF7ED !important;
+      border-color: #FED7AA !important;
+
+      mat-icon {
+        color: #EA580C !important;
+      }
+
+      .status-info {
+        strong {
+          color: #0F172A !important;
+        }
+
+        span {
+          color: #64748B !important;
+        }
+      }
+
+      &--enrolled {
+        background: #F0FDF4 !important;
+        border-color: #BBF7D0 !important;
+
+        mat-icon {
+          color: #16A34A !important;
+        }
+      }
+    }
+  }
+}
+
+// ============================================
+// FORM ACTIONS
+// ============================================
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(151, 71, 255, 0.2);
+
+  button {
+    min-width: 160px;
+    font-weight: 600;
+    font-size: 0.938rem;
+    transition: all 0.3s ease;
+
+    mat-icon {
+      margin-right: 0.5rem;
+    }
+  }
+
+  .btn-cancel {
+    color: #94a3b8;
+    border-color: rgba(148, 163, 184, 0.3);
+
+    &:hover {
+      background: rgba(148, 163, 184, 0.1);
+      color: white;
+    }
+  }
+
+  .btn-enroll {
+    background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3) !important;
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 6px 16px rgba(6, 182, 212, 0.4) !important;
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      background: rgba(148, 163, 184, 0.2) !important;
+      color: rgba(255, 255, 255, 0.4) !important;
+      box-shadow: none !important;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #9747FF, #7c3aed) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 12px rgba(151, 71, 255, 0.3) !important;
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 6px 16px rgba(151, 71, 255, 0.4) !important;
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      background: rgba(148, 163, 184, 0.2) !important;
+      color: rgba(255, 255, 255, 0.4) !important;
+      box-shadow: none !important;
+      cursor: not-allowed;
+    }
+  }
+}
+
+:host([data-theme="light"]) .form-actions {
+  border-top-color: #E2E8F0 !important;
+
+  .btn-cancel {
+    color: #64748B !important;
+    border-color: #CBD5E1 !important;
+
+    &:hover {
+      background: #F1F5F9 !important;
+      color: #0F172A !important;
+    }
+  }
+
+  .btn-enroll {
+    background: linear-gradient(135deg, #00B8AC, #0891B2) !important;
+    box-shadow: 0 2px 8px rgba(0, 184, 172, 0.25) !important;
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 12px rgba(0, 184, 172, 0.35) !important;
+    }
+
+    &:disabled {
+      background: #E2E8F0 !important;
+      color: #94A3B8 !important;
+    }
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #8B35FF, #7C3AED) !important;
+    box-shadow: 0 2px 8px rgba(139, 53, 255, 0.25) !important;
+
+    &:hover:not(:disabled) {
+      box-shadow: 0 4px 12px rgba(139, 53, 255, 0.35) !important;
+    }
+
+    &:disabled {
+      background: #E2E8F0 !important;
+      color: #94A3B8 !important;
+    }
+  }
+}
+
+// ============================================
+// ENROLLMENT MODAL
+// ============================================
+.enrollment-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+  }
+
+  &__content {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(151, 71, 255, 0.3);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.3s ease;
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(151, 71, 255, 0.2);
+    background: rgba(151, 71, 255, 0.05);
+
+    .header-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      mat-icon {
+        font-size: 2rem;
+        width: 2rem;
+        height: 2rem;
+        color: #9747FF;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: white;
+      }
+    }
+
+    button {
+      mat-icon {
+        color: #94a3b8;
+      }
+
+      &:hover mat-icon {
+        color: white;
+      }
+    }
+  }
+
+  &__body {
+    padding: 2rem;
+    max-height: calc(90vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:host([data-theme="light"]) .enrollment-modal {
+  &__content {
+    background: #FFFFFF;
+    border-color: #E2E8F0;
+  }
+
+  &__header {
+    border-bottom-color: #E2E8F0;
+    background: #F8FAFC;
+
+    .header-info {
+      mat-icon {
+        color: #8B35FF;
+      }
+
+      h2 {
+        color: #0F172A;
+      }
+    }
+  }
+}
+
+// ============================================
+// ENROLLMENT STEPS - BOTONES VISIBLES
+// ============================================
+.enrollment-step {
+  .step-instruction {
+    text-align: center;
+    font-size: 1rem;
+    color: #cbd5e1;
+    margin: 0 0 2rem;
+  }
+
+  .step-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+
+    button {
+      min-width: 140px;
+      font-weight: 600;
+      font-size: 0.938rem;
+      transition: all 0.3s ease;
+
+      mat-icon {
+        margin-right: 0.5rem;
+      }
+    }
+
+    // ✅ BOTÓN CANCELAR - MUY VISIBLE
+    .mat-mdc-outlined-button,
+    button[mat-stroked-button] {
+      color: #f1f5f9 !important;
+      border: 2px solid rgba(241, 245, 249, 0.6) !important;
+      background: rgba(51, 65, 85, 0.6) !important;
+      backdrop-filter: blur(4px);
+
+      mat-icon {
+        color: #f1f5f9 !important;
+      }
+
+      &:hover:not(:disabled) {
+        background: rgba(239, 68, 68, 0.25) !important;
+        border-color: #f87171 !important;
+        color: #fecaca !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+
+        mat-icon {
+          color: #fecaca !important;
+        }
+      }
+    }
+
+    // Botón primario (Capturar/Confirmar)
+    .mat-mdc-raised-button,
+    button[mat-raised-button][color="primary"] {
+      background: linear-gradient(135deg, #9747FF, #7c3aed) !important;
+      color: white !important;
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(151, 71, 255, 0.3) !important;
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 6px 16px rgba(151, 71, 255, 0.4) !important;
+        transform: translateY(-2px);
+      }
+
+      &:disabled {
+        background: rgba(148, 163, 184, 0.3) !important;
+        color: rgba(255, 255, 255, 0.5) !important;
+        box-shadow: none !important;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  &--center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+
+    h3 {
+      margin: 1.5rem 0 0.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    p {
+      margin: 0;
+      color: #94a3b8;
+    }
+  }
+
+  &--success {
+    .success-icon {
+      font-size: 4rem;
+      width: 4rem;
+      height: 4rem;
+      color: #4ade80;
+    }
+  }
+}
+
+// ✅ TEMA CLARO
+:host([data-theme="light"]) .enrollment-step {
+  .step-instruction {
+    color: #475569;
+  }
+
+  .step-actions {
+    .mat-mdc-outlined-button,
+    button[mat-stroked-button] {
+      color: #334155 !important;
+      border: 2px solid #94a3b8 !important;
+      background: #ffffff !important;
+
+      mat-icon {
+        color: #334155 !important;
+      }
+
+      &:hover:not(:disabled) {
+        background: #fee2e2 !important;
+        border-color: #ef4444 !important;
+        color: #dc2626 !important;
+
+        mat-icon {
+          color: #dc2626 !important;
+        }
+      }
+    }
+
+    .mat-mdc-raised-button,
+    button[mat-raised-button][color="primary"] {
+      background: linear-gradient(135deg, #8B35FF, #7C3AED) !important;
+      box-shadow: 0 2px 8px rgba(139, 53, 255, 0.25) !important;
+
+      &:hover:not(:disabled) {
+        box-shadow: 0 4px 12px rgba(139, 53, 255, 0.35) !important;
+      }
+
+      &:disabled {
+        background: #e2e8f0 !important;
+        color: #94a3b8 !important;
+      }
+    }
+  }
+
+  &--center {
+    h3 {
+      color: #0F172A;
+    }
+
+    p {
+      color: #64748B;
+    }
+  }
+
+  &--success {
+    .success-icon {
+      color: #16A34A;
+    }
+  }
+}
+// ============================================
+// CAMERA - CÍRCULO MÁS GRANDE
+// ============================================
+.camera-container {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  aspect-ratio: 4/3;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .face-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+
+    .face-circle {
+      width: 380px;
+      height: 380px;
+      border: 4px dashed rgba(151, 71, 255, 0.6);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .face-instruction {
+      margin-top: 2rem;
+      padding: 0.75rem 1.5rem;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 24px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    &.face-detected {
+      .face-circle {
+        border-color: #4ade80;
+        border-style: solid;
+        border-width: 5px;
+        box-shadow: 0 0 30px rgba(74, 222, 128, 0.6);
+      }
+
+      .face-instruction {
+        background: rgba(34, 197, 94, 0.9);
+      }
+    }
+  }
+}
+
+// ============================================
+// IMAGE PREVIEW
+// ============================================
+.image-preview {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(151, 71, 255, 0.3);
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+:host([data-theme="light"]) .image-preview {
+  border-color: #E2E8F0;
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+
+  .search-card .search-form {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .user-form {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .status-container {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .enrollment-modal {
+    &__content {
+      width: 95%;
+      max-height: 95vh;
+    }
+
+    &__body {
+      padding: 1.5rem;
+    }
+  }
+
+  .camera-container {
+    max-width: 100%;
+
+    .face-overlay {
+      .face-circle {
+        width: 280px;
+        height: 280px;
+      }
+    }
+  }
+
+  .enrollment-step {
+    .step-actions {
+      flex-direction: column;
+
+      button {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// ============================================
+// AGREGAR AL FINAL DE user-management.component.scss
+// ============================================
+
+// 🌙 FORZAR MODO NOCTURNO
+
+:host([data-theme="dark"]) {
+  
+  // Cards oscuras
+  .search-card {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(151, 71, 255, 0.3) !important;
+  }
+
+  .form-card {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(151, 71, 255, 0.2) !important;
+  }
+
+  // Inputs oscuros
+  ::ng-deep {
+    .mat-mdc-form-field.mat-form-field-appearance-fill {
+      .mat-mdc-text-field-wrapper {
+        background-color: rgba(51, 65, 85, 0.4) !important;
+        border: 1px solid rgba(151, 71, 255, 0.3) !important;
+      }
+
+      input, textarea {
+        color: #e2e8f0 !important;
+      }
+
+      label {
+        color: #a78bfa !important;
+      }
+    }
+  }
+}
+
+
+
+:host([data-theme="light"]) {
+  ::ng-deep {
+    .mat-mdc-form-field.mat-form-field-appearance-fill {
+      .mat-mdc-text-field-wrapper,
+      .mdc-text-field,
+      .mdc-text-field--filled {
+        background-color: #F5F3FF !important;
+        border: 1px solid #DDD6FE !important;
+      }
+
+      input, textarea {
+        color: #0F172A !important;
+      }
+
+      label {
+        color: #64748B !important;
+      }
+    }
+  }
+}

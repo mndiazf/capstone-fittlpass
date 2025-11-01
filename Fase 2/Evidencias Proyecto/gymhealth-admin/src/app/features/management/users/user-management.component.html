@@ -1,0 +1,330 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <mat-icon>people</mat-icon>
+      <div>
+        <h1>Mantenedor de Usuarios</h1>
+        <p>Gestiona los colaboradores del gimnasio</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <mat-card class="search-card">
+    <mat-card-content>
+      <form [formGroup]="searchForm" class="search-form">
+        <mat-form-field appearance="fill" class="search-field">
+          <mat-label>Buscar Colaborador por RUT</mat-label>
+          <input 
+            matInput 
+            formControlName="searchTerm"
+            placeholder="11.111.111-1"
+            (keyup.enter)="searchUser()">
+          <mat-icon matPrefix>search</mat-icon>
+          <button 
+            mat-icon-button 
+            matSuffix 
+            *ngIf="searchForm.get('searchTerm')?.value"
+            (click)="searchForm.patchValue({ searchTerm: '' }); $event.stopPropagation();"
+            type="button"
+            aria-label="Limpiar búsqueda">
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <button 
+          mat-raised-button 
+          color="warn"
+          type="button"
+          class="btn-clear"
+          (click)="clearForm()"
+          matTooltip="Limpiar formulario">
+          <mat-icon>cleaning_services</mat-icon>
+        </button>
+
+        <button 
+          mat-raised-button 
+          color="primary" 
+          type="button"
+          (click)="searchUser()"
+          [disabled]="isSearching()">
+          <mat-spinner *ngIf="isSearching()" diameter="20"></mat-spinner>
+          <mat-icon *ngIf="!isSearching()">search</mat-icon>
+          {{ isSearching() ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Formulario Principal -->
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>{{ isEditMode() ? 'edit' : 'badge' }}</mat-icon>
+        {{ isEditMode() ? 'Modificar Datos del Colaborador' : 'Datos del Colaborador' }}
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="userForm" class="user-form">
+        <!-- Datos Personales -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <mat-icon>badge</mat-icon>
+            Datos Personales
+          </h3>
+          <div class="form-grid">
+            <mat-form-field appearance="fill">
+              <mat-label>Primer Nombre *</mat-label>
+              <input matInput formControlName="firstName" placeholder="Juan">
+              <mat-icon matPrefix>person</mat-icon>
+              <mat-error>Campo requerido (mín. 2 caracteres)</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Segundo Nombre</mat-label>
+              <input matInput formControlName="secondName" placeholder="Carlos">
+              <mat-icon matPrefix>person_outline</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Apellido Paterno *</mat-label>
+              <input matInput formControlName="paternalLastName" placeholder="Pérez">
+              <mat-icon matPrefix>person</mat-icon>
+              <mat-error>Campo requerido (mín. 2 caracteres)</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Apellido Materno *</mat-label>
+              <input matInput formControlName="maternalLastName" placeholder="González">
+              <mat-icon matPrefix>person</mat-icon>
+              <mat-error>Campo requerido (mín. 2 caracteres)</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>RUT *</mat-label>
+              <input 
+                matInput 
+                formControlName="rut" 
+                placeholder="12.345.678-9"
+                (input)="formatRut($event)">
+              <mat-icon matPrefix>fingerprint</mat-icon>
+              <mat-error>Formato: 12.345.678-9</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+<!-- Datos de Acceso -->
+<div class="form-section">
+  <h3 class="section-title">
+    <mat-icon>lock</mat-icon>
+    Datos de Acceso
+  </h3>
+  <div class="form-grid">
+    <mat-form-field appearance="fill">
+      <mat-label>Email *</mat-label>
+      <input matInput type="email" formControlName="email" placeholder="usuario@gymhealth.com">
+      <mat-icon matPrefix>email</mat-icon>
+      <mat-error *ngIf="userForm.get('email')?.hasError('required')">
+        El email es requerido
+      </mat-error>
+      <mat-error *ngIf="userForm.get('email')?.hasError('email') || userForm.get('email')?.hasError('invalidEmail')">
+        Email inválido (ejemplo: usuario@correo.com)
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Campo de contraseña SOLO si requiere -->
+    <mat-form-field appearance="fill" *ngIf="requiresPassword()">
+      <mat-label>Contraseña *</mat-label>
+      <input matInput type="password" formControlName="password" placeholder="Contraseña segura">
+      <mat-icon matPrefix>lock</mat-icon>
+      <mat-error>{{ getPasswordErrorMessage() }}</mat-error>
+      <mat-hint>Mín. 8 caracteres: mayúsculas, minúsculas, números y especiales</mat-hint>
+    </mat-form-field>
+
+    <!-- Mensaje informativo para Personal Trainer -->
+    <div class="info-box" *ngIf="!requiresPassword() && userForm.get('profileId')?.value">
+      <mat-icon>info</mat-icon>
+      <span>Los Personal Trainers no requieren contraseña de acceso al sistema</span>
+    </div>
+  </div>
+</div>
+
+        <!-- Asignación -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <mat-icon>business</mat-icon>
+            Asignación
+          </h3>
+          <div class="form-grid">
+            <mat-form-field appearance="fill">
+              <mat-label>Perfil *</mat-label>
+              <mat-select formControlName="profileId">
+                <mat-option *ngFor="let profile of profiles()" [value]="profile.id">
+                  {{ profile.name }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix>badge</mat-icon>
+              <mat-error>Seleccione un perfil</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill">
+              <mat-label>Sucursal *</mat-label>
+              <mat-select formControlName="branchId">
+                <mat-option *ngFor="let branch of branches()" [value]="branch.id">
+                  {{ branch.name }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix>store</mat-icon>
+              <mat-error>Seleccione una sucursal</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Estado -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <mat-icon>settings</mat-icon>
+            Estado
+          </h3>
+          <div class="status-container">
+            <mat-checkbox formControlName="isActive" class="custom-checkbox" color="primary">
+              <div class="checkbox-content">
+                <strong>Usuario Activo</strong>
+                <span>El colaborador puede acceder al sistema</span>
+              </div>
+            </mat-checkbox>
+
+            <div class="enrollment-status" *ngIf="isEditMode()">
+              <div class="status-badge" [class.status-badge--enrolled]="editingUser()?.hasEnrollment">
+                <mat-icon>{{ editingUser()?.hasEnrollment ? 'verified_user' : 'face' }}</mat-icon>
+                <div class="status-info">
+                  <strong>{{ editingUser()?.hasEnrollment ? 'Con Reconocimiento Facial' : 'Sin Reconocimiento Facial' }}</strong>
+                  <span *ngIf="editingUser()?.lastEnrollment">Último: {{ editingUser()?.lastEnrollment }}</span>
+                  <span *ngIf="!editingUser()?.hasEnrollment">No registrado en sistema biométrico</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="form-actions">
+          <button 
+            mat-stroked-button 
+            type="button"
+            class="btn-cancel"
+            (click)="clearForm()"
+            *ngIf="isEditMode()">
+            <mat-icon>close</mat-icon>
+            Cancelar
+          </button>
+          
+          <button 
+            mat-raised-button 
+            color="accent"
+            type="button"
+            class="btn-enroll"
+            (click)="openEnrollmentModal()"
+            [disabled]="!editingUser()">
+            <mat-icon>face</mat-icon>
+            {{ editingUser()?.hasEnrollment ? 'Actualizar Facial' : 'Enrolar Facial' }}
+          </button>
+
+          <button 
+            mat-raised-button 
+            color="primary" 
+            type="button"
+            class="btn-save"
+            (click)="saveUser()">
+            <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+            {{ isEditMode() ? 'Guardar Cambios' : 'Agregar Usuario' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- MODAL DE ENROLLMENT FACIAL -->
+  <div class="enrollment-modal" *ngIf="showEnrollmentModal()">
+    <div class="enrollment-modal__overlay" (click)="closeEnrollmentModal()"></div>
+    <div class="enrollment-modal__content">
+      
+      <div class="enrollment-modal__header">
+        <div class="header-info">
+          <mat-icon>face</mat-icon>
+          <h2>{{ editingUser()?.hasEnrollment ? 'Actualizar' : 'Enrolar' }} Reconocimiento Facial</h2>
+        </div>
+        <button mat-icon-button (click)="closeEnrollmentModal()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="enrollment-modal__body">
+        
+        <div class="enrollment-step" *ngIf="enrollmentView() === 'camera'">
+          <p class="step-instruction">Posiciona tu rostro dentro del círculo</p>
+          
+          <div class="camera-container">
+            <video #videoElement autoplay playsinline></video>
+            <canvas #canvasElement style="display: none;"></canvas>
+
+            <div class="face-overlay" [class.face-detected]="faceDetected()">
+              <div class="face-circle"></div>
+              <p class="face-instruction">
+                {{ faceDetected() ? '✓ Rostro detectado' : 'Centra tu rostro' }}
+              </p>
+            </div>
+          </div>
+
+          <div class="step-actions">
+            <button mat-stroked-button (click)="closeEnrollmentModal()">
+              <mat-icon>close</mat-icon>
+              Cancelar
+            </button>
+            <button 
+              mat-raised-button 
+              color="primary"
+              [disabled]="!faceDetected()"
+              (click)="captureImage()">
+              <mat-icon>camera_alt</mat-icon>
+              Capturar
+            </button>
+          </div>
+        </div>
+
+        <div class="enrollment-step" *ngIf="enrollmentView() === 'review'">
+          <p class="step-instruction">Verifica que la imagen sea clara</p>
+          
+          <div class="image-preview">
+            <img [src]="capturedImage()" alt="Rostro capturado">
+          </div>
+
+          <div class="step-actions">
+            <button mat-stroked-button (click)="retakePhoto()">
+              <mat-icon>refresh</mat-icon>
+              Tomar Otra
+            </button>
+            <button mat-raised-button color="primary" (click)="confirmEnrollment()">
+              <mat-icon>check_circle</mat-icon>
+              Confirmar
+            </button>
+          </div>
+        </div>
+
+        <div class="enrollment-step enrollment-step--center" *ngIf="enrollmentView() === 'processing'">
+          <mat-spinner diameter="60"></mat-spinner>
+          <h3>Procesando imagen facial...</h3>
+          <p>Por favor espera un momento</p>
+        </div>
+
+        <div class="enrollment-step enrollment-step--center enrollment-step--success" *ngIf="enrollmentView() === 'success'">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <h3>¡Enrolamiento Exitoso!</h3>
+          <p>{{ editingUser()?.firstName }} {{ editingUser()?.paternalLastName }} ha sido registrado correctamente</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

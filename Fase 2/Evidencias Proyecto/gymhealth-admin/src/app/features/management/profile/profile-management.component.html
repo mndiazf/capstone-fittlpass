@@ -1,0 +1,130 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>
+      <mat-icon>admin_panel_settings</mat-icon>
+      Mantenedor de Perfiles
+    </h1>
+  </div>
+
+  <!-- Formulario -->
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>
+        @if (editingProfile) { Editar Perfil } @else { Nuevo Perfil }
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="profileForm" class="profile-form">
+        <div class="basic-info">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre del Perfil</mat-label>
+            <input matInput formControlName="name" placeholder="Ej: Supervisor" />
+            <mat-icon matPrefix>badge</mat-icon>
+
+            @if (profileForm.get('name')?.hasError('required')) {
+              <mat-error>El nombre es requerido</mat-error>
+            }
+            @if (profileForm.get('name')?.hasError('minlength')) {
+              <mat-error>Mínimo 3 caracteres</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="permissions-section">
+          <div class="permissions-header">
+            <mat-icon>fact_check</mat-icon>
+            <h3>Permisos (Interfaces que puede ver)</h3>
+            <span class="selected-count">{{ selectedPermissions().length }} seleccionados</span>
+          </div>
+
+          <div class="permissions-grid">
+            @for (perm of availablePermissions(); track perm.id) {
+              <mat-checkbox
+                class="permission-checkbox"
+                [checked]="isPermissionSelected(perm.id)"
+                (change)="togglePermission(perm.id, $event.checked)">
+                <div class="permission-item">
+                  <strong>{{ perm.name }}</strong>
+                  <span class="permission-desc">{{ perm.description }}</span>
+                </div>
+              </mat-checkbox>
+            }
+          </div>
+        </div>
+
+        <div class="form-actions">
+          @if (editingProfile) {
+            <button mat-button (click)="cancelEdit()">
+              <mat-icon>close</mat-icon> Cancelar
+            </button>
+          }
+          <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="profileForm.invalid">
+            <mat-icon>{{ editingProfile ? 'save' : 'add' }}</mat-icon>
+            {{ editingProfile ? 'Guardar Cambios' : 'Agregar Perfil' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Tabla de Perfiles -->
+  <mat-card class="table-card">
+    <mat-card-header>
+      <mat-card-title>Lista de Perfiles</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="table-container">
+        <table mat-table [dataSource]="profiles()" class="profiles-table">
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Perfil</th>
+            <td mat-cell *matCellDef="let profile">
+              <div class="profile-name-cell">
+                <span class="color-indicator" [style.background-color]="getColor(profile.color)"></span>
+                <span class="profile-name">{{ profile.name }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="permissions">
+            <th mat-header-cell *matHeaderCellDef>Permisos Asignados</th>
+            <td mat-cell *matCellDef="let profile">
+              <div class="permissions-badges">
+                @for (permId of profile.permissions; track permId) {
+                  <span class="permission-badge" [matTooltip]="getPermissionDescription(permId)">
+                    {{ getPermissionName(permId) }}
+                  </span>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Acciones</th>
+            <td mat-cell *matCellDef="let profile">
+              <button mat-icon-button color="primary" (click)="editProfile(profile)" matTooltip="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteProfile(profile)" matTooltip="Eliminar">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        @if (profiles().length === 0) {
+          <div class="empty-state">
+            <mat-icon>shield</mat-icon>
+            <p>No hay perfiles creados</p>
+            <p class="hint">Crea tu primer perfil usando el formulario</p>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

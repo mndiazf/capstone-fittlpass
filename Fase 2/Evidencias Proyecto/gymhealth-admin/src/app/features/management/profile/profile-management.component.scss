@@ -1,0 +1,402 @@
+/* ===== Mantenedor de Perfiles (usa variables del tema global) ===== */
+
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+
+    mat-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+      color: var(--purple-primary);
+    }
+  }
+}
+
+.form-card,
+.table-card {
+  margin-bottom: 2rem;
+  /* El fondo/borde ya lo define .mat-mdc-card en tu styles.scss con variables */
+}
+
+/* ===== Formulario ===== */
+.profile-form {
+  .basic-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    mat-form-field {
+      width: 100%;
+    }
+
+    .color-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+
+      &.purple {
+        color: var(--purple-primary);
+      }
+      &.blue {
+        color: #3b82f6;
+      }
+      &.green {
+        color: #22c55e;
+      }
+      &.cyan {
+        color: #06b6d4;
+      }
+      &.orange {
+        color: var(--orange-accent);
+      }
+      &.pink {
+        color: #ec4899;
+      }
+    }
+  }
+
+  .permissions-section {
+    margin-bottom: 2rem;
+
+    .permissions-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--border-color);
+
+      mat-icon {
+        font-size: 1.75rem;
+        width: 1.75rem;
+        height: 1.75rem;
+        color: var(--purple-primary);
+      }
+
+      h3 {
+        flex: 1;
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-primary);
+      }
+
+      .selected-count {
+        padding: 0.25rem 0.75rem;
+        background: var(--purple-primary);
+        color: #fff;
+        border-radius: 12px;
+        font-size: 0.813rem;
+        font-weight: 600;
+      }
+    }
+
+    .permissions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+
+      .permission-checkbox {
+        padding: 0.75rem;
+        background: var(--bg-card);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+
+        &:hover {
+          border-color: var(--border-hover);
+          box-shadow: var(--shadow-md);
+        }
+
+        .permission-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          margin-left: 0.5rem;
+
+          strong {
+            font-size: 0.938rem;
+            color: var(--text-primary);
+          }
+          .permission-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+          }
+        }
+      }
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+
+    button {
+      min-width: 150px;
+
+      mat-icon {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}
+
+/* ===== Tabla ===== */
+.table-container {
+  overflow-x: auto;
+}
+
+.profiles-table {
+  width: 100%;
+  min-width: 900px;
+
+  th {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  td {
+    padding: 1rem 0.5rem;
+  }
+
+  .profile-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .color-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .profile-name {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+  }
+
+  .permissions-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    .permission-badge {
+      display: inline-block;
+      padding: 0.25rem 0.625rem;
+      background: color-mix(in srgb, var(--purple-primary) 12%, transparent);
+      color: color-mix(in srgb, var(--purple-primary) 85%, #fff 0%);
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid color-mix(in srgb, var(--purple-primary) 30%, transparent);
+      transition: all 0.2s ease;
+      cursor: default;
+
+      &:hover {
+        background: color-mix(in srgb, var(--purple-primary) 18%, transparent);
+        border-color: color-mix(in srgb, var(--purple-primary) 45%, transparent);
+      }
+    }
+  }
+}
+
+/* ===== Ajustes Material dentro del componente (con variables) ===== */
+:host {
+  /* Campos Material (outline/fill) */
+  ::ng-deep
+    .mat-mdc-form-field.mat-form-field-appearance-outline
+    .mat-mdc-text-field-wrapper,
+  ::ng-deep
+    .mat-mdc-form-field.mat-form-field-appearance-fill
+    .mat-mdc-text-field-wrapper {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+  }
+
+  ::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+    background: transparent !important;
+  }
+
+  ::ng-deep .mat-mdc-form-field input,
+  ::ng-deep .mat-mdc-form-field textarea {
+    color: var(--text-primary) !important;
+  }
+
+  ::ng-deep .mat-mdc-floating-label {
+    color: var(--text-secondary) !important;
+  }
+}
+
+/* ===== Checkboxes calipso en modo oscuro ===== */
+:host-context([data-theme="dark"]) {
+  ::ng-deep .permission-checkbox .mat-mdc-checkbox,
+  ::ng-deep .mat-mdc-checkbox {
+    --mdc-checkbox-unselected-icon-color: var(--calipso);
+    --mdc-checkbox-unselected-hover-icon-color: var(--calipso);
+    --mdc-checkbox-unselected-focus-icon-color: var(--calipso);
+    --mdc-checkbox-unselected-pressed-icon-color: var(--calipso);
+
+    --mdc-checkbox-selected-icon-color: var(--calipso);
+    --mdc-checkbox-selected-hover-icon-color: var(--calipso);
+    --mdc-checkbox-selected-focus-icon-color: var(--calipso);
+    --mdc-checkbox-selected-pressed-icon-color: var(--calipso);
+
+    --mdc-checkbox-selected-checkmark-color: #0b0d12;
+    --mat-checkbox-ripple-color: var(--calipso);
+  }
+
+  ::ng-deep .mat-mdc-checkbox .mdc-checkbox__background {
+    border-width: 2px !important;
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .permissions-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+
+  .profile-form {
+    .basic-info {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .permissions-grid {
+      grid-template-columns: 1fr !important;
+      padding: 1rem;
+    }
+  }
+
+  .profiles-table {
+    font-size: 0.875rem;
+  }
+}
+
+/* ===== Lista de Perfiles (mat-table dentro del card) ===== */
+.table-card {
+  ::ng-deep .mat-mdc-card-header .mat-mdc-card-title {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  .table-container {
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+  }
+
+  ::ng-deep .mat-mdc-table {
+    width: 100%;
+    background: transparent;
+  }
+
+  ::ng-deep .mat-mdc-header-row {
+    background: var(--bg-secondary);
+  }
+  ::ng-deep .mat-mdc-header-cell {
+    color: var(--text-secondary);
+    font-weight: 700;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  ::ng-deep .mat-mdc-row {
+    background: var(--bg-card);
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+    border-bottom: 1px solid var(--border-color);
+  }
+  ::ng-deep .mat-mdc-row:hover {
+    background: color-mix(in srgb, var(--calipso) 8%, var(--bg-card));
+    box-shadow: var(--shadow-md);
+  }
+
+  ::ng-deep .mat-mdc-cell {
+    color: var(--text-primary);
+  }
+
+  .permissions-badges .permission-badge {
+    background: color-mix(in srgb, var(--purple-primary) 12%, transparent);
+    color: color-mix(in srgb, var(--purple-primary) 85%, #fff 0%);
+    border: 1px solid color-mix(in srgb, var(--purple-primary) 30%, transparent);
+  }
+
+  ::ng-deep button[mat-icon-button][color='primary'] .mat-icon {
+    color: var(--purple-primary);
+  }
+  ::ng-deep button[mat-icon-button][color='warn'] .mat-icon {
+    color: var(--orange-accent);
+  }
+}
+
+.profiles-table .profile-name-cell .profile-name {
+  color: var(--text-primary);
+}
+
+
+/* === Checkbox calipso SOLO en este componente y SOLO en modo oscuro === */
+:host-context([data-theme="dark"]) {
+  /* Borde del checkbox (estado sin marcar, hover, focus) */
+  ::ng-deep .permission-checkbox .mat-mdc-checkbox .mdc-checkbox__background {
+    border-color: var(--calipso) !important;
+    border-width: 2px !important;
+    background-color: transparent !important;
+  }
+
+  /* Al pasar el mouse sigue calipso */
+  ::ng-deep .permission-checkbox .mat-mdc-checkbox:hover .mdc-checkbox__background {
+    border-color: var(--calipso) !important;
+  }
+
+  /* Estado marcado: fondo y borde calipso */
+  ::ng-deep .permission-checkbox .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__background {
+    background-color: var(--calipso) !important;
+    border-color: var(--calipso) !important;
+  }
+
+  /* Color del check (palomita) cuando está marcado */
+  ::ng-deep .permission-checkbox .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__checkmark {
+    color: #0B0D12 !important; /* contraste con tu fondo oscuro */
+  }
+
+  /* Ripple/focus con calipso */
+  ::ng-deep .permission-checkbox .mat-mdc-checkbox .mat-mdc-focus-indicator,
+  ::ng-deep .permission-checkbox .mat-mdc-checkbox .mdc-checkbox__ripple {
+    background-color: color-mix(in srgb, var(--calipso) 25%, transparent) !important;
+  }
+}
