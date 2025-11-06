@@ -35,6 +35,32 @@ export class SidebarService {
         }
       ]
     },
+        { 
+      id: 'salesandpayment', 
+      icon: 'point_of_sale', 
+      label: 'Ventas y Pagos',
+      children: [
+        {
+          id: 'presential-sale',
+          icon: 'store',
+          label: 'Venta Presencial',
+          route: '/sales/presential'
+        }
+   
+        // {
+        //   id: 'payment-history',
+        //   icon: 'history',
+        //   label: 'Historial de Pagos',
+        //   route: '/sales/history'
+        // },
+        // {
+        //   id: 'reports',
+        //   icon: 'assessment',
+        //   label: 'Reportes',
+        //   route: '/sales/reports'
+        // }
+      ]
+    },
     
    { 
       id: 'management', 

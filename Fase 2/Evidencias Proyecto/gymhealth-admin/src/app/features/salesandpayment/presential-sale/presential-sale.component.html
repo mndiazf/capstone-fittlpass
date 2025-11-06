@@ -1,0 +1,929 @@
+<!-- presential-sale.component.html - Angular 20.1.0 -->
+<!-- ✨ CON MODAL POS INTEGRADO -->
+
+<div class="presential-sale-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <div class="header-info">
+        <h1 class="header-title">Venta Presencial</h1>
+        <p class="header-breadcrumb">Ventas y Pagos / Venta Presencial</p>
+      </div>
+      @if (currentStep !== 'success') {
+        <button class="btn btn-outline" (click)="cancelSale()">
+          ✕ Cancelar Venta
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Step Indicator -->
+  @if (currentStep !== 'success') {
+    <div class="step-indicator-wrapper">
+      <div class="step-indicator">
+        <div class="step" [class.active]="getStepNumber() === 1" [class.completed]="getStepNumber() > 1">
+          <div class="step-number">{{ getStepNumber() > 1 ? '✓' : '1' }}</div>
+          <span class="step-label">Cliente</span>
+        </div>
+        <div class="step-line" [class.completed]="getStepNumber() > 1"></div>
+        
+        <div class="step" [class.active]="getStepNumber() === 2" [class.completed]="getStepNumber() > 2">
+          <div class="step-number">{{ getStepNumber() > 2 ? '✓' : '2' }}</div>
+          <span class="step-label">Membresía</span>
+        </div>
+        <div class="step-line" [class.completed]="getStepNumber() > 2"></div>
+        
+        <div class="step" [class.active]="getStepNumber() === 3" [class.completed]="getStepNumber() > 3">
+          <div class="step-number">{{ getStepNumber() > 3 ? '✓' : '3' }}</div>
+          <span class="step-label">Resumen</span>
+        </div>
+        <div class="step-line" [class.completed]="getStepNumber() > 3"></div>
+        
+        <div class="step" [class.active]="getStepNumber() === 4">
+          <div class="step-number">4</div>
+          <span class="step-label">Pago</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Content Area -->
+  <div class="content-area">
+    
+    <!-- PANTALLA DE BIENVENIDA -->
+    @if (currentStep === 'welcome') {
+      <div class="screen welcome-screen">
+        <div class="welcome-card">
+          <div class="welcome-icon">🏪</div>
+          <h2 class="welcome-title">Venta Presencial</h2>
+          <p class="welcome-text">
+            Inicia una nueva venta presencial registrando al cliente y seleccionando
+            su membresía. El proceso es rápido y guiado paso a paso.
+          </p>
+          <button class="btn btn-primary btn-lg" (click)="startNewSale()">
+            ➕ Nueva Venta
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- SELECCIÓN DE TIPO DE CLIENTE -->
+    @if (currentStep === 'client-type') {
+      <div class="screen">
+        <div class="selection-grid">
+          <div class="selection-card" (click)="selectClientType('new')">
+            <div class="selection-icon">👤</div>
+            <h3 class="selection-title">Cliente Nuevo</h3>
+            <p class="selection-desc">Registrar un nuevo miembro en el sistema</p>
+          </div>
+
+          <div class="selection-card" (click)="selectClientType('existing')">
+            <div class="selection-icon">🔍</div>
+            <h3 class="selection-title">Cliente Existente</h3>
+            <p class="selection-desc">Buscar cliente registrado previamente</p>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-outline" (click)="goBack()">← Volver</button>
+        </div>
+      </div>
+    }
+
+    <!-- FORMULARIO NUEVO CLIENTE -->
+    @if (currentStep === 'new-client') {
+      <div class="screen">
+        <div class="form-card">
+          <form [formGroup]="clientForm" (ngSubmit)="submitClientForm()">
+            
+            <!-- Datos Personales -->
+            <div class="form-section">
+              <h3 class="form-section-title">📋 Datos Personales</h3>
+              
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label required">Primer Nombre</label>
+                  <input 
+                    type="text" 
+                    class="form-input"
+                    formControlName="firstName"
+                    placeholder="Juan"
+                    [class.error]="isFieldInvalid('firstName')">
+                  @if (isFieldInvalid('firstName')) {
+                    <div class="error-message">
+                      {{ getFieldError('firstName') }}
+                    </div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Segundo Nombre</label>
+                  <input 
+                    type="text" 
+                    class="form-input"
+                    formControlName="secondName"
+                    placeholder="Carlos">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label required">Primer Apellido</label>
+                  <input 
+                    type="text" 
+                    class="form-input"
+                    formControlName="lastName"
+                    placeholder="Pérez"
+                    [class.error]="isFieldInvalid('lastName')">
+                  @if (isFieldInvalid('lastName')) {
+                    <div class="error-message">
+                      {{ getFieldError('lastName') }}
+                    </div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Segundo Apellido</label>
+                  <input 
+                    type="text" 
+                    class="form-input"
+                    formControlName="secondLastName"
+                    placeholder="González">
+                </div>
+
+            <div class="form-group">
+            <label class="form-label required">RUT/DNI</label>
+            <input 
+                type="text" 
+                class="form-input"
+                formControlName="rut"
+                placeholder="12.345.678-9"
+                (input)="onRutInput($event)"
+                [class.error]="isFieldInvalid('rut')">
+            @if (isFieldInvalid('rut')) {
+                <div class="error-message">
+                {{ getFieldError('rut') }}
+                </div>
+            }
+            </div>
+
+                <div class="form-group">
+                  <label class="form-label required">Fecha de Nacimiento</label>
+                  <input 
+                    type="date" 
+                    class="form-input"
+                    formControlName="birthDate"
+                    [class.error]="isFieldInvalid('birthDate')">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label required">Email</label>
+                  <input 
+                    type="email" 
+                    class="form-input"
+                    formControlName="email"
+                    placeholder="juan@email.com"
+                    [class.error]="isFieldInvalid('email')">
+                  @if (isFieldInvalid('email')) {
+                    <div class="error-message">
+                      {{ getFieldError('email') }}
+                    </div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label required">Teléfono</label>
+                  <input 
+                    type="tel" 
+                    class="form-input"
+                    formControlName="phone"
+                    placeholder="+56 9 1234 5678"
+                    [class.error]="isFieldInvalid('phone')">
+                  @if (isFieldInvalid('phone')) {
+                    <div class="error-message">
+                      {{ getFieldError('phone') }}
+                    </div>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Género</label>
+                  <select class="form-input" formControlName="gender">
+                    <option value="">Seleccionar...</option>
+                    <option value="male">Masculino</option>
+                    <option value="female">Femenino</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dirección -->
+            <div class="form-section">
+              <h3 class="form-section-title">📍 Dirección</h3>
+              
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label class="form-label">Calle y Número</label>
+                  <input type="text" class="form-input" formControlName="address" placeholder="Av. Principal 123">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Comuna/Ciudad</label>
+                  <input type="text" class="form-input" formControlName="city" placeholder="Santiago">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Región</label>
+                  <select class="form-input" formControlName="region">
+                    <option value="">Seleccionar región...</option>
+                    @for (region of chileanRegions; track region) {
+                      <option [value]="region">{{ region }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contacto de Emergencia -->
+            <div class="form-section">
+              <h3 class="form-section-title">🚨 Contacto de Emergencia</h3>
+              
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Nombre del Contacto</label>
+                  <input type="text" class="form-input" formControlName="emergencyContact" placeholder="María Pérez">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Teléfono de Emergencia</label>
+                  <input 
+                    type="tel" 
+                    class="form-input" 
+                    formControlName="emergencyPhone" 
+                    placeholder="+56 9 8765 4321"
+                    [class.error]="isFieldInvalid('emergencyPhone')">
+                  @if (isFieldInvalid('emergencyPhone')) {
+                    <div class="error-message">
+                      {{ getFieldError('emergencyPhone') }}
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="action-buttons">
+              <button type="button" class="btn btn-outline" (click)="goBack()">← Volver</button>
+              <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+                {{ isSubmitting ? 'Guardando...' : 'Continuar →' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    <!-- BÚSQUEDA CLIENTE EXISTENTE -->
+    @if (currentStep === 'existing-client') {
+      <div class="screen">
+        <div class="form-card">
+          <h3 class="form-section-title">🔍 Buscar Cliente</h3>
+          
+     <div class="search-container">
+         <input 
+             type="text" 
+             class="form-input"
+            [(ngModel)]="searchTerm"
+            placeholder="Ingresa RUT del miembro"
+            (input)="onSearchRutInput($event)"
+            (keyup.enter)="searchClient()">
+      <button class="btn btn-primary" (click)="searchClient()" [disabled]="isSearching">
+         {{ isSearching ? 'Buscando...' : '🔍 Buscar' }}
+  </button>
+</div>
+
+          <!-- Resultados -->
+          @if (hasSearched) {
+            <div class="search-results">
+              @if (searchResults.length === 0) {
+                <div class="no-results">
+                  <div class="no-results-icon">🔍</div>
+                  <p>No se encontraron clientes</p>
+                  <p class="text-sm">Intenta con otro término de búsqueda</p>
+                </div>
+              }
+
+              @if (searchResults.length > 0) {
+                <div class="results-list">
+                  <p class="results-count">Se encontraron {{ searchResults.length }} cliente(s)</p>
+                  
+                  @for (client of searchResults; track client.id) {
+                    <div 
+                      class="client-result"
+                      [class.selected]="selectedClient?.id === client.id"
+                      (click)="selectClient(client)">
+                      
+                      <div class="client-info">
+                        <h4 class="client-name">
+                          {{ client.fullName }}
+                          @if (selectedClient?.id === client.id) {
+                            <span class="badge-selected">✓ Seleccionado</span>
+                          }
+                        </h4>
+                        
+                        <div class="client-details">
+                          <div><strong>RUT:</strong> {{ client.rut }}</div>
+                          <div><strong>Email:</strong> {{ client.email }}</div>
+                          <div><strong>Teléfono:</strong> {{ client.phone }}</div>
+                          <div>
+                            <strong>Membresía:</strong>
+                            <span [class.text-success]="client.membershipStatus === 'active'"
+                                  [class.text-danger]="client.membershipStatus === 'expired'">
+                              {{ client.membershipType }} - {{ client.membershipStatus === 'active' ? 'Activa' : 'Vencida' }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Estado inicial -->
+          @if (!hasSearched) {
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <p>Ingresa los datos del cliente para buscarlo en el sistema</p>
+            </div>
+          }
+
+          <div class="action-buttons">
+            <button class="btn btn-outline" (click)="goBack()">← Volver</button>
+            <button class="btn btn-primary" (click)="confirmClientSelection()" [disabled]="!selectedClient">
+              Continuar →
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- SELECCIÓN DE MEMBRESÍA -->
+    @if (currentStep === 'membership') {
+      <div class="screen">
+        <!-- Info del cliente -->
+        <div class="client-banner">
+          <div class="client-avatar">👤</div>
+          <div>
+            <p class="client-banner-label">Cliente seleccionado:</p>
+            <p class="client-banner-name">{{ saleData.client?.fullName }}</p>
+          </div>
+        </div>
+
+        <!-- Alerta membresía gratuita -->
+        @if (showFreeWarning) {
+          <div class="alert alert-warning">
+            ⚠️ Este cliente ya utilizó su membresía gratuita anteriormente
+          </div>
+        }
+
+        <!-- Grid de membresías -->
+        <div class="membership-grid">
+          @for (membership of memberships; track membership.id) {
+            <div 
+              class="membership-card"
+              [class.selected]="selectedMembership?.id === membership.id"
+              [class.disabled]="membership.id === 'free' && !canUseFree"
+              (click)="selectMembership(membership)">
+              
+              @if (selectedMembership?.id === membership.id) {
+                <div class="membership-checkmark">✓</div>
+              }
+              
+              @if (membership.badge) {
+                <span class="membership-badge" 
+                      [class.badge-popular]="membership.badgeClass === 'badge-popular'"
+                      [class.badge-best]="membership.badgeClass === 'badge-best'"
+                      [class.badge-free]="membership.badgeClass === 'badge-free'">
+                  {{ membership.badge }}
+                </span>
+              }
+
+              <h3 class="membership-type">{{ membership.name }}</h3>
+              <div class="membership-price">
+                {{ membership.price | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                @if (membership.pricePerDay) {
+                  <span>/día</span>
+                }
+              </div>
+
+              <ul class="membership-features">
+                @for (feature of membership.features; track $index) {
+                  <li>{{ feature }}</li>
+                }
+              </ul>
+
+              @if (membership.id === 'free-3days' && !canUseFree) {
+                <div class="membership-unavailable">
+                  Ya utilizada
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Configuración de membresía -->
+        @if (selectedMembership) {
+          <div class="config-card">
+            <h3 class="config-title">⚙️ Configuración de la Membresía</h3>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Fecha de Inicio</label>
+                <input 
+                  type="date" 
+                  class="form-input"
+                  [(ngModel)]="startDate"
+                  [min]="today">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Fecha de Fin</label>
+                <input 
+                  type="date" 
+                  class="form-input"
+                  [value]="calculateEndDate()"
+                  disabled>
+              </div>
+
+              <!-- Selector de días para membresía por días -->
+              @if (selectedMembership.requiresDays) {
+                <div class="form-group full-width">
+                  <label class="form-label">Cantidad de Días (1-30)</label>
+                  <div class="days-selector">
+                    <input 
+                      type="range" 
+                      min="1" 
+                      max="30"
+                      [(ngModel)]="daysCount"
+                      class="range-input">
+                    <input 
+                      type="number" 
+                      min="1" 
+                      max="30"
+                      [(ngModel)]="daysCount"
+                      class="days-input">
+                    <span>días</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Precio total -->
+            <div class="price-summary">
+              <span>Precio Total:</span>
+              <span class="price-total">{{ calculateMembershipPrice() | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+          </div>
+        }
+
+        <div class="action-buttons">
+          <button class="btn btn-outline" (click)="goBack()">← Volver</button>
+          <button class="btn btn-primary" (click)="confirmMembership()" [disabled]="!selectedMembership">
+            Continuar →
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- RESUMEN DE VENTA -->
+    @if (currentStep === 'summary') {
+      <div class="screen">
+        <div class="summary-card">
+          <h2 class="summary-title">📋 Resumen de la Venta</h2>
+
+          <!-- Cliente -->
+          <div class="summary-section">
+            <h3 class="summary-section-title">CLIENTE</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">Nombre:</span>
+                <span class="summary-value">{{ saleData.client?.fullName }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">RUT:</span>
+                <span class="summary-value">{{ saleData.client?.rut }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Email:</span>
+                <span class="summary-value">{{ saleData.client?.email }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Teléfono:</span>
+                <span class="summary-value">{{ saleData.client?.phone }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Membresía -->
+          <div class="summary-section">
+            <h3 class="summary-section-title">MEMBRESÍA</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">Tipo:</span>
+                <span class="summary-value">{{ saleData.membership?.type?.name }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Vigencia:</span>
+                <span class="summary-value">{{ saleData.membership?.startDate | date:'dd/MM/yyyy' }} - {{ saleData.membership?.endDate | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pago -->
+          <div class="summary-section">
+            <div class="summary-header">
+              <h3 class="summary-section-title">DETALLE DE PAGO</h3>
+              <button class="btn btn-sm btn-outline" (click)="toggleDiscounts()">
+                {{ showDiscounts ? '✕ Cerrar' : '+ Agregar Descuento' }}
+              </button>
+            </div>
+
+            <!-- Panel de descuentos -->
+            @if (showDiscounts) {
+              <div class="discounts-panel">
+                <p class="discounts-label">Selecciona los descuentos aplicables:</p>
+                <div class="discounts-list">
+                  @for (discount of availableDiscounts; track discount.id) {
+                    <label class="discount-item">
+                      <input 
+                        type="checkbox"
+                        [(ngModel)]="discount.selected"
+                        (change)="updateDiscounts()">
+                      <div class="discount-info">
+                        <div class="discount-name">
+                          {{ discount.name }}
+                          <span class="discount-value">-{{ discount.value }}%</span>
+                        </div>
+                        <p class="discount-desc">{{ discount.description }}</p>
+                      </div>
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="payment-details">
+              <div class="payment-row">
+                <span>Precio Base:</span>
+                <span>{{ saleData.membership?.price | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+
+              @for (discount of selectedDiscounts; track discount.id) {
+                <div class="payment-row discount-row">
+                  <span>{{ discount.name }} ({{ discount.value }}%):</span>
+                  <span>-{{ calculateDiscountAmount(discount) | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+                </div>
+              }
+
+              <div class="payment-row total-row">
+                <span>TOTAL A PAGAR:</span>
+                <span class="total-amount">{{ calculateTotal() | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mensaje membresía gratuita -->
+          @if (saleData.membership?.type?.id === 'free-3days') {
+            <div class="alert alert-info">
+              <strong>ℹ️ Membresía Gratuita:</strong> Esta es una membresía de prueba de 3 días válida por 1 semana.
+            </div>
+          }
+
+          <div class="action-buttons">
+            <button class="btn btn-outline" (click)="goBack()">← Volver</button>
+            <button class="btn btn-primary" (click)="proceedToPayment()">Proceder al Pago →</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- PROCESO DE PAGO -->
+    @if (currentStep === 'payment') {
+      <div class="screen">
+        <div class="payment-total-banner">
+          <p class="payment-label">Total a Pagar</p>
+          <p class="payment-amount">{{ calculateTotal() | currency:'CLP':'symbol-narrow':'1.0-0' }}</p>
+        </div>
+
+        <!-- INDICADOR DE DATOS AUTO-COMPLETADOS (NUEVO) -->
+        @if (posTransactionResponse && !showPOSModal && (selectedPaymentMethod?.id === 'debit' || selectedPaymentMethod?.id === 'credit')) {
+          <div class="pos-autocomplete-banner">
+            <span class="pos-autocomplete-icon">✅</span>
+            <div class="pos-autocomplete-text">
+              <strong>Datos completados automáticamente desde el POS</strong>
+              <p class="text-sm">
+                {{ posTransactionResponse.cardBrand }} •••• {{ posTransactionResponse.lastFourDigits }}
+                | Autorización: {{ posTransactionResponse.authorizationCode }}
+              </p>
+            </div>
+          </div>
+        }
+
+        <div class="payment-card">
+          <h3 class="payment-title">💳 Selecciona el Método de Pago</h3>
+
+          <div class="payment-methods-grid">
+            @for (method of paymentMethods; track method.id) {
+              <div 
+                class="payment-method"
+                [class.selected]="selectedPaymentMethod?.id === method.id"
+                (click)="selectPaymentMethod(method)">
+                
+                <div class="payment-icon">{{ method.icon }}</div>
+                <div class="payment-name">{{ method.name }}</div>
+                @if (selectedPaymentMethod?.id === method.id) {
+                  <div class="payment-selected-badge">
+                    ✓ Seleccionado
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Formulario según método -->
+          @if (selectedPaymentMethod) {
+            <div class="payment-form">
+              
+              <!-- Efectivo -->
+              @if (selectedPaymentMethod.requiresChange) {
+                <div>
+                  <div class="form-group">
+                    <label class="form-label required">Monto Recibido</label>
+                    <input 
+                      type="number" 
+                      class="form-input"
+                      [(ngModel)]="amountReceived"
+                      [placeholder]="calculateTotal().toString()">
+                  </div>
+
+                  <div class="change-display">
+                    <span>Vuelto:</span>
+                    <span class="change-amount">{{ calculateChange() | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+                  </div>
+                </div>
+              }
+
+              <!-- Tarjeta/Transferencia (Los campos se auto-completan con POS) -->
+              @if (selectedPaymentMethod.requiresReference && selectedPaymentMethod.id !== 'debit' && selectedPaymentMethod.id !== 'credit') {
+                <div>
+                  <div class="form-group">
+                    <label class="form-label required">Número de Comprobante</label>
+                    <input 
+                      type="text" 
+                      class="form-input"
+                      [(ngModel)]="referenceNumber"
+                      placeholder="Ej: 123456789">
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="action-buttons">
+            <button class="btn btn-outline" (click)="goBack()" [disabled]="isProcessing">← Volver</button>
+            <button 
+              class="btn btn-primary" 
+              (click)="confirmPayment()" 
+              [disabled]="!selectedPaymentMethod || isProcessing">
+              {{ isProcessing ? '⏳ Procesando...' : '✓ Confirmar Pago' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- PANTALLA DE ÉXITO -->
+    @if (currentStep === 'success') {
+      <div class="screen success-screen">
+        <div class="success-card">
+          <div class="success-icon-container">
+            <div class="success-icon">✅</div>
+          </div>
+
+          <h2 class="success-title">¡Venta Exitosa!</h2>
+          <p class="success-message">La membresía ha sido activada correctamente</p>
+
+          <div class="success-details">
+            <div class="success-detail-row">
+              <strong>Cliente:</strong>
+              <span>{{ saleData.client?.fullName }}</span>
+            </div>
+            <div class="success-detail-row">
+              <strong>Membresía:</strong>
+              <span>{{ saleData.membership?.type?.name }}</span>
+            </div>
+            <div class="success-detail-row">
+              <strong>Código:</strong>
+              <span class="membership-code">{{ membershipCode }}</span>
+            </div>
+            <div class="success-detail-row">
+              <strong>Vigencia:</strong>
+              <span>{{ saleData.membership?.startDate | date:'dd/MM/yyyy' }} - {{ saleData.membership?.endDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="success-detail-row">
+              <strong>Monto Pagado:</strong>
+              <span class="amount-paid">{{ saleData.payment?.total | currency:'CLP':'symbol-narrow':'1.0-0' }}</span>
+            </div>
+          </div>
+
+          <div class="success-actions">
+            <button class="action-btn action-btn-primary" (click)="sendEmail()">
+              <span class="action-icon">📧</span>
+              Enviar por Email
+            </button>
+        
+          </div>
+
+          <div class="success-navigation">
+            <button class="btn btn-outline" (click)="goToDashboard()">🏠 Ir al Dashboard</button>
+            <button class="btn btn-primary" (click)="startNewSale()">➕ Nueva Venta</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ============================================ -->
+    <!-- ✨ MODAL DE SIMULACIÓN POS (NUEVO) -->
+    <!-- ============================================ -->
+    @if (showPOSModal) {
+      <div class="pos-modal-overlay" (click)="cancelPOSTransaction()">
+        <div class="pos-modal" (click)="$event.stopPropagation()">
+          
+          <!-- Header del modal -->
+          <div class="pos-modal-header">
+            <h3 class="pos-modal-title">
+              <span class="pos-icon">💳</span>
+              Terminal POS
+            </h3>
+            @if (!posTransactionResponse && !posError) {
+              <button class="btn-close" (click)="cancelPOSTransaction()">✕</button>
+            }
+          </div>
+
+          <!-- Contenido del modal -->
+          <div class="pos-modal-content">
+            
+            <!-- PROGRESO DE LA TRANSACCIÓN -->
+            @if (posProgress && !posTransactionResponse && !posError) {
+              <div class="pos-progress-container">
+                <!-- Icono animado -->
+                <div class="pos-progress-icon">
+                  @if (posProgress.state === 'connecting') {
+                    <div class="spinner"></div>
+                  }
+                  @if (posProgress.state === 'waiting-card' || posProgress.state === 'reading-card') {
+                    <div class="card-animation">💳</div>
+                  }
+                  @if (posProgress.state === 'processing') {
+                    <div class="processing-animation">
+                      <span class="pulse">⏳</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Mensaje de estado -->
+                <p class="pos-progress-message">
+                  {{ posProgress.icon }} {{ posProgress.message }}
+                </p>
+
+                <!-- Barra de progreso -->
+                <div class="pos-progress-bar-container">
+                  <div 
+                    class="pos-progress-bar" 
+                    [style.width.%]="posProgress.progress"
+                    [class.complete]="posProgress.progress === 100">
+                  </div>
+                </div>
+
+                <p class="pos-progress-percent">{{ posProgress.progress }}%</p>
+
+                <!-- Instrucciones según el estado -->
+                @if (posProgress.state === 'waiting-card') {
+                  <div class="pos-instructions">
+                    <p>👇 Inserte, deslice o acerque la tarjeta al lector</p>
+                  </div>
+                }
+                @if (posProgress.state === 'reading-card') {
+                  <div class="pos-instructions">
+                    <p>⏳ Por favor espere...</p>
+                    <p class="text-sm">No retire la tarjeta</p>
+                  </div>
+                }
+                @if (posProgress.state === 'processing') {
+                  <div class="pos-instructions">
+                    <p>🔐 Verificando con el banco...</p>
+                    <p class="text-sm">Este proceso puede tardar unos segundos</p>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- TRANSACCIÓN EXITOSA -->
+            @if (posTransactionResponse) {
+              <div class="pos-success-container">
+                <div class="pos-success-icon">
+                  <div class="checkmark-circle">
+                    <div class="checkmark">✓</div>
+                  </div>
+                </div>
+
+                <h4 class="pos-success-title">¡Pago Aprobado!</h4>
+
+                <div class="pos-transaction-details">
+                  <div class="pos-detail-row">
+                    <span class="pos-detail-label">Monto:</span>
+                    <span class="pos-detail-value">
+                      {{ posTransactionResponse.amount | currency:'CLP':'symbol-narrow':'1.0-0' }}
+                    </span>
+                  </div>
+
+                  <div class="pos-detail-row">
+                    <span class="pos-detail-label">Tarjeta:</span>
+                    <span class="pos-detail-value">
+                      {{ posTransactionResponse.cardBrand }} •••• {{ posTransactionResponse.lastFourDigits }}
+                    </span>
+                  </div>
+
+                  <div class="pos-detail-row">
+                    <span class="pos-detail-label">Autorización:</span>
+                    <span class="pos-detail-value code">
+                      {{ posTransactionResponse.authorizationCode }}
+                    </span>
+                  </div>
+
+                  <div class="pos-detail-row">
+                    <span class="pos-detail-label">Comprobante:</span>
+                    <span class="pos-detail-value code">
+                      {{ posTransactionResponse.receiptNumber }}
+                    </span>
+                  </div>
+
+                  <div class="pos-detail-row">
+                    <span class="pos-detail-label">Fecha:</span>
+                    <span class="pos-detail-value">
+                      {{ posTransactionResponse.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}
+                    </span>
+                  </div>
+                </div>
+
+                <p class="pos-success-note">
+                  ✅ Los datos se han registrado automáticamente
+                </p>
+              </div>
+            }
+
+            <!-- ERROR EN LA TRANSACCIÓN -->
+            @if (posError) {
+              <div class="pos-error-container">
+                <div class="pos-error-icon">❌</div>
+                
+                <h4 class="pos-error-title">Transacción Rechazada</h4>
+                
+                <p class="pos-error-message">{{ posError }}</p>
+
+                <div class="pos-error-actions">
+                  <button class="btn btn-outline" (click)="cancelPOSTransaction()">
+                    Cancelar
+                  </button>
+                  <button class="btn btn-primary" (click)="retryPOSTransaction()">
+                    🔄 Reintentar
+                  </button>
+                </div>
+
+                <p class="pos-error-help">
+                  💡 Verifique con el cliente o intente otro método de pago
+                </p>
+              </div>
+            }
+
+          </div>
+
+          <!-- Footer del modal -->
+          @if (posTransactionResponse) {
+            <div class="pos-modal-footer">
+              <button class="btn btn-primary btn-block" (click)="showPOSModal = false">
+                Continuar con el Pago
+              </button>
+            </div>
+          }
+
+        </div>
+      </div>
+    }
+    <!-- ============================================ -->
+    <!-- FIN DEL MODAL POS -->
+    <!-- ============================================ -->
+
+  </div>
+</div>

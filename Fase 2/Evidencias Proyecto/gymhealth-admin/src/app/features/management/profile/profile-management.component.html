@@ -22,10 +22,10 @@
             <input matInput formControlName="name" placeholder="Ej: Supervisor" />
             <mat-icon matPrefix>badge</mat-icon>
 
-            @if (profileForm.get('name')?.hasError('required')) {
+            @if (profileForm.get('name')?.hasError('required') && profileForm.get('name')?.touched) {
               <mat-error>El nombre es requerido</mat-error>
             }
-            @if (profileForm.get('name')?.hasError('minlength')) {
+            @if (profileForm.get('name')?.hasError('minlength') && profileForm.get('name')?.touched) {
               <mat-error>Mínimo 3 caracteres</mat-error>
             }
           </mat-form-field>

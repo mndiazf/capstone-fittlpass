@@ -50,16 +50,17 @@ export class ProfileManagementComponent {
   displayedColumns = ['name', 'permissions', 'actions'];
 
   availablePermissions = signal<Permission[]>([
-    { id: 'dashboard',   name: 'Dashboard',    description: 'Ver página principal' },
-    { id: 'members',     name: 'Miembros',     description: 'Gestión de miembros' },
-    { id: 'enrollment',  name: 'Enrollment',   description: 'Control de acceso facial' },
-    { id: 'classes',     name: 'Clases',       description: 'Gestión de clases' },
-    { id: 'trainers',    name: 'Entrenadores', description: 'Gestión de entrenadores' },
-    { id: 'payments',    name: 'Pagos',        description: 'Gestión de pagos' },
-    { id: 'reports',     name: 'Reportes',     description: 'Ver reportes y estadísticas' },
-    { id: 'settings',    name: 'Configuración',description: 'Ajustes del sistema' },
-    { id: 'users',       name: 'Usuarios',     description: 'Mantenedor de usuarios' },
-    { id: 'profiles',    name: 'Perfiles',     description: 'Mantenedor de perfiles' }
+    { id: 'dashboard',        name: 'Dashboard',           description: 'Ver página principal' },
+    { id: 'members',          name: 'Miembros',            description: 'Gestión de miembros' },
+    { id: 'enrollment',       name: 'Enrollment',          description: 'Control de acceso facial' },
+    { id: 'classes',          name: 'Clases',              description: 'Gestión de clases' },
+    { id: 'in_person_sale',   name: 'Venta Presencial',    description: 'Realizar ventas presenciales' },
+    { id: 'reports',          name: 'Reportes',            description: 'Ver reportes y estadísticas' },
+    { id: 'maintainer',       name: 'Mantenedor',          description: 'Acceso al módulo mantenedor' },
+    { id: 'users',            name: 'Usuarios',            description: 'Mantenedor de usuarios' },
+    { id: 'profiles',         name: 'Perfiles',            description: 'Mantenedor de perfiles' },
+    { id: 'notifications',    name: 'Notificaciones',      description: 'Ver y gestionar notificaciones' },
+    { id: 'settings',         name: 'Configuración',       description: 'Ajustes del sistema' }
   ]);
 
   constructor(private fb: FormBuilder) {
@@ -82,7 +83,7 @@ export class ProfileManagementComponent {
       { id: '2', name: 'Recepcionista', color: 'green',
         permissions: ['dashboard','members','enrollment'] },
       { id: '3', name: 'Personal Trainer', color: 'orange',
-        permissions: ['dashboard'] }
+        permissions: ['dashboard','classes','trainers'] }
     ];
     this.profiles.set(defaultProfiles);
     localStorage.setItem('gymhealth_profiles', JSON.stringify(defaultProfiles));
@@ -130,6 +131,8 @@ export class ProfileManagementComponent {
   editProfile(profile: Profile) {
     this.editingProfile = profile;
     this.profileForm.patchValue(profile);
+    this.profileForm.markAsPristine();
+    this.profileForm.markAsUntouched();
     this.selectedPermissions.set([...profile.permissions]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -145,6 +148,11 @@ export class ProfileManagementComponent {
   resetForm() {
     this.editingProfile = null;
     this.profileForm.reset();
+    this.profileForm.markAsPristine();
+    this.profileForm.markAsUntouched();
+    Object.keys(this.profileForm.controls).forEach(key => {
+      this.profileForm.get(key)?.setErrors(null);
+    });
     this.selectedPermissions.set([]);
   }
 

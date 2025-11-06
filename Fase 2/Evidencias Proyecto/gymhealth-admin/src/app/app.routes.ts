@@ -44,7 +44,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/members/enrollment/enrollment.component')
           .then(m => m.EnrollmentComponent)
       },
-
+      // ← NUEVA RUTA: Venta Presencial
+      {
+        path: 'sales/presential',
+        loadComponent: () => import('./features/salesandpayment/presential-sale/presential-sale.component')
+          .then(m => m.PresentialSaleComponent)
+      },
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component')
@@ -55,7 +60,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/settings.component')
           .then(m => m.SettingsComponent)
       },
-            {
+      {
         path: 'management/users',
         loadComponent: () => import('./features/management/users/user-management.component')
           .then(m => m.UserManagementComponent)
@@ -68,7 +73,6 @@ export const routes: Routes = [
     ]
   },
   
-
   {
     path: '**',
     redirectTo: '/auth/login'
