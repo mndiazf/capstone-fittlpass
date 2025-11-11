@@ -1,5 +1,3 @@
-// src/app/app.routes.ts
-
 import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 import { authGuard } from './core/guards/auth.guard';
@@ -44,7 +42,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/members/enrollment/enrollment.component')
           .then(m => m.EnrollmentComponent)
       },
-      // ← NUEVA RUTA: Venta Presencial
+      // Venta Presencial
       {
         path: 'sales/presential',
         loadComponent: () => import('./features/salesandpayment/presential-sale/presential-sale.component')
@@ -60,6 +58,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/settings.component')
           .then(m => m.SettingsComponent)
       },
+      // Management - Rutas existentes
       {
         path: 'management/users',
         loadComponent: () => import('./features/management/users/user-management.component')
@@ -69,6 +68,21 @@ export const routes: Routes = [
         path: 'management/profiles',
         loadComponent: () => import('./features/management/profile/profile-management.component')
           .then(m => m.ProfileManagementComponent)
+      },
+      
+      // 👇 GESTIÓN DE TURNOS
+      {
+        path: 'management/staff-schedule',
+        loadComponent: () => import('./features/management/staff-schedule/staff-schedule.component')
+          .then(m => m.StaffScheduleComponent),
+        title: 'Gestión de Turnos - GymHealth'
+      },
+      {
+        path: 'management/staff-schedule/detail/:id',
+        loadComponent: () => import('./features/management/staff-schedule-detail/staff-schedule-detail.component')
+          //                      
+          .then(m => m.StaffScheduleDetailComponent),
+        title: 'Configuración Avanzada - GymHealth'
       }
     ]
   },

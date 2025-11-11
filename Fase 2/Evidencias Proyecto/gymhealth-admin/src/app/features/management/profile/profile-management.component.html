@@ -1,16 +1,23 @@
 <div class="page-container">
   <div class="page-header">
-    <h1>
+    <h1 class="page-header__title">
       <mat-icon>admin_panel_settings</mat-icon>
       Mantenedor de Perfiles
     </h1>
+    <p class="page-header__subtitle">Define roles y permisos para los colaboradores</p>
   </div>
 
   <!-- Formulario -->
   <mat-card class="form-card">
     <mat-card-header>
-      <mat-card-title>
-        @if (editingProfile) { Editar Perfil } @else { Nuevo Perfil }
+      <mat-card-title class="form-card__title">
+        @if (editingProfile) { 
+          <mat-icon>edit</mat-icon>
+          Editar Perfil 
+        } @else { 
+          <mat-icon>add_circle</mat-icon>
+          Nuevo Perfil 
+        }
       </mat-card-title>
     </mat-card-header>
 
@@ -55,11 +62,11 @@
 
         <div class="form-actions">
           @if (editingProfile) {
-            <button mat-button (click)="cancelEdit()">
+            <button mat-button (click)="cancelEdit()" class="btn-cancel">
               <mat-icon>close</mat-icon> Cancelar
             </button>
           }
-          <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="profileForm.invalid">
+          <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="profileForm.invalid" class="btn-save">
             <mat-icon>{{ editingProfile ? 'save' : 'add' }}</mat-icon>
             {{ editingProfile ? 'Guardar Cambios' : 'Agregar Perfil' }}
           </button>
@@ -71,7 +78,10 @@
   <!-- Tabla de Perfiles -->
   <mat-card class="table-card">
     <mat-card-header>
-      <mat-card-title>Lista de Perfiles</mat-card-title>
+      <mat-card-title class="table-card__title">
+        <mat-icon>shield</mat-icon>
+        Lista de Perfiles
+      </mat-card-title>
     </mat-card-header>
 
     <mat-card-content>

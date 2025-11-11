@@ -78,6 +78,12 @@ export class SidebarService {
           icon: 'admin_panel_settings',
           label: 'Mantenedor de Perfiles',
           route: '/management/profiles'
+        },
+        {
+          id: 'management-staff-schedule',
+          icon: 'event_note',
+          label: 'Mantenedor de horarios',
+          route: '/management/staff-schedule'
         }
       ]
     }

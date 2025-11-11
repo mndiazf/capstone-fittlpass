@@ -1,0 +1,211 @@
+<!-- src/app/features/management/staff-schedule/staff-schedule.component.html -->
+
+<div class="staff-schedule">
+  <!-- Header -->
+  <div class="staff-schedule__header">
+    <div class="header-content">
+      <h1 class="staff-schedule__title">
+        <mat-icon class="icon">event_note</mat-icon>
+        Gestión de Turnos por Rol
+      </h1>
+      <p class="staff-schedule__subtitle">
+        Asigna turnos al personal según su rol
+      </p>
+    </div>
+  </div>
+
+  <!-- Barra de acciones rápidas -->
+  @if (hasSelection()) {
+    <mat-card class="action-bar">
+      <mat-card-content>
+        <div class="action-bar__content">
+          <div class="action-bar__info">
+            <mat-icon class="action-bar__icon">people</mat-icon>
+            <span class="action-bar__text">
+              {{ selectedCount() }} persona(s) seleccionada(s)
+            </span>
+          </div>
+
+          <div class="action-bar__buttons">
+            <button 
+              mat-raised-button 
+              color="primary"
+              (click)="assignShift(ShiftType.MORNING)"
+              matTooltip="Turno Mañana: 07:00 - 15:00 (L-V)">
+              <mat-icon>wb_sunny</mat-icon>
+              Mañana
+            </button>
+
+            <button 
+              mat-raised-button 
+              color="accent"
+              (click)="assignShift(ShiftType.AFTERNOON)"
+              matTooltip="Turno Tarde: 14:00 - 22:00 (L-S)">
+              <mat-icon>wb_twilight</mat-icon>
+              Tarde
+            </button>
+
+            <button 
+              mat-raised-button 
+              color="warn"
+              (click)="assignShift(ShiftType.NIGHT)"
+              matTooltip="Turno Noche: 18:00 - 23:00 (L-V)">
+              <mat-icon>nights_stay</mat-icon>
+              Noche
+            </button>
+
+            <button 
+              mat-stroked-button 
+              (click)="clearSelection()">
+              <mat-icon>clear</mat-icon>
+              Limpiar
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Grupos por rol -->
+  <div class="role-groups">
+    @for (group of roleGroups(); track group.role) {
+      <mat-card class="role-card">
+        <mat-card-header class="role-card__header">
+          <div class="role-card__header-content">
+            <div class="role-info">
+              <h2 class="role-title">
+                {{ group.role }}
+                <span class="role-badge" [matBadge]="group.members.length" matBadgeColor="accent"></span>
+              </h2>
+              <p class="role-subtitle">
+                {{ group.members.length }} miembro(s) activo(s)
+              </p>
+            </div>
+
+            <div class="role-actions">
+              <button 
+                mat-icon-button 
+                [color]="allSelectedInRole(group.role) ? 'primary' : ''"
+                [matTooltip]="allSelectedInRole(group.role) ? 'Deseleccionar todos' : 'Seleccionar todos'"
+                (click)="allSelectedInRole(group.role) ? deselectAllInRole(group.role) : selectAllInRole(group.role)">
+                <mat-icon>
+                  {{ allSelectedInRole(group.role) ? 'check_box' : 'check_box_outline_blank' }}
+                </mat-icon>
+              </button>
+
+              <button 
+                mat-icon-button 
+                (click)="toggleRoleExpansion(group.role)"
+                [matTooltip]="isRoleExpanded(group.role) ? 'Contraer' : 'Expandir'">
+                <mat-icon>
+                  {{ isRoleExpanded(group.role) ? 'expand_less' : 'expand_more' }}
+                </mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content>
+          @if (isRoleExpanded(group.role)) {
+            <div class="staff-list">
+              @for (staff of group.members; track staff.id) {
+                <div 
+                  class="staff-item"
+                  [class.staff-item--selected]="isSelected(staff.id)">
+                  
+                  <!-- Checkbox de selección -->
+                  <mat-checkbox 
+                    [checked]="isSelected(staff.id)"
+                    (change)="toggleStaffSelection(staff.id)"
+                    color="primary">
+                  </mat-checkbox>
+
+                  <!-- Avatar -->
+                  <div class="staff-avatar">
+                    <div class="avatar-circle">
+                      {{ staff.name.charAt(0) }}
+                    </div>
+                  </div>
+
+                  <!-- Información del staff -->
+                  <div class="staff-info">
+                    <div class="staff-name">{{ staff.name }}</div>
+                    <div class="staff-meta">
+                      <span class="meta-item">
+                        <mat-icon>badge</mat-icon>
+                        {{ staff.rut }}
+                      </span>
+                      <span class="meta-item">
+                        <mat-icon>email</mat-icon>
+                        {{ staff.email }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Turno actual con menú desplegable -->
+                  <div class="staff-shift">
+                    <div class="shift-chip-wrapper">
+                      <button 
+                        class="shift-chip"
+                        [class.shift-chip--open]="isShiftMenuOpen(staff.id)"
+                        [attr.data-shift]="staff.shiftType"
+                        (click)="toggleShiftMenu(staff.id, $event)"
+                        [matTooltip]="getShiftDescription(staff.shiftType)">
+                        <mat-icon class="shift-icon">{{ getShiftIcon(staff.shiftType) }}</mat-icon>
+                        <span class="shift-label">{{ staff.shiftType }}</span>
+                        <mat-icon class="shift-arrow">
+                          {{ isShiftMenuOpen(staff.id) ? 'expand_less' : 'expand_more' }}
+                        </mat-icon>
+                      </button>
+
+                      @if (isShiftMenuOpen(staff.id)) {
+                        <div class="shift-menu">
+                          @for (shift of getAvailableShifts(staff.shiftType); track shift) {
+                            <button 
+                              class="shift-menu-item"
+                              [attr.data-shift]="shift"
+                              (click)="assignShiftToStaff(staff.id, shift, $event)"
+                              [matTooltip]="getShiftDescription(shift)">
+                              <mat-icon>{{ getShiftIcon(shift) }}</mat-icon>
+                              <span>{{ shift }}</span>
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Botón de configuración avanzada -->
+                  <div class="staff-actions">
+                    <button 
+                      mat-icon-button 
+                      color="primary"
+                      (click)="goToAdvancedConfig(staff.id)"
+                      matTooltip="Configuración avanzada">
+                      <mat-icon>settings</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+
+  <!-- Estado vacío -->
+  @if (roleGroups().length === 0) {
+    <div class="empty-state">
+      <mat-card class="empty-card">
+        <mat-card-content>
+          <div class="empty-content">
+            <mat-icon class="empty-icon">groups</mat-icon>
+            <h3>No hay personal disponible</h3>
+            <p>Agrega miembros del personal para poder gestionar sus turnos</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+</div>

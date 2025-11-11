@@ -1,0 +1,626 @@
+// src/app/features/management/staff-schedule/staff-schedule.component.scss
+
+.staff-schedule {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: 100vh;
+
+  // ============================================
+  // HEADER
+  // ============================================
+  &__header {
+    margin-bottom: 2rem;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--orange-accent);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+
+    .icon {
+      font-size: 2.5rem;
+    }
+  }
+
+  &__subtitle {
+    font-size: 1.125rem;
+    color: var(--calipso);
+    font-weight: 600;
+  }
+}
+
+// ============================================
+// BARRA DE ACCIONES
+// ============================================
+.action-bar {
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, var(--calipso), var(--purple-primary)) !important;
+  border: none !important;
+  box-shadow: var(--shadow-lg) !important;
+  
+  mat-card-content {
+    padding: 0 !important;
+  }
+
+  &__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: white;
+  }
+
+  &__icon {
+    font-size: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  &__text {
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  &__buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    button {
+      font-weight: 600;
+
+      mat-icon {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+}
+
+// ============================================
+// GRUPOS POR ROL
+// ============================================
+.role-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.role-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-md) !important;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-lg) !important;
+    border-color: var(--calipso) !important;
+  }
+
+  &__header {
+    background: rgba(0, 210, 198, 0.1);
+    border-bottom: 2px solid var(--border-color);
+    padding: 1.5rem !important;
+
+    mat-card-header-text {
+      margin: 0;
+    }
+  }
+
+  &__header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  mat-card-content {
+    padding: 0 !important;
+  }
+}
+
+.role-info {
+  flex: 1;
+}
+
+.role-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.role-badge {
+  position: relative !important;
+  top: -2px;
+}
+
+.role-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.role-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+// ============================================
+// LISTA DE STAFF
+// ============================================
+.staff-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-item {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  cursor: pointer;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: rgba(0, 210, 198, 0.05);
+  }
+
+  &--selected {
+    background: rgba(0, 210, 198, 0.1);
+    border-left: 4px solid var(--calipso);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+
+    .staff-avatar,
+    .staff-shift,
+    .staff-actions {
+      grid-column: span 2;
+    }
+  }
+}
+
+.staff-avatar {
+  .avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--calipso), var(--purple-primary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: white;
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.staff-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.staff-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--calipso);
+  }
+}
+
+// ============================================
+// CHIPS DE TURNOS - MEJORADOS
+// ============================================
+.staff-shift {
+  position: relative;
+}
+
+.shift-chip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.shift-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.125rem;
+  border-radius: 12px;
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.95rem;
+  min-width: 160px;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  &--open {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    transform: translateY(-1px);
+  }
+
+  .shift-icon {
+    font-size: 1.375rem;
+    width: 1.375rem;
+    height: 1.375rem;
+    // Color dinámico desde TypeScript
+  }
+
+  .shift-label {
+    flex: 1;
+    text-align: left;
+    color: var(--text-primary);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .shift-arrow {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+  }
+
+  &--open .shift-arrow {
+    transform: rotate(180deg);
+  }
+}
+
+// Colores específicos para cada turno
+.shift-chip {
+  // Mañana - Amarillo/Sol
+  &[data-shift="Mañana"] {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.25)) !important;
+    border-color: rgba(251, 191, 36, 0.6) !important;
+    
+    .shift-icon {
+      color: #F59E0B !important;
+    }
+  }
+
+  // Tarde - Naranja/Atardecer
+  &[data-shift="Tarde"] {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.25)) !important;
+    border-color: rgba(249, 115, 22, 0.6) !important;
+    
+    .shift-icon {
+      color: #F97316 !important;
+    }
+  }
+
+  // Noche - Púrpura/Luna
+  &[data-shift="Noche"] {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.25)) !important;
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    
+    .shift-icon {
+      color: #8B5CF6 !important;
+    }
+  }
+
+  // Personalizado - Calipso
+  &[data-shift="Personalizado"] {
+    background: linear-gradient(135deg, rgba(0, 210, 198, 0.15), rgba(0, 210, 198, 0.25)) !important;
+    border-color: rgba(0, 210, 198, 0.6) !important;
+    
+    .shift-icon {
+      color: var(--calipso) !important;
+    }
+  }
+}
+
+// Menú desplegable de turnos
+.shift-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  padding: 0.5rem;
+  animation: slideDown 0.2s ease;
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.shift-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  border: 2px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  span {
+    flex: 1;
+    text-align: left;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  &:hover {
+    transform: translateX(4px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &:active {
+    transform: translateX(2px);
+  }
+
+  // Colores por turno en el menú
+  &[data-shift="Mañana"] {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.25)) !important;
+    border-color: rgba(251, 191, 36, 0.5) !important;
+    
+    mat-icon {
+      color: #F59E0B !important;
+    }
+  }
+
+  &[data-shift="Tarde"] {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.25)) !important;
+    border-color: rgba(249, 115, 22, 0.5) !important;
+    
+    mat-icon {
+      color: #F97316 !important;
+    }
+  }
+
+  &[data-shift="Noche"] {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.25)) !important;
+    border-color: rgba(139, 92, 246, 0.5) !important;
+    
+    mat-icon {
+      color: #8B5CF6 !important;
+    }
+  }
+
+  &[data-shift="Personalizado"] {
+    background: linear-gradient(135deg, rgba(0, 210, 198, 0.15), rgba(0, 210, 198, 0.25)) !important;
+    border-color: rgba(0, 210, 198, 0.5) !important;
+    
+    mat-icon {
+      color: var(--calipso) !important;
+    }
+  }
+}
+
+.staff-actions {
+  button {
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// ============================================
+// ESTADO VACÍO
+// ============================================
+.empty-state {
+  margin-top: 2rem;
+}
+
+.empty-card {
+  background: var(--bg-card) !important;
+  border: 2px dashed var(--border-color) !important;
+  box-shadow: none !important;
+}
+
+.empty-content {
+  text-align: center;
+  padding: 4rem 2rem;
+
+  .empty-icon {
+    font-size: 5rem;
+    width: 5rem;
+    height: 5rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    margin-bottom: 1rem;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+  }
+}
+
+// ============================================
+// TEMA CLARO - AJUSTES ESPECÍFICOS
+// ============================================
+[data-theme="light"] {
+  .role-card,
+  .empty-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+
+    &:hover {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15) !important;
+    }
+  }
+
+  .role-card__header {
+    background: rgba(0, 184, 172, 0.08);
+  }
+
+  .role-title,
+  .staff-name {
+    color: #0F172A !important;
+  }
+
+  .role-subtitle,
+  .meta-item {
+    color: #64748B !important;
+  }
+
+  .staff-item:hover {
+    background: rgba(0, 184, 172, 0.03);
+  }
+
+  .staff-item--selected {
+    background: rgba(0, 184, 172, 0.05);
+    border-left-color: #00B8AC;
+  }
+
+  .empty-card {
+    border: 2px dashed #CBD5E1 !important;
+  }
+
+  .shift-menu {
+    background: #FFFFFF;
+    border-color: #E2E8F0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 1024px) {
+  .staff-schedule {
+    padding: 1.5rem;
+  }
+
+  .action-bar__content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-bar__buttons {
+    width: 100%;
+    
+    button {
+      flex: 1;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .staff-schedule__title {
+    font-size: 2rem;
+
+    .icon {
+      font-size: 1rem;
+    }
+  }
+
+  .role-title {
+    font-size: 1rem;
+  }
+
+  .staff-item {
+    padding: 1rem;
+  }
+
+  .staff-name {
+    font-size: 1rem;
+  }
+
+  .staff-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .shift-chip {
+    min-width: 140px;
+    font-size: 0.875rem;
+  }
+
+  .shift-menu {
+    left: 0;
+    right: 0;
+  }
+}

@@ -1,0 +1,195 @@
+<!-- src/app/features/management/staff-schedule-detail/staff-schedule-detail.component.html -->
+
+<div class="staff-schedule-detail">
+  @if (selectedStaff(); as staff) {
+    <!-- Header -->
+    <div class="detail-header">
+      <button 
+        mat-icon-button 
+        (click)="goBack()"
+        matTooltip="Volver">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      
+      <div class="header-content">
+        <h1 class="detail-title">
+          <span class="icon">⚙️</span>
+          Configuración Avanzada
+        </h1>
+        <p class="detail-subtitle">
+          Personaliza el horario de {{ staff.name }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Información del Personal -->
+    <mat-card class="info-card">
+      <mat-card-content>
+        <div class="staff-details">
+          <div class="staff-avatar">
+            <div class="avatar-circle">
+              {{ staff.name.charAt(0) }}
+            </div>
+          </div>
+
+          <div class="staff-data">
+            <h2 class="staff-name">{{ staff.name }}</h2>
+            <div class="staff-meta">
+              <span class="meta-item">
+                <mat-icon>work</mat-icon>
+                {{ staff.role }}
+              </span>
+              <span class="meta-item">
+                <mat-icon>badge</mat-icon>
+                {{ staff.rut }}
+              </span>
+              <span class="meta-item">
+                <mat-icon>email</mat-icon>
+                {{ staff.email }}
+              </span>
+              <span class="meta-item">
+                <mat-icon>phone</mat-icon>
+                {{ staff.phone }}
+              </span>
+            </div>
+            <div class="staff-stats">
+              <div class="stat-badge">
+                <span class="stat-label">Horas Semanales</span>
+                <span class="stat-value">{{ weeklyHours() }}h</span>
+              </div>
+              <div class="stat-badge">
+                <span class="stat-label">Días Activos</span>
+                <span class="stat-value">{{ activeDaysCount() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Horarios -->
+    <mat-card class="schedule-card">
+      <mat-card-header>
+        <mat-card-title class="schedule-header">
+          <div class="schedule-header__content">
+            <div>
+              <h3>Horario Laboral Personalizado</h3>
+              <p class="schedule-description">Configura los días y horarios específicos</p>
+            </div>
+            <div class="schedule-actions">
+              <button 
+                mat-raised-button 
+                [color]="isEditing() ? 'accent' : 'primary'"
+                (click)="toggleEditMode()">
+                <mat-icon>{{ isEditing() ? 'close' : 'edit' }}</mat-icon>
+                {{ isEditing() ? 'Cancelar' : 'Editar' }}
+              </button>
+              @if (isEditing()) {
+                <button 
+                  mat-raised-button 
+                  color="primary"
+                  (click)="saveSchedules()">
+                  <mat-icon>save</mat-icon>
+                  Guardar
+                </button>
+              }
+            </div>
+          </div>
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="schedule-grid">
+          <!-- Header de la tabla -->
+          <div class="schedule-grid__header">
+            <div class="grid-cell grid-cell--day">Día</div>
+            <div class="grid-cell grid-cell--time">Hora Inicio</div>
+            <div class="grid-cell grid-cell--time">Hora Fin</div>
+            <div class="grid-cell grid-cell--duration">Duración</div>
+            <div class="grid-cell grid-cell--status">Estado</div>
+          </div>
+
+          <!-- Filas de días -->
+          @for (day of daysOfWeek; track day) {
+            @let schedule = getScheduleForDay(day);
+            <div 
+              class="schedule-row"
+              [class.schedule-row--active]="schedule?.isActive"
+              [class.schedule-row--inactive]="schedule && !schedule.isActive">
+              
+              <!-- Día -->
+              <div class="grid-cell grid-cell--day">
+                <span class="day-name">{{ day }}</span>
+              </div>
+
+              <!-- Hora Inicio -->
+              <div class="grid-cell grid-cell--time">
+                @if (schedule) {
+                  <input 
+                    type="time" 
+                    class="time-input"
+                    [value]="schedule.startTime"
+                    [disabled]="!isEditing() || !schedule.isActive"
+                    (change)="updateTime(day, 'startTime', $any($event.target).value)">
+                } @else {
+                  <span class="time-placeholder">--:--</span>
+                }
+              </div>
+
+              <!-- Hora Fin -->
+              <div class="grid-cell grid-cell--time">
+                @if (schedule) {
+                  <input 
+                    type="time" 
+                    class="time-input"
+                    [value]="schedule.endTime"
+                    [disabled]="!isEditing() || !schedule.isActive"
+                    (change)="updateTime(day, 'endTime', $any($event.target).value)">
+                } @else {
+                  <span class="time-placeholder">--:--</span>
+                }
+              </div>
+
+              <!-- Duración -->
+              <div class="grid-cell grid-cell--duration">
+                @if (schedule?.isActive) {
+                  <span class="duration-badge">{{ getDuration(schedule) }}</span>
+                } @else {
+                  <span class="duration-placeholder">--</span>
+                }
+              </div>
+
+              <!-- Estado/Toggle -->
+              <div class="grid-cell grid-cell--status">
+                <button 
+                  mat-icon-button 
+                  [color]="schedule?.isActive ? 'primary' : ''"
+                  (click)="toggleDay(day)"
+                  [disabled]="!isEditing()"
+                  [matTooltip]="schedule?.isActive ? 'Desactivar día' : 'Activar día'">
+                  <mat-icon>
+                    {{ schedule?.isActive ? 'toggle_on' : 'toggle_off' }}
+                  </mat-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Resumen semanal -->
+        <div class="schedule-summary">
+          <div class="summary-item">
+            <mat-icon class="summary-icon">event</mat-icon>
+            <span class="summary-label">Días Activos:</span>
+            <span class="summary-value">{{ activeDaysCount() }}</span>
+          </div>
+          <div class="summary-item">
+            <mat-icon class="summary-icon">schedule</mat-icon>
+            <span class="summary-label">Total Horas:</span>
+            <span class="summary-value">{{ weeklyHours() }} horas/semana</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

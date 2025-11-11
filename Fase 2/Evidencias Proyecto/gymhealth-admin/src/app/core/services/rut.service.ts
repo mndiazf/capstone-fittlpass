@@ -7,10 +7,7 @@ import { Injectable } from '@angular/core';
 })
 export class RutService {
 
-  /**
-   * Formatea un RUT mientras el usuario escribe
-   * Ejemplo: 12345678-9 → 12.345.678-9
-   */
+
   formatRut(rut: string): string {
 
     const clean = rut.replace(/[^0-9kK]/g, '').toUpperCase();
@@ -30,10 +27,7 @@ export class RutService {
     return `${formattedBody}-${dv}`;
   }
 
-  /**
-   * Limpia el RUT dejando solo números y K
-   * Ejemplo: 12.345.678-9 → 123456789
-   */
+
   cleanRut(rut: string): string {
     return rut.replace(/[^0-9kK]/g, '').toUpperCase();
   }

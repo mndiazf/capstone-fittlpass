@@ -409,3 +409,82 @@ p {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
 }
+
+// ============================================
+// CHECKBOXES GLOBALES - COLOR CALIPSO
+// ============================================
+
+// Modo oscuro
+[data-theme="dark"] {
+  .mat-mdc-checkbox {
+    --mdc-checkbox-unselected-icon-color: var(--calipso);
+    --mdc-checkbox-unselected-hover-icon-color: var(--calipso-light);
+    --mdc-checkbox-selected-icon-color: var(--calipso);
+    --mdc-checkbox-selected-hover-icon-color: var(--calipso-light);
+    --mdc-checkbox-selected-checkmark-color: #0B0D12;
+  }
+
+  // Borde visible para checkboxes sin marcar
+  .mat-mdc-checkbox .mdc-checkbox__background {
+    border-color: var(--calipso) !important;
+    border-width: 2px !important;
+    background-color: transparent !important;
+  }
+
+  // Hover en checkbox sin marcar
+  .mat-mdc-checkbox:hover .mdc-checkbox__background {
+    border-color: var(--calipso-light) !important;
+    background-color: rgba(0, 210, 198, 0.1) !important;
+  }
+
+  // Checkbox marcado
+  .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__background {
+    background-color: var(--calipso) !important;
+    border-color: var(--calipso) !important;
+  }
+
+  // Checkmark (palomita) cuando está marcado
+  .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__checkmark {
+    color: #0B0D12 !important;
+  }
+
+  // Ripple effect
+  .mat-mdc-checkbox .mat-mdc-focus-indicator,
+  .mat-mdc-checkbox .mdc-checkbox__ripple {
+    background-color: color-mix(in srgb, var(--calipso) 25%, transparent) !important;
+  }
+}
+
+// Modo claro
+[data-theme="light"] {
+  .mat-mdc-checkbox {
+    --mdc-checkbox-unselected-icon-color: var(--calipso);
+    --mdc-checkbox-unselected-hover-icon-color: #00D2C6;
+    --mdc-checkbox-selected-icon-color: var(--calipso);
+    --mdc-checkbox-selected-hover-icon-color: #00D2C6;
+    --mdc-checkbox-selected-checkmark-color: #FFFFFF;
+  }
+
+  // Borde visible en modo claro
+  .mat-mdc-checkbox .mdc-checkbox__background {
+    border-color: var(--calipso) !important;
+    border-width: 2px !important;
+  }
+
+  // Hover en modo claro
+  .mat-mdc-checkbox:hover .mdc-checkbox__background {
+    border-color: #00D2C6 !important;
+    background-color: rgba(0, 184, 172, 0.05) !important;
+  }
+
+  // Checkbox marcado en modo claro
+  .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__background {
+    background-color: var(--calipso) !important;
+    border-color: var(--calipso) !important;
+  }
+
+  // Checkmark en modo claro
+  .mat-mdc-checkbox.mat-mdc-checkbox-checked .mdc-checkbox__checkmark {
+    color: #FFFFFF !important;
+  }
+}
