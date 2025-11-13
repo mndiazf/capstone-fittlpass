@@ -1,13 +1,13 @@
 // src/routes/checkout.routes.ts
 import { Router } from 'express';
 
-import { CheckoutController } from '../controllers/checkout.controller';
-import { CheckoutService } from '../services/checkout.service';
 
-import { PgUserRepository } from '../repositories/user.repository';
-import { PgMembershipPlanRepository } from '../repositories/membership-plan.repository';
-import { PgUserMembershipRepository } from '../repositories/user-membership.repository';
-import { PgMembershipPaymentRepository } from '../repositories/membership-payment.repository';
+import { PgMembershipPlanRepository } from '../repositories/membership/membership-plan.repository';
+import { PgUserMembershipRepository } from '../repositories/membership/user-membership.repository';
+import { PgMembershipPaymentRepository } from '../repositories/membership/membership-payment.repository';
+import { PgUserRepository } from '../repositories/user/user.repository';
+import { CheckoutService } from '../services/checkout/checkout.service';
+import { CheckoutController } from '../controllers/checkout/checkout.controller';
 
 // ===== Composition Root =====
 const userRepo = new PgUserRepository();

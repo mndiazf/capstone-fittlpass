@@ -1,16 +1,11 @@
 // src/services/checkout.service.ts
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { logger } from '../utils/logger';
-
-import { PgUserRepository } from '../repositories/user.repository';
-import {
-  PgMembershipPlanRepository,
-  MembershipPlan,
-} from '../repositories/membership-plan.repository';
-
-import { PgUserMembershipRepository } from '../repositories/user-membership.repository';
-import { PgMembershipPaymentRepository } from '../repositories/membership-payment.repository';
+import { PgUserRepository } from '../../repositories/user/user.repository';
+import { MembershipPlan, PgMembershipPlanRepository } from '../../repositories/membership/membership-plan.repository';
+import { PgUserMembershipRepository } from '../../repositories/membership/user-membership.repository';
+import { PgMembershipPaymentRepository } from '../../repositories/membership/membership-payment.repository';
+import { logger } from '../../utils/logger';
 
 export interface CheckoutUserInput {
   rut: string;

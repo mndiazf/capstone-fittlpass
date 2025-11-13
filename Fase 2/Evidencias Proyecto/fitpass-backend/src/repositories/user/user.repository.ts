@@ -1,5 +1,5 @@
-// src/repositories/user.repository.ts
-import { query } from '../config/db';
+import { query } from "../../config/db";
+
 
 export interface CreateUserInput {
   email: string;

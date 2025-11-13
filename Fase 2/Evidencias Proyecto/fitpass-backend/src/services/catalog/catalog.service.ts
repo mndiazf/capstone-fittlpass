@@ -1,10 +1,7 @@
-import { BranchRepository, BranchRow } from '../repositories/branch.repository';
-import {
-  IMembershipPlanRepository,
-  MembershipPlanFilter,
-  MembershipPlan,
-} from '../repositories/membership-plan.repository';
-import { logger } from '../utils/logger';
+import { BranchRepository, BranchRow } from "../../repositories/branch/branch.repository";
+import { IMembershipPlanRepository, MembershipPlan, MembershipPlanFilter } from "../../repositories/membership/membership-plan.repository";
+import { logger } from "../../utils/logger";
+
 
 export interface MembershipCatalogItem {
   code: string;

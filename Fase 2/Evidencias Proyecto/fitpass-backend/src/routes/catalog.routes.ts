@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { PgMembershipPlanRepository } from '../repositories/membership-plan.repository';
-import { CatalogService } from '../services/catalog.service';
-import { CatalogController } from '../controllers/catalog.controller';
+import { PgMembershipPlanRepository } from '../repositories/membership/membership-plan.repository';
+import { CatalogService } from '../services/catalog/catalog.service';
+import { CatalogController } from '../controllers/catalog/catalog.controller';
+
 
 // === Composition Root (DIP) ===
 const membershipPlanRepository = new PgMembershipPlanRepository();

@@ -1,5 +1,5 @@
 // src/repositories/membership-payment.repository.ts
-import { query } from '../config/db';
+import { query } from '../../config/db';
 
 export interface CreateMembershipPaymentInput {
   membershipId: string;

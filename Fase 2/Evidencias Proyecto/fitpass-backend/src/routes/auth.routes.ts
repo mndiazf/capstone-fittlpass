@@ -1,13 +1,13 @@
 // src/routes/auth.routes.ts
 import { Router } from 'express';
 
-import { AuthController } from '../controllers/auth.controller';
-import { AuthService } from '../services/auth.service';
 
-import { PgUserRepository } from '../repositories/user.repository';
-import { PgUserMembershipRepository } from '../repositories/user-membership.repository';
-import { PgMembershipPlanRepository } from '../repositories/membership-plan.repository';
-import { PgMembershipPaymentRepository } from '../repositories/membership-payment.repository';
+import { PgUserMembershipRepository } from '../repositories/membership/user-membership.repository';
+import { PgMembershipPlanRepository } from '../repositories/membership/membership-plan.repository';
+import { PgMembershipPaymentRepository } from '../repositories/membership/membership-payment.repository';
+import { AuthController } from '../controllers/auth/auth.controller';
+import { PgUserRepository } from '../repositories/user/user.repository';
+import { AuthService } from '../services/auth/auth.service';
 
 // === Composition Root ===
 const userRepo = new PgUserRepository();

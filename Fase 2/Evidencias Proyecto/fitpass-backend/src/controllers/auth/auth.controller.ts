@@ -1,7 +1,8 @@
 // src/controllers/auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../services/auth.service';
-import { logger } from '../utils/logger';
+import { AuthService } from '../../services/auth/auth.service';
+import { logger } from '../../utils/logger';
+
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

@@ -1,7 +1,8 @@
 // src/controllers/checkout.controller.ts
 import { Request, Response, NextFunction } from 'express';
-import { CheckoutService } from '../services/checkout.service';
-import { logger } from '../utils/logger';
+import { CheckoutService } from '../../services/checkout/checkout.service';
+import { logger } from '../../utils/logger';
+
 
 export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}

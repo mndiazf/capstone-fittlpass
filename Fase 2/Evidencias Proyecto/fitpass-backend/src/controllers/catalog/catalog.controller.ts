@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { ICatalogService } from '../services/catalog.service';
-import { PlanScope } from '../repositories/membership-plan.repository';
-import { logger } from '../utils/logger';
+import { ICatalogService } from '../../services/catalog/catalog.service';
+import { PlanScope } from '../../repositories/membership/membership-plan.repository';
+import { logger } from '../../utils/logger';
+
 
 export class CatalogController {
   constructor(private readonly catalogService: ICatalogService) {}

@@ -1,5 +1,6 @@
 // src/repositories/branch.repository.ts
-import { query } from '../config/db';
+
+import { query } from "../../config/db";
 
 export interface BranchRow {
   id: string;

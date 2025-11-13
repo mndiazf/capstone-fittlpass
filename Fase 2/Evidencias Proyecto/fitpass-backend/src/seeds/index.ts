@@ -1,8 +1,9 @@
 import 'dotenv/config';
-import { seedBranches } from './branches.seed';
-import { seedMembershipPlans } from './membership-plans.seed';
+
 import { closePool } from '../config/db';
 import { logger } from '../utils/logger';
+import { seedBranches } from './branches/branches.seed';
+import { seedMembershipPlans } from './membership/membership-plans.seed';
 
 const runSeeds = async (): Promise<void> => {
   try {

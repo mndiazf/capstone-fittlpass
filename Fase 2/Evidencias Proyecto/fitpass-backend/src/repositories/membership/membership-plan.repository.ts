@@ -1,5 +1,5 @@
 // src/repositories/membership-plan.repository.ts
-import { query } from '../config/db';
+import { query } from '../../config/db';
 
 export type PlanScope = 'ONECLUB' | 'MULTICLUB';
 export type PeriodUnit = 'WEEK' | 'MONTH' | 'TOTAL';

@@ -1,21 +1,11 @@
 // src/services/auth.service.ts
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { logger } from '../utils/logger';
+import { PgUserRepository } from '../../repositories/user/user.repository';
+import { PgUserMembershipRepository, UserMembershipRow } from '../../repositories/membership/user-membership.repository';
+import { MembershipPlan, PgMembershipPlanRepository } from '../../repositories/membership/membership-plan.repository';
+import { MembershipPaymentRow, PgMembershipPaymentRepository } from '../../repositories/membership/membership-payment.repository';
 
-import { PgUserRepository } from '../repositories/user.repository';
-import {
-  PgUserMembershipRepository,
-  UserMembershipRow,
-} from '../repositories/user-membership.repository';
-import {
-  PgMembershipPlanRepository,
-  MembershipPlan,
-} from '../repositories/membership-plan.repository';
-import {
-  PgMembershipPaymentRepository,
-  MembershipPaymentRow,
-} from '../repositories/membership-payment.repository';
 
 export interface LoginInput {
   emailOrRut: string;
