@@ -3,14 +3,28 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, map, tap } from 'rxjs';
 
-const API_BASE = 'http://localhost:8080';
+/** ============================
+ * CONFIG
+ * ============================ */
+const API_AUTH = 'http://localhost:3000/api/auth';
+const API_CHECKOUT = 'http://localhost:3000/api/checkout';
 
-export type MembershipType = 'MULTICLUB_ANUAL' | 'ONECLUB_ANUAL' | 'ONECLUB_MENSUAL';
+const KEY_PROFILE = 'userProfile';
+const KEY_TOKEN = 'fitpass_token';
+
+
+/** ============================
+ * TYPES
+ * ============================ */
+
+/** Ahora el plan puede ser cualquiera (MULTICLUB_ANUAL, ONECLUB_ANUAL_SCL_CENTRO, etc.) */
+export type MembershipType = string;
+
 export type MembershipStatus = 'ACTIVE' | 'EXPIRED';
 export type AccessStatus = 'NO_ENROLADO' | 'ACTIVO' | 'BLOQUEADO';
 export type EnrollmentStatus = 'NOT_ENROLLED' | 'ENROLLED';
 
-export type UserProfile = {
+export interface UserProfile {
   id: string;
   firstName: string;
   middleName?: string | null;
@@ -32,153 +46,236 @@ export type UserProfile = {
   membershipBranchId?: string | null;
   membershipBranchName?: string | null;
   membershipBranchCode?: string | null;
-};
+}
 
-export type Session = {
-  sessionId: string;
-  issuedAt: number;
-  expiresAt: number;
-  ttlMinutes: number;
-  lastActivity: number;
-};
-
-type State = {
-  profile: UserProfile | null;
-  session: Session | null;
-};
-
-export type RegisterPayload = {
+/** DTOs para el checkout de membresías */
+export interface CheckoutUserDTO {
+  rut: string;
+  email: string;
   firstName: string;
-  middleName?: string | null;
   lastName: string;
   secondLastName?: string | null;
-  email: string;
-  phone?: string | null;
-  rut: string;
+  middleName?: string | null;
+  phone: string;
   password: string;
-  membershipType: MembershipType;
-  status?: 'active' | 'pending' | 'inactive';
-  /** SOLO camelCase; NO existe branch_id aquí */
-  branchId?: string;
-};
+}
 
-const KEY_PROFILE = 'userProfile';
-const KEY_SESSION = 'fitpass_session';
-const IDLE_TIMEOUT_MINUTES = 30;
+export interface CheckoutPaymentDTO {
+  amount: number;
+  currency: string;
+  cardLast4: string;
+}
 
+export interface CheckoutMembershipPayload {
+  planCode: string;          // ej: "MULTICLUB_ANUAL" o "ONECLUB_ANUAL_SCL_CENTRO"
+  branchId?: string | null;  // requerido para ONECLUB, opcional para MULTICLUB
+  user: CheckoutUserDTO;
+  payment: CheckoutPaymentDTO;
+}
+
+
+/** ============================
+ * AUTH SERVICE
+ * ============================ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+
   private http = inject(HttpClient);
 
-  private state$ = new BehaviorSubject<State>({
-    profile: loadProfile(),
-    session: loadSession(),
-  });
+  private profileSubject = new BehaviorSubject<UserProfile | null>(loadProfile());
+  readonly profile$ = this.profileSubject.asObservable();
 
-  readonly profile$ = this.state$.pipe(map((s) => s.profile));
-  readonly isAuthenticated$ = this.state$.pipe(map((s) => this.isSessionValid(s.session)));
+  readonly isAuthenticated$ = this.profile$.pipe(
+    map(() => !!loadToken())
+  );
 
-  private static mapAuthResponse(resp: {
-    profile: UserProfile;
-    session: { sessionId: string; issuedAt: number; expiresAt: number; ttlMinutes: number };
-  }): State {
-    const now = Date.now();
-    const session: Session = { ...resp.session, lastActivity: now };
-    return { profile: resp.profile, session };
+  /** Getter sincronizado (compat con código existente) */
+  get profile(): UserProfile | null {
+    return this.profileSubject.value;
   }
 
-  /** ===== REGISTER ===== */
-  register(payload: RegisterPayload) {
-    // Enviamos exactamente lo recibido (type-safe, sin branch_id)
+  get token(): string | null {
+    return loadToken();
+  }
+
+  /** Flag síncrono de autenticación, usado por la nav */
+  get isAuthenticated(): boolean {
+    return !!loadToken();
+  }
+
+  /** Antes gestionábamos idle con sesiones; ahora el JWT no tiene "touch" real.
+   *  Dejamos el método para no romper componentes existentes.
+   */
+  touch(): void {
+    // Aquí podrías hacer un ping al backend o refrescar token más adelante si lo necesitas.
+  }
+
+
+  /** ============================
+   * LOGIN
+   * POST http://localhost:3000/api/auth/login
+   * ============================ */
+  login(emailOrRut: string, password: string) {
     return this.http
-      .post<{ profile: UserProfile; session: { sessionId: string; issuedAt: number; expiresAt: number; ttlMinutes: number } }>(
-        `${API_BASE}/api/auth/register`,
+      .post<{ token: string; tokenType: string }>(
+        `${API_AUTH}/login`,
+        { emailOrRut, password }
+      )
+      .pipe(
+        tap((resp) => {
+          saveToken(resp.token);
+
+          const decoded = decodeJwt(resp.token);
+          if (!decoded) return;
+
+          const profile = mapJwtToProfile(decoded);
+          saveProfile(profile);
+
+          this.profileSubject.next(profile);
+        })
+      );
+  }
+
+
+  /** ============================
+   * CHECKOUT MEMBRESÍA
+   * POST http://localhost:3000/api/checkout/memberships
+   * ============================ */
+  checkoutMembership(payload: CheckoutMembershipPayload) {
+    return this.http
+      .post<{ token: string; tokenType: string }>(
+        `${API_CHECKOUT}/memberships`,
         payload
       )
       .pipe(
-        map(AuthService.mapAuthResponse),
-        tap((s) => {
-          saveProfile(s.profile!);
-          saveSession(s.session!);
-          this.state$.next(s);
+        tap((resp) => {
+          // 1) Guardar token JWT
+          saveToken(resp.token);
+
+          // 2) Decodificar JWT
+          const decoded = decodeJwt(resp.token);
+          if (!decoded) return;
+
+          // 3) Mapear a UserProfile
+          const profile = mapJwtToProfile(decoded);
+
+          // 4) Guardar perfil + actualizar estado global
+          saveProfile(profile);
+          this.profileSubject.next(profile);
         })
       );
   }
 
-  /** ===== LOGIN ===== */
-  login(email: string, password: string) {
-    return this.http
-      .post<{ profile: UserProfile; session: { sessionId: string; issuedAt: number; expiresAt: number; ttlMinutes: number } }>(
-        `${API_BASE}/api/auth/login`,
-        { email, password }
-      )
-      .pipe(
-        map(AuthService.mapAuthResponse),
-        tap((s) => {
-          saveProfile(s.profile!);
-          saveSession(s.session!);
-          this.state$.next(s);
-        })
-      );
+
+  /** ============================
+   * LOGOUT
+   * ============================ */
+  logout() {
+    clearToken();
+    clearProfile();
+    this.profileSubject.next(null);
   }
 
-  /** ===== LOGOUT ===== */
-  logout(): void {
-    localStorage.removeItem(KEY_SESSION);
-    const { profile } = this.state$.value;
-    this.state$.next({ profile, session: null });
-  }
 
-  /** ===== TOUCH (idle) ===== */
-  touch(): void {
-    const { session, profile } = this.state$.value;
-    if (!this.isSessionValid(session)) {
-      this.logout();
-      return;
-    }
-    const updated = { ...session!, lastActivity: Date.now() };
-    saveSession(updated);
-    this.state$.next({ profile, session: updated });
-  }
-
-  // ===== getters =====
-  get profile(): UserProfile | null { return this.state$.value.profile; }
-  get session(): Session | null { return this.state$.value.session; }
-  get isAuthenticated(): boolean { return this.isSessionValid(this.session); }
-
-  // ===== utils =====
-  private isSessionValid(s: Session | null): boolean {
-    if (!s) return false;
-    const now = Date.now();
-    const hardExpire = now < s.expiresAt;
-    const idleOk = now - s.lastActivity <= IDLE_TIMEOUT_MINUTES * 60 * 1000;
-    return hardExpire && idleOk;
-  }
-
-  setProfile(profile: UserProfile): void {
+  /** ============================
+   * SET PROFILE (por si necesitas ajustar algo manualmente)
+   * ============================ */
+  setProfile(profile: UserProfile) {
     saveProfile(profile);
-    const { session } = this.state$.value;
-    this.state$.next({ profile, session });
+    this.profileSubject.next(profile);
   }
 }
 
-// ===== Helpers de storage =====
+
+
+/** ============================
+ * HELPERS: JWT decode
+ * ============================ */
+function decodeJwt(token: string): any | null {
+  try {
+    const base64 = token.split('.')[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const json = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`)
+        .join('')
+    );
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+
+/** ============================
+ * MAP JWT → UserProfile
+ * ============================ */
+function mapJwtToProfile(payload: any): UserProfile {
+  const user = payload.user ?? {};
+  const membership = payload.membership ?? {};
+
+  const statusRaw = (user.status ?? '').toString().toLowerCase();
+  const statusMapped =
+    statusRaw === 'activo' ? 'active' :
+    statusRaw === 'pending' ? 'pending' :
+    statusRaw === 'inactive' ? 'inactive' :
+    'active';
+
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    middleName: user.middleName ?? null,
+    lastName: user.lastName,
+    secondLastName: user.secondLastName ?? null,
+    email: user.email,
+    phone: user.phone ?? null,
+    rut: user.rut,
+    status: statusMapped,
+
+    membershipType: membership.planCode ?? null,
+    membershipStatus: membership.status ?? null,
+    membershipStart: membership.startDate ?? null,
+    membershipEnd: membership.endDate ?? null,
+
+    accessStatus: user.accessStatus ?? null,
+    enrollmentStatus: null,
+
+    membershipBranchId: membership.branchId ?? null,
+    membershipBranchName: membership.branchName ?? null,
+    membershipBranchCode: membership.branchCode ?? null,
+  };
+}
+
+
+/** ============================
+ * LOCAL STORAGE HELPERS
+ * ============================ */
+function loadToken(): string | null {
+  return localStorage.getItem(KEY_TOKEN);
+}
+
+function saveToken(token: string) {
+  localStorage.setItem(KEY_TOKEN, token);
+}
+
+function clearToken() {
+  localStorage.removeItem(KEY_TOKEN);
+}
+
 function loadProfile(): UserProfile | null {
   const raw = localStorage.getItem(KEY_PROFILE);
   if (!raw) return null;
   try { return JSON.parse(raw) as UserProfile; } catch { return null; }
 }
 
-function saveProfile(p: UserProfile): void {
-  localStorage.setItem(KEY_PROFILE, JSON.stringify(p));
+function saveProfile(profile: UserProfile) {
+  localStorage.setItem(KEY_PROFILE, JSON.stringify(profile));
 }
 
-function loadSession(): Session | null {
-  const raw = localStorage.getItem(KEY_SESSION);
-  if (!raw) return null;
-  try { return JSON.parse(raw) as Session; } catch { return null; }
-}
-
-function saveSession(s: Session): void {
-  localStorage.setItem(KEY_SESSION, JSON.stringify(s));
+function clearProfile() {
+  localStorage.removeItem(KEY_PROFILE);
 }

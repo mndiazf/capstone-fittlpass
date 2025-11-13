@@ -27,7 +27,10 @@
           <svg viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
           </svg>
-          <p>Para poder ingresar a las sucursales, acércate al administrador y realiza el enrolamiento facial para habilitar tu acceso.</p>
+          <p>
+            Para poder ingresar a las sucursales, acércate al administrador y
+            realiza el enrolamiento facial para habilitar tu acceso.
+          </p>
         </div>
         <button class="modal-btn" (click)="closeWelcomeModal()">Entendido</button>
       </div>
@@ -85,7 +88,13 @@
           <div class="membership-badge">
             <span class="badge-icon">⭐</span>
             <span class="badge-text">
-              {{ userData?.membershipStatus === 'ACTIVE' ? 'Activo' : (userData?.membershipStatus === 'EXPIRED' ? 'Vencido' : '—') }}
+              {{
+                userData?.membershipStatus === 'ACTIVE'
+                  ? 'Activo'
+                  : (userData?.membershipStatus === 'EXPIRED'
+                      ? 'Vencido'
+                      : '—')
+              }}
             </span>
           </div>
 
@@ -98,15 +107,18 @@
           <p class="membership-extra" *ngIf="!isOneClub && userData?.membershipType === 'MULTICLUB_ANUAL'">
             <strong>MultiClub Free Pass</strong>
           </p>
+          <p class="membership-extra" *ngIf="userData?.accessStatus === 'NO_ENROLADO'">
+            Enrolamiento facial pendiente. Solicítalo en recepción.
+          </p>
 
           <div class="membership-details">
             <div class="detail-item">
-              <span class="detail-label">Precio mensual</span>
+              <span class="detail-label">Monto del plan</span>
               <span class="detail-value">{{ userData?.membershipPrice }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">Fecha de inicio</span>
-              <span class="detail-value">{{ formatDate(userData?.joinDate!) }}</span>
+              <span class="detail-value">{{ formatDate(userData?.joinDate) }}</span>
             </div>
           </div>
         </div>
@@ -124,13 +136,28 @@
           <div class="payment-date">
             <span class="payment-day">{{ userData?.nextPayment?.getDate() }}</span>
             <div class="payment-month">
-              <span>{{ userData?.nextPayment?.toLocaleDateString('es-CL', { month: 'short' }) }}</span>
+              <span>
+                {{
+                  userData?.nextPayment?.toLocaleDateString('es-CL', { month: 'short' })
+                }}
+              </span>
               <span>{{ userData?.nextPayment?.getFullYear() }}</span>
             </div>
           </div>
           <div class="payment-info">
-            <p class="payment-amount">{{ userData?.membershipPrice }}</p>
+            <p class="payment-amount">{{ userData?.nextPaymentAmount }}</p>
             <p class="payment-days">Faltan {{ getDaysUntilPayment() }} días</p>
+            <p class="payment-method" *ngIf="userData?.cardBrand || userData?.cardLast4">
+              Tarjeta {{ userData?.cardBrand || '—' }}
+              terminada en {{ userData?.cardLast4 || '----' }}
+            </p>
+
+            <!-- Mensaje especial para el trial -->
+            <p class="payment-trial" *ngIf="userData?.isTrial">
+              Estás en tu período de prueba de 7 días (costo $0). 
+              Al finalizar, se cobrará <strong>{{ userData?.nextPaymentAmount }}</strong> 
+              por tu membresía mensual.
+            </p>
           </div>
         </div>
       </div>
@@ -148,7 +175,10 @@
             <div class="access-list">
               @for (access of recentAccess; track access) {
                 <div class="access-item">
-                  <div class="access-icon" [class.entry]="access.type === 'entry'" [class.exit]="access.type === 'exit'">
+                  <div
+                    class="access-icon"
+                    [class.entry]="access.type === 'entry'"
+                    [class.exit]="access.type === 'exit'">
                     @if (access.type === 'entry') {
                       <svg viewBox="0 0 24 24">
                         <path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/>
@@ -161,9 +191,14 @@
                   </div>
                   <div class="access-details">
                     <p class="access-location">{{ access.location }}</p>
-                    <p class="access-time">{{ formatDate(access.date) }} - {{ access.time }}</p>
+                    <p class="access-time">
+                      {{ formatDate(access.date) }} - {{ access.time }}
+                    </p>
                   </div>
-                  <span class="access-type" [class.entry]="access.type === 'entry'" [class.exit]="access.type === 'exit'">
+                  <span
+                    class="access-type"
+                    [class.entry]="access.type === 'entry'"
+                    [class.exit]="access.type === 'exit'">
                     {{ access.type === 'entry' ? 'Entrada' : 'Salida' }}
                   </span>
                 </div>

@@ -93,7 +93,6 @@
               <div class="field">
                 <label>Sucursal *</label>
                 <select formControlName="branchId" [class.invalid]="branchId?.touched && branchId?.invalid">
-                  <!-- placeholder: ngValue null (no value="") -->
                   <option [ngValue]="null">Selecciona una sucursal</option>
                   @for (b of branches; track b.id) {
                     <option [ngValue]="b.id">{{ b.name }} — {{ b.address }}</option>
@@ -107,7 +106,7 @@
             }
 
             <!-- Botón -->
-            <button type="submit" class="submit-btn" [disabled]="f.invalid">
+            <button type="submit" class="submit-btn" [disabled]="f.invalid || !selectedMembership">
               Continuar con el pago
             </button>
 
@@ -122,9 +121,13 @@
           <div class="summary-section">
             <div class="summary-card">
               <h2 class="summary-title">Resumen de compra</h2>
-              
-              <div class="plan-badge">{{ selectedMembership.discount }}</div>
+
               <h3 class="plan-name">{{ selectedMembership.name }}</h3>
+
+              <div class="plan-tags">
+                <span class="badge">{{ selectedMembership.scopeLabel }}</span>
+                <span class="duration-label">{{ selectedMembership.durationLabel }}</span>
+              </div>
               
               <div class="plan-features">
                 <p class="features-title">Incluye:</p>
@@ -149,10 +152,6 @@
                     </span>
                   </div>
                 }
-                <div class="price-row">
-                  <span class="label">Precio mensual:</span>
-                  <span class="value">{{ selectedMembership.monthlyPrice }}</span>
-                </div>
                 <div class="price-row total">
                   <span class="label">Total:</span>
                   <span class="value">{{ selectedMembership.price }}</span>
@@ -211,9 +210,14 @@
               </div>
             </div>
 
-            <button type="submit" class="submit-btn" [disabled]="paymentForm.invalid">
+            <button type="submit" class="submit-btn" [disabled]="paymentForm.invalid || !selectedMembership">
               Pagar {{ selectedMembership?.price }}
             </button>
+
+            <!-- 🔹 Error en paso de pago -->
+            @if (errorMsg) {
+              <div class="error" style="margin-top:12px">{{ errorMsg }}</div>
+            }
           </form>
         </div>
 
@@ -221,9 +225,12 @@
           <div class="summary-section">
             <div class="summary-card">
               <h2 class="summary-title">Resumen de compra</h2>
-              
-              <div class="plan-badge">{{ selectedMembership.discount }}</div>
               <h3 class="plan-name">{{ selectedMembership.name }}</h3>
+
+              <div class="plan-tags">
+                <span class="badge">{{ selectedMembership.scopeLabel }}</span>
+                <span class="duration-label">{{ selectedMembership.durationLabel }}</span>
+              </div>
               
               <div class="pricing-summary">
                 <div class="price-row total">
