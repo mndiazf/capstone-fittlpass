@@ -22,7 +22,7 @@ export class SidebarService {
       label: 'Dashboard', 
       route: '/dashboard' 
     },
-    { 
+        { 
       id: 'members', 
       icon: 'group', 
       label: 'Miembros',
@@ -32,6 +32,19 @@ export class SidebarService {
           icon: 'face',
           label: 'Enrolamiento',
           route: '/enrollment'
+        },
+        // 👇 NUEVAS RUTAS
+        {
+          id: 'member-search',
+          icon: 'person_search',
+          label: 'Buscar Miembro',
+          route: '/members/search'
+        },
+        {
+          id: 'member-block',
+          icon: 'gavel',
+          label: 'Infracciones',
+          route: '/members/block'
         }
       ]
     },

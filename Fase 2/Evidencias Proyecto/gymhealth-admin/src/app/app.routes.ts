@@ -42,6 +42,19 @@ export const routes: Routes = [
         loadComponent: () => import('./features/members/enrollment/enrollment.component')
           .then(m => m.EnrollmentComponent)
       },
+       {
+        path: 'members/search',
+        loadComponent: () => import('./features/members/member-search/member-search.component')
+          .then(m => m.MemberSearchComponent),
+        title: 'Búsqueda de Miembros - GymHealth'
+      },
+      {
+        path: 'members/block',
+        loadComponent: () => import('./features/members/member-block/member-block.component')
+          .then(m => m.MemberBlockComponent),
+        title: 'Registro de Infracciones - GymHealth'
+      },
+      
       // Venta Presencial
       {
         path: 'sales/presential',

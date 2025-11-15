@@ -1,0 +1,527 @@
+<!-- member-block.component.html - ARCHIVO COMPLETO -->
+
+<div class="member-block-container">
+  
+  <!-- HEADER -->
+  <div class="block-header">
+    <h1 class="page-title">
+      <mat-icon>gavel</mat-icon>
+      Registro de Infracciones
+    </h1>
+    <p class="page-subtitle">Sistema de control de infracciones graves y bloqueos</p>
+  </div>
+
+  <!-- SUCCESS MESSAGE -->
+  @if (showSuccessMessage()) {
+    <mat-card class="success-card">
+      <div class="success-content">
+        <mat-icon class="success-icon">check_circle</mat-icon>
+        <div>
+          <h3>Bloqueo Registrado Exitosamente</h3>
+          <p>El miembro ha sido bloqueado y su acceso facial ha sido deshabilitado</p>
+        </div>
+      </div>
+    </mat-card>
+  }
+
+  <!-- MAIN CONTENT -->
+  @if (!showSuccessMessage()) {
+    
+    <!-- PASO 1: BÚSQUEDA DE MIEMBRO -->
+    <mat-card class="step-card">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div>
+          <h2>Buscar Miembro</h2>
+          <p>Ingresa el RUT, nombre o email del miembro</p>
+        </div>
+      </div>
+
+      <div class="step-content">
+        @if (!selectedMember()) {
+          <div class="search-section">
+            <mat-icon class="section-icon">person_search</mat-icon>
+            <h2>Buscar Miembro</h2>
+            <p>Ingresa el RUT, nombre o email del miembro</p>
+
+            <div class="search-input-group">
+              <mat-form-field appearance="outline" floatLabel="always" class="search-field">
+                <mat-label>RUT / Nombre / Email</mat-label>
+                <mat-icon matPrefix>search</mat-icon>
+                <input
+                  matInput
+                  [formControl]="searchControl"
+                  (input)="onRutInput($event)"
+                  (keyup.enter)="searchMember(searchControl.value || '')"
+                  placeholder="Ej: 12.345.678-9, Juan Pérez..."
+                  [disabled]="isSearching()"
+                  maxlength="50">
+                @if (searchControl.invalid && searchControl.touched) {
+                  <mat-error>Mínimo 3 caracteres</mat-error>
+                }
+              </mat-form-field>
+
+              @if (isSearching()) {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  disabled
+                  class="search-button">
+                  <mat-icon class="spinning">refresh</mat-icon>
+                  Buscando...
+                </button>
+              } @else {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="searchMember(searchControl.value || '')"
+                  [disabled]="!searchControl.valid"
+                  class="search-button">
+                  <mat-icon>search</mat-icon>
+                  Buscar
+                </button>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="selected-member">
+            <div class="member-info">
+              <div class="member-avatar">
+                {{ selectedMember()!.nombre.charAt(0) }}{{ selectedMember()!.apellido.charAt(0) }}
+              </div>
+              <div class="member-details">
+                <h3>{{ selectedMember()!.nombre }} {{ selectedMember()!.apellido }}</h3>
+                <p class="member-email">{{ selectedMember()!.email }}</p>
+                <p class="member-rut">RUT: {{ selectedMember()!.rut }}</p>
+                <mat-chip-set>
+                  <mat-chip class="status-chip">{{ selectedMember()!.estadoMembresia }}</mat-chip>
+                  @if (selectedMember()!.bloqueosActivos > 0) {
+                    <mat-chip class="warning-chip">
+                      {{ selectedMember()!.bloqueosActivos }} bloqueo(s) previo(s)
+                    </mat-chip>
+                  }
+                </mat-chip-set>
+              </div>
+            </div>
+            <button
+              mat-icon-button
+              (click)="clearMemberSelection()"
+              class="close-button">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+    </mat-card>
+
+    <!-- INFO PANEL (SOLO CUANDO NO HAY MIEMBRO SELECCIONADO) -->
+    @if (!selectedMember()) {
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>info</mat-icon>
+            Tipos de Infracciones y Bloqueos
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          
+          <div class="info-grid">
+            <div class="info-section">
+              <h4>
+                <mat-icon class="section-icon critical">dangerous</mat-icon>
+                Infracciones Críticas
+              </h4>
+              <ul>
+                <li>Agresión física o verbal</li>
+                <li>Consumo de sustancias</li>
+                <li>Robo</li>
+              </ul>
+              <p class="note">Bloqueo permanente inmediato + denuncia + acceso facial bloqueado</p>
+            </div>
+
+            <div class="info-section">
+              <h4>
+                <mat-icon class="section-icon warning">report_problem</mat-icon>
+                Infracciones Graves
+              </h4>
+              <ul>
+                <li>Daño a equipamiento: 30-90 días</li>
+                <li>Grabación sin consentimiento: 60 días</li>
+              </ul>
+              <p class="note">Suspensión temporal + acceso facial bloqueado durante el período</p>
+            </div>
+
+            <div class="info-section">
+              <h4>
+                <mat-icon class="section-icon">schedule</mat-icon>
+                Bloqueos Automáticos
+              </h4>
+              <ul>
+                <li>7 días: Recordatorio</li>
+                <li>15 días: Advertencia</li>
+                <li>30 días: Bloqueo automático</li>
+                <li>60 días: Suspensión de membresía</li>
+              </ul>
+              <p class="note">Activados automáticamente por morosidad</p>
+            </div>
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- FORMULARIO (SOLO CUANDO HAY MIEMBRO SELECCIONADO) -->
+    @if (selectedMember()) {
+      <form [formGroup]="blockForm" (ngSubmit)="submitBlock()">
+        
+        <!-- PASO 2: TIPO DE INFRACCIÓN -->
+        <mat-card class="step-card">
+          <div class="step-header">
+            <div class="step-number">2</div>
+            <div>
+              <h2>Tipo de Infracción</h2>
+              <p>Selecciona la infracción cometida</p>
+            </div>
+          </div>
+
+          <div class="step-content">
+            <div class="infraction-grid">
+              @for (infraction of infractionTypes; track infraction.code) {
+                <div
+                  class="infraction-card"
+                  [class.selected]="selectedInfractionCode() === infraction.code"
+                  [class.critical]="infraction.severity === 'CRITICA'"
+                  (click)="selectInfraction(infraction.code)">
+                  <mat-icon [style.color]="infraction.color">{{ infraction.icon }}</mat-icon>
+                  <h4>{{ infraction.name }}</h4>
+                  <p>{{ infraction.description }}</p>
+                  <div class="infraction-badge" [class.permanent]="infraction.blockType === 'PERMANENTE'">
+                    <mat-icon>{{ infraction.blockType === 'PERMANENTE' ? 'block' : 'schedule' }}</mat-icon>
+                    {{ infraction.blockType }}
+                    @if (infraction.defaultDays) {
+                      ({{ infraction.defaultDays }} días)
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (blockForm.get('infractionType')?.invalid && blockForm.get('infractionType')?.touched) {
+              <div class="error-message">
+                <mat-icon>error</mat-icon>
+                Debes seleccionar un tipo de infracción
+              </div>
+            }
+
+            <!-- RESUMEN DE INFRACCIÓN -->
+            @if (selectedInfraction()) {
+              <div class="infraction-summary">
+                <div class="summary-row" [class.critical]="isPermanentBlock()">
+                  <mat-icon>{{ isPermanentBlock() ? 'block' : 'schedule' }}</mat-icon>
+                  <div>
+                    <strong>Consecuencia:</strong>
+                    <p>{{ getBlockSummary() }}</p>
+                  </div>
+                </div>
+                
+                @if (requiresPoliceReport()) {
+                  <div class="summary-row alert">
+                    <mat-icon>report_problem</mat-icon>
+                    <div>
+                      <strong>Requiere Denuncia Policial</strong>
+                      <p>Debe registrarse denuncia en Carabineros o PDI</p>
+                    </div>
+                  </div>
+                }
+                
+                @if (requiresPayment()) {
+                  <div class="summary-row alert">
+                    <mat-icon>payments</mat-icon>
+                    <div>
+                      <strong>Requiere Cobro de Reparación</strong>
+                      <p>Se debe registrar el monto del daño</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </mat-card>
+
+        <!-- PASO 3: DETALLES (SOLO SI HAY INFRACCIÓN SELECCIONADA) -->
+        @if (selectedInfraction()) {
+          <mat-card class="step-card">
+            <div class="step-header">
+              <div class="step-number">3</div>
+              <div>
+                <h2>Detalles de la Infracción</h2>
+                <p>Proporciona información detallada del incidente</p>
+              </div>
+            </div>
+
+            <div class="step-content">
+              
+              <!-- FECHA DEL SUCESO -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Fecha del Suceso</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="picker"
+                  formControlName="incidentDate"
+                  [max]="today"
+                  placeholder="Selecciona la fecha">
+                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+                <mat-hint>Fecha en la que ocurrió la infracción</mat-hint>
+                @if (blockForm.get('incidentDate')?.invalid && blockForm.get('incidentDate')?.touched) {
+                  <mat-error>Fecha requerida</mat-error>
+                }
+              </mat-form-field>
+              
+              <!-- DESCRIPCIÓN -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Descripción Detallada</mat-label>
+                <textarea
+                  matInput
+                  formControlName="description"
+                  rows="4"
+                  placeholder="Describe qué ocurrió, dónde y quiénes estuvieron involucrados..."
+                  maxlength="500">
+                </textarea>
+                <mat-hint align="start">Mínimo 20 caracteres</mat-hint>
+                <mat-hint align="end">{{ blockForm.get('description')?.value?.length || 0 }}/500</mat-hint>
+                @if (blockForm.get('description')?.invalid && blockForm.get('description')?.touched) {
+                  <mat-error>
+                    @if (blockForm.get('description')?.errors?.['required']) {
+                      Campo requerido
+                    }
+                    @if (blockForm.get('description')?.errors?.['minlength']) {
+                      Mínimo 20 caracteres
+                    }
+                  </mat-error>
+                }
+              </mat-form-field>
+
+              <!-- OBSERVACIONES ADICIONALES -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Observaciones del Colaborador (Opcional)</mat-label>
+                <textarea
+                  matInput
+                  formControlName="observations"
+                  rows="3"
+                  placeholder="Añade cualquier contexto adicional, testigos presentes, o detalles relevantes..."
+                  maxlength="500">
+                </textarea>
+                <mat-hint align="start">Información adicional del colaborador que registra</mat-hint>
+                <mat-hint align="end">{{ blockForm.get('observations')?.value?.length || 0 }}/500</mat-hint>
+              </mat-form-field>
+
+              <!-- CAMPOS CONDICIONALES -->
+              <div class="form-row">
+                @if (requiresPoliceReport()) {
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Número de Denuncia</mat-label>
+                    <mat-icon matPrefix>badge</mat-icon>
+                    <input
+                      matInput
+                      formControlName="policeReportNumber"
+                      placeholder="Ej: 2025-1234567">
+                    @if (blockForm.get('policeReportNumber')?.invalid && blockForm.get('policeReportNumber')?.touched) {
+                      <mat-error>Número de denuncia requerido</mat-error>
+                    }
+                  </mat-form-field>
+                }
+
+                @if (requiresPayment()) {
+                  <mat-form-field appearance="outline" [class.half-width]="requiresPoliceReport()" [class.full-width]="!requiresPoliceReport()">
+                    <mat-label>Monto del Daño</mat-label>
+                    <span matPrefix>$&nbsp;</span>
+                    <input
+                      matInput
+                      type="number"
+                      formControlName="damageAmount"
+                      placeholder="0"
+                      min="1000">
+                    <mat-hint>Mínimo {{ formatCurrency(1000) }}</mat-hint>
+                    @if (blockForm.get('damageAmount')?.invalid && blockForm.get('damageAmount')?.touched) {
+                      <mat-error>Monto requerido (mínimo $1.000)</mat-error>
+                    }
+                  </mat-form-field>
+                }
+              </div>
+
+              <!-- DÍAS DE SUSPENSIÓN -->
+              @if (!isPermanentBlock()) {
+                <div class="slider-container">
+                  <label class="slider-label">
+                    Días de Suspensión: 
+                    <strong>{{ blockForm.get('blockDays')?.value }} días</strong>
+                  </label>
+                  <mat-slider
+                    [min]="selectedInfraction()!.minDays!"
+                    [max]="selectedInfraction()!.maxDays!"
+                    [step]="1"
+                    [discrete]="true"
+                    [showTickMarks]="true"
+                    class="suspension-slider">
+                    <input matSliderThumb formControlName="blockDays">
+                  </mat-slider>
+                  <div class="slider-range">
+                    <span>{{ selectedInfraction()!.minDays }} días</span>
+                    <span>{{ selectedInfraction()!.maxDays }} días</span>
+                  </div>
+                </div>
+              }
+
+              <!-- EVIDENCIA -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>URL de Evidencia (opcional)</mat-label>
+                <mat-icon matPrefix>link</mat-icon>
+                <input
+                  matInput
+                  formControlName="evidenceUrl"
+                  placeholder="https://drive.google.com/..."
+                  type="url">
+                <mat-hint>Link a fotos, videos o documentos</mat-hint>
+                @if (blockForm.get('evidenceUrl')?.invalid && blockForm.get('evidenceUrl')?.touched) {
+                  <mat-error>URL inválida</mat-error>
+                }
+              </mat-form-field>
+
+              <!-- CHECKBOXES -->
+              <div class="checkbox-group">
+                <mat-checkbox formControlName="notifyMember">
+                  Enviar notificación al miembro por email
+                </mat-checkbox>
+                
+                @if (blockForm.get('infractionType')?.value === 'GRABACION_SIN_CONSENTIMIENTO') {
+                  <mat-checkbox 
+                    formControlName="isSecondOffense"
+                    (change)="handleSecondOffenseChange($event.checked)">
+                    Esta es una segunda ofensa (cambia a bloqueo PERMANENTE)
+                  </mat-checkbox>
+                }
+              </div>
+
+            </div>
+          </mat-card>
+
+          <!-- PASO 4: CONFIRMACIÓN -->
+          <mat-card class="step-card confirmation-card">
+            <div class="step-header">
+              <div class="step-number">4</div>
+              <div>
+                <h2>Confirmación Final</h2>
+                <p>Revisa la información antes de aplicar el bloqueo</p>
+              </div>
+            </div>
+
+            <div class="step-content">
+              
+              <div class="confirmation-summary">
+                <div class="summary-item">
+                  <mat-icon>person</mat-icon>
+                  <div>
+                    <strong>Miembro</strong>
+                    <p>{{ selectedMember()!.nombre }} {{ selectedMember()!.apellido }}</p>
+                    <span class="detail">{{ selectedMember()!.rut }}</span>
+                  </div>
+                </div>
+                
+                <mat-divider></mat-divider>
+                
+                <div class="summary-item">
+                  <mat-icon [style.color]="selectedInfraction()!.color">{{ selectedInfraction()!.icon }}</mat-icon>
+                  <div>
+                    <strong>Infracción</strong>
+                    <p>{{ selectedInfraction()!.name }}</p>
+                  </div>
+                </div>
+                
+                <mat-divider></mat-divider>
+                
+                <div class="summary-item">
+                  <mat-icon>event</mat-icon>
+                  <div>
+                    <strong>Fecha del Suceso</strong>
+                    <p>{{ formatDate(blockForm.get('incidentDate')?.value) }}</p>
+                  </div>
+                </div>
+                
+                <mat-divider></mat-divider>
+                
+                <div class="summary-item" [class.critical]="isPermanentBlock()">
+                  <mat-icon>{{ isPermanentBlock() ? 'block' : 'schedule' }}</mat-icon>
+                  <div>
+                    <strong>Consecuencia</strong>
+                    <p>{{ getBlockSummary() }}</p>
+                  </div>
+                </div>
+
+                <mat-divider></mat-divider>
+
+                <div class="summary-item critical">
+                  <mat-icon>face_retouching_off</mat-icon>
+                  <div>
+                    <strong>Acceso Facial</strong>
+                    <p>Será bloqueado inmediatamente</p>
+                    <span class="detail">El torniquete no permitirá el ingreso</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (isPermanentBlock()) {
+                <div class="critical-warning">
+                  <mat-icon>warning</mat-icon>
+                  <div>
+                    <h4>⚠️ ADVERTENCIA: BLOQUEO PERMANENTE</h4>
+                    <p>
+                      El miembro será bloqueado de forma PERMANENTE y no podrá acceder nunca más.
+                      El sistema de reconocimiento facial rechazará automáticamente su acceso.
+                      Esta acción requiere autorización de gerencia.
+                    </p>
+                  </div>
+                </div>
+              }
+
+              <div class="action-buttons">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="resetForm()"
+                  [disabled]="isSubmitting()">
+                  <mat-icon>close</mat-icon>
+                  Cancelar
+                </button>
+                
+                @if (isSubmitting()) {
+                  <button
+                    mat-raised-button
+                    color="warn"
+                    type="submit"
+                    disabled>
+                    <mat-icon class="spinning">refresh</mat-icon>
+                    Procesando...
+                  </button>
+                } @else {
+                  <button
+                    mat-raised-button
+                    color="warn"
+                    type="submit"
+                    [disabled]="blockForm.invalid">
+                    <mat-icon>{{ isPermanentBlock() ? 'block' : 'gavel' }}</mat-icon>
+                    Aplicar Bloqueo
+                  </button>
+                }
+              </div>
+
+            </div>
+          </mat-card>
+        }
+
+      </form>
+    }
+
+  }
+
+</div>
