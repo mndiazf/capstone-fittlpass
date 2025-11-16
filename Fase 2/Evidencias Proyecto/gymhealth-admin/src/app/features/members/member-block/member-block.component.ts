@@ -1,6 +1,6 @@
-// member-block.component.ts - ARCHIVO COMPLETO
+// member-block.component.ts - CON HOSTBINDING PARA TEMAS
 
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, HostBinding } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -18,6 +18,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { RutService } from '../../../core/services/rut.service';
 import { MemberManagementService } from '../../../core/services/member-management.service';
+import { ThemeService } from '../../../core/services/theme.service';
 import { 
   Member, 
   CreateInfractionRequest, 
@@ -66,10 +67,17 @@ interface InfractionCardUI {
   styleUrl: './member-block.component.scss'
 })
 export class MemberBlockComponent implements OnInit {
+  // 🎨 HOST BINDING REACTIVO - Sincroniza data-theme con el servicio
+  @HostBinding('attr.data-theme') 
+  get dataTheme() {
+    return this.themeService.theme();
+  }
+
   private fb = inject(FormBuilder);
   private rutService = inject(RutService);
   private snackBar = inject(MatSnackBar);
   private memberService = inject(MemberManagementService);
+  private themeService = inject(ThemeService);
 
   // Form Controls
   searchControl = new FormControl('', [Validators.required, Validators.minLength(3)]);

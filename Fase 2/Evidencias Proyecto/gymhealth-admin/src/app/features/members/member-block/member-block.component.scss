@@ -24,6 +24,10 @@ $light-text-secondary: #475569;
 $light-bg: #FFFFFF;
 $light-border: #E2E8F0;
 
+:host {
+  display: block;
+}
+
 .member-block-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -135,6 +139,13 @@ $light-border: #E2E8F0;
   backdrop-filter: blur(10px);
 }
 
+// Modo oscuro - card más visible sin ser negra
+:host([data-theme="dark"]) .step-card {
+  background: rgba(24, 36, 53, 0.6) !important;
+  border: 1px solid rgba(0, 210, 198, 0.2) !important;
+}
+
+// Modo claro - card blanca limpia
 :host([data-theme="light"]) .step-card {
   background: $light-bg !important;
   border: 1px solid $light-border !important;
@@ -406,7 +417,7 @@ $light-border: #E2E8F0;
   }
 }
 
-// ===== INFO CARD (DEBAJO DE LA BÚSQUEDA) =====
+// ===== INFO CARD =====
 .info-card {
   background: rgba($surface, 0.8) !important;
   border: 1px solid rgba($secondary, 0.3) !important;
@@ -437,6 +448,13 @@ $light-border: #E2E8F0;
   }
 }
 
+// Modo oscuro - card más visible
+:host([data-theme="dark"]) .info-card {
+  background: rgba(24, 36, 53, 0.6) !important;
+  border: 1px solid rgba(0, 210, 198, 0.2) !important;
+}
+
+// Modo claro - card blanca
 :host([data-theme="light"]) .info-card {
   background: $light-bg !important;
   border: 1px solid $light-border !important;
@@ -800,12 +818,10 @@ $light-border: #E2E8F0;
       border-radius: 4px;
     }
 
-    // FORZAR LABEL ARRIBA SIEMPRE
     .mat-mdc-form-field-flex {
       align-items: flex-start !important;
     }
 
-    // Infix container
     .mat-mdc-form-field-infix {
       padding-top: 28px !important;
       padding-bottom: 8px !important;
@@ -814,7 +830,6 @@ $light-border: #E2E8F0;
       align-items: center;
     }
 
-    // Input y textarea - BASE
     input,
     textarea {
       color: white !important;
@@ -822,21 +837,18 @@ $light-border: #E2E8F0;
       margin: 0 !important;
     }
 
-    // ✅ AJUSTAR INPUT CUANDO HAY ÍCONO DE PREFIJO
     &.mat-mdc-form-field-has-icon-prefix {
       input {
-        padding-left: 8px !important; // ✅ PADDING PARA SEPARAR DEL ÍCONO
+        padding-left: 8px !important;
       }
     }
 
-    // ✅ AJUSTAR INPUT CUANDO HAY PREFIJO DE TEXTO (como $)
     &.mat-mdc-form-field-has-text-prefix {
       input {
         padding-left: 4px !important;
       }
     }
 
-    // Label flotante - SIEMPRE ARRIBA
     .mat-mdc-floating-label {
       color: $calipso !important;
       position: absolute !important;
@@ -854,14 +866,12 @@ $light-border: #E2E8F0;
       }
     }
 
-    // ✅ AJUSTAR LABEL CUANDO HAY ÍCONO DE PREFIJO
     &.mat-mdc-form-field-has-icon-prefix {
       .mat-mdc-floating-label {
         left: 56px !important;
       }
     }
 
-    // Prefijo de iconos - AJUSTAR POSICIÓN Y ESPACIO
     .mat-mdc-form-field-icon-prefix {
       color: $calipso;
       margin-right: 1rem !important;
@@ -872,38 +882,32 @@ $light-border: #E2E8F0;
       height: 1.25rem !important;
     }
 
-    // Prefijo de texto (como $)
     .mat-mdc-form-field-text-prefix {
       color: $calipso;
       padding-right: 0.5rem;
       font-weight: 600;
     }
 
-    // ✅ AJUSTAR LABEL CUANDO HAY PREFIJO DE TEXTO
     &.mat-mdc-form-field-has-text-prefix {
       .mat-mdc-floating-label {
         left: 48px !important;
       }
     }
 
-    // Sufijos (datepicker toggle, etc)
     .mat-mdc-form-field-icon-suffix {
       align-self: center;
     }
 
-    // Placeholder - OCULTAR o hacer más sutil
     .mat-mdc-input-element::placeholder {
       color: transparent !important;
       opacity: 0 !important;
     }
 
-    // Cuando el campo tiene foco, mostrar placeholder
     .mat-mdc-input-element:focus::placeholder {
       color: $slate !important;
       opacity: 0.5 !important;
     }
 
-    // Hint text
     .mat-mdc-form-field-hint-wrapper {
       padding: 0 16px;
     }
@@ -914,7 +918,6 @@ $light-border: #E2E8F0;
       margin-top: 4px;
     }
 
-    // Error messages
     .mat-mdc-form-field-error-wrapper {
       padding: 0 16px;
     }
@@ -926,14 +929,12 @@ $light-border: #E2E8F0;
       margin-top: 4px;
     }
 
-    // Ajuste para textareas
     textarea.mat-mdc-input-element {
       min-height: 80px;
       resize: vertical;
       padding-top: 4px !important;
     }
 
-    // Datepicker toggle
     .mat-datepicker-toggle {
       color: $calipso !important;
     }
@@ -943,7 +944,6 @@ $light-border: #E2E8F0;
     }
   }
 
-  // Outline appearance específico
   .mat-mdc-form-field-appearance-outline {
     .mat-mdc-notched-outline {
       .mat-mdc-notched-outline-leading,
@@ -958,7 +958,6 @@ $light-border: #E2E8F0;
       }
     }
 
-    // Focused state
     &.mat-focused .mat-mdc-notched-outline {
       .mat-mdc-notched-outline-leading,
       .mat-mdc-notched-outline-trailing,
@@ -968,7 +967,6 @@ $light-border: #E2E8F0;
       }
     }
 
-    // Invalid state
     &.mat-form-field-invalid .mat-mdc-notched-outline {
       .mat-mdc-notched-outline-leading,
       .mat-mdc-notched-outline-trailing,

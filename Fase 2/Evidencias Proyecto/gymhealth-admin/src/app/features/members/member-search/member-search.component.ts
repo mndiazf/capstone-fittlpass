@@ -1,6 +1,4 @@
-// member-search.component.ts - VERSIÓN CONECTADA AL SERVICIO
-
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, HostBinding, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,6 +13,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { RutService } from '../../../core/services/rut.service';
 import { MemberManagementService } from '../../../core/services/member-management.service';
+import { ThemeService } from '../../../core/services/theme.service';
 import { Member, AccessHistory, MembershipStatus } from '../../../shared/models/member.models';
 
 @Component({
@@ -37,11 +36,18 @@ import { Member, AccessHistory, MembershipStatus } from '../../../shared/models/
   templateUrl: './member-search.component.html',
   styleUrl: './member-search.component.scss'
 })
-export class MemberSearchComponent {
+export class MemberSearchComponent implements OnInit {
+  // 🎨 HOST BINDING REACTIVO
+  @HostBinding('attr.data-theme') 
+  get dataTheme() {
+    return this.themeService.theme();
+  }
+
   private fb = inject(FormBuilder);
   private rutService = inject(RutService);
   private memberService = inject(MemberManagementService);
   private snackBar = inject(MatSnackBar);
+  private themeService = inject(ThemeService);
   
   // Controles de búsqueda
   searchControl = new FormControl('', [Validators.required, Validators.minLength(3)]);
@@ -82,6 +88,12 @@ export class MemberSearchComponent {
     this.initContactForm();
   }
 
+  ngOnInit(): void {
+    // El HostBinding getter se actualiza automáticamente cuando cambia themeService.theme()
+  }
+
+  // ... resto del código sin cambios
+  
   private initContactForm(): void {
     this.contactForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -93,7 +105,6 @@ export class MemberSearchComponent {
 
     this.contactForm.disable();
 
-    // Actualizar validadores según checkbox
     this.contactForm.get('tieneContactoEmergencia')?.valueChanges.subscribe(value => {
       const nombreControl = this.contactForm.get('contactoEmergenciaNombre');
       const telefonoControl = this.contactForm.get('contactoEmergenciaTelefono');
@@ -116,9 +127,6 @@ export class MemberSearchComponent {
     });
   }
 
-  /**
-   * Formatea el RUT automáticamente mientras el usuario escribe
-   */
   onRutInput(event: any): void {
     const input = event.target;
     const cursorPosition = input.selectionStart;
@@ -137,9 +145,6 @@ export class MemberSearchComponent {
     }, 0);
   }
 
-  /**
-   * 🔍 BÚSQUEDA CONECTADA AL SERVICIO
-   */
   searchMember(query: string): void {
     if (!query || query.trim().length < 3) {
       this.snackBar.open('Debes ingresar al menos 3 caracteres', 'Cerrar', {
@@ -155,7 +160,6 @@ export class MemberSearchComponent {
     let searchQuery = query.trim();
     const cleanedQuery = this.rutService.cleanRut(query);
     
-    // Validar RUT si parece ser uno
     if (/^[0-9kK]+$/.test(cleanedQuery)) {
       if (!this.rutService.validateRut(query)) {
         this.snackBar.open('❌ RUT inválido. Por favor verifica el dígito verificador.', 'Cerrar', {
@@ -170,7 +174,6 @@ export class MemberSearchComponent {
       searchQuery = cleanedQuery;
     }
     
-    // ✅ USAR EL SERVICIO (MOCK o REAL)
     this.memberService.searchMembers({ query: searchQuery, limit: 1 }).subscribe({
       next: (response) => {
         if (response.members && response.members.length > 0) {
@@ -209,9 +212,6 @@ export class MemberSearchComponent {
     });
   }
 
-  /**
-   * 📊 CARGAR HISTORIAL DE ACCESO
-   */
   private loadAccessHistory(memberId: number): void {
     this.memberService.getMemberAccessHistory(memberId, 10).subscribe({
       next: (history) => {
@@ -243,8 +243,6 @@ export class MemberSearchComponent {
     this.contactForm.disable();
     this.isEditing.set(false);
   }
-
-  // === MODO EDICIÓN ===
 
   enableEdit(): void {
     this.isEditing.set(true);
@@ -279,8 +277,6 @@ export class MemberSearchComponent {
     this.isSaving.set(true);
     const formValue = this.contactForm.value;
     
-    // TODO: Crear método updateMemberContact en el servicio
-    // Por ahora, simulación local
     setTimeout(() => {
       const updatedMember: Member = {
         ...member,
@@ -332,8 +328,6 @@ export class MemberSearchComponent {
     this.contactForm.get(controlName)?.setValue(formatted, { emitEvent: false });
   }
 
-  // === OTRAS ACCIONES ===
-
   requestDataUpdate(): void {
     const member = this.selectedMember();
     if (!member) return;
@@ -370,8 +364,6 @@ export class MemberSearchComponent {
       verticalPosition: 'top'
     });
   }
-
-  // === UTILIDADES ===
 
   getStatusColor(status: string): string {
     switch (status) {
