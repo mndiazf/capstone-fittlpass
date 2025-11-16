@@ -1,10 +1,11 @@
 // src/app/core/services/auth.service.ts
-// ✨ TODO EN UNO: Autenticación + Gestión de Sesiones
+// ✨ CORRECCIÓN: getCurrentUserBranchId ahora retorna number | null
 
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, fromEvent, merge, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, fromEvent, merge, Subject, of } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
+import { StaffService, StaffMember } from './staff.service';
 
 export interface User {
   email: string;
@@ -17,6 +18,11 @@ export interface User {
   providedIn: 'root'
 })
 export class AuthService {
+  // ==========================================
+  // INYECCIÓN DE DEPENDENCIAS
+  // ==========================================
+  private staffService = inject(StaffService);
+
   // ==========================================
   // AUTENTICACIÓN
   // ==========================================
@@ -116,6 +122,84 @@ export class AuthService {
   getUserData(): User | null {
     const userData = localStorage.getItem('gym_user');
     return userData ? JSON.parse(userData) : null;
+  }
+
+  // ==========================================
+  // CONTEXTO DE SUCURSAL
+  // ==========================================
+
+  /**
+   * Obtiene los datos completos del staff member logueado
+   */
+  getCurrentStaffMember(): Observable<StaffMember | null> {
+    const currentUser = this.currentUserValue;
+    
+    if (!currentUser || !currentUser.email) {
+      return of(null);
+    }
+
+    return this.staffService.getByEmail(currentUser.email);
+  }
+
+  /**
+   * ✅ CORREGIDO: Obtiene el ID de sucursal del usuario logueado como NUMBER
+   */
+  getCurrentUserBranchId(): number | null {
+    const currentUser = this.currentUserValue;
+    if (!currentUser) return null;
+
+    // MOCK: mapear email a branchId
+    // En producción esto vendría del token JWT o una llamada al backend
+    const mockStaffData: { [email: string]: number } = {
+      'juan.perez@gymhealth.com': 1,
+      'maria.lopez@gymhealth.com': 2,
+      'pedro.ramirez@gymhealth.com': 1,
+      // Usuarios de prueba adicionales
+      'admin1@gymhealth.com': 1,
+      'admin2@gymhealth.com': 2,
+      'admin3@gymhealth.com': 3,
+    };
+
+    return mockStaffData[currentUser.email] || 1; // Default: sucursal 1
+  }
+
+  /**
+   * Verifica si el usuario actual es super admin
+   */
+  isSuperAdmin(): boolean {
+    const currentUser = this.currentUserValue;
+    if (!currentUser) return false;
+
+    // MOCK: solo emails específicos son super admin
+    // En producción esto vendría del token JWT o perfil del usuario
+    const superAdminEmails = [
+      'admin@gymhealth.com',
+      'superadmin@gymhealth.com'
+    ];
+
+    return superAdminEmails.includes(currentUser.email);
+  }
+
+  /**
+   * Obtiene el nombre completo del usuario para auditoría
+   */
+  getCurrentUserFullName(): string {
+    const currentUser = this.currentUserValue;
+    if (!currentUser) return 'Usuario Desconocido';
+    
+    // MOCK: mapear email a nombre completo
+    const mockStaffNames: { [email: string]: string } = {
+      'juan.perez@gymhealth.com': 'Juan Pérez González',
+      'maria.lopez@gymhealth.com': 'María López Silva',
+      'pedro.ramirez@gymhealth.com': 'Pedro Ramírez Fernández',
+      'admin1@gymhealth.com': 'Admin Las Condes',
+      'admin2@gymhealth.com': 'Admin Providencia',
+      'admin3@gymhealth.com': 'Admin Viña del Mar',
+      'admin@gymhealth.com': 'Super Admin',
+      'superadmin@gymhealth.com': 'Super Admin',
+    };
+
+    return mockStaffNames[currentUser.email] || currentUser.name;
   }
 
   // ==========================================

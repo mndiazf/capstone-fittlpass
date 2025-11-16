@@ -96,6 +96,12 @@ export const routes: Routes = [
           //                      
           .then(m => m.StaffScheduleDetailComponent),
         title: 'Configuración Avanzada - GymHealth'
+      },
+       {
+        path: 'management/branch-schedule',
+        loadComponent: () => import('./features/management/branch-schedule/branch-schedule.component')
+          .then(m => m.BranchScheduleComponent),
+        title: 'Horarios de Sucursal - GymHealth'
       }
     ]
   },

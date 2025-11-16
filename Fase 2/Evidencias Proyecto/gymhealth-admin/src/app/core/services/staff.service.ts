@@ -1,3 +1,5 @@
+// src/app/core/services/staff.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
@@ -45,6 +47,24 @@ export class StaffService {
 
     // REAL con backend (descomentar cuando tengas API):
     // return this.http.get<StaffMember>(`${this.apiUrl}/rut/${rut}`).pipe(
+    //   catchError(this.handleError)
+    // );
+  }
+
+  // 👇 NUEVO: Buscar por Email
+  getByEmail(email: string): Observable<StaffMember> {
+    // MOCK para desarrollo - eliminar cuando tengas backend
+    const mockStaff = this.getMockStaff();
+    const found = mockStaff.find(s => s.email === email);
+    
+    if (found) {
+      return of(found).pipe(delay(500)); // Simular delay de red
+    }
+    
+    return throwError(() => new Error('Colaborador no encontrado'));
+
+    // REAL con backend (descomentar cuando tengas API):
+    // return this.http.get<StaffMember>(`${this.apiUrl}/email/${email}`).pipe(
     //   catchError(this.handleError)
     // );
   }
@@ -101,64 +121,63 @@ export class StaffService {
     return new Blob([u8arr], { type: mime });
   }
 
-  // MOCK DATA para pruebas
   // MOCK DATA para pruebas - RUTS VÁLIDOS
-private getMockStaff(): StaffMember[] {
-  return [
-    {
-      id: '1',
-      firstName: 'Juan',
-      secondName: 'Carlos',
-      paternalLastName: 'Pérez',
-      maternalLastName: 'González',
-      rut: '11.111.111-1', // 
-      email: 'juan.perez@gymhealth.com',
-      profileId: '1',
-      profileName: 'Administrador',
-      branchId: '1',
-      branchName: 'Sucursal Centro',
-      isActive: true,
-      hasEnrollment: false,
-      enrollmentLocked: false,
-      createdAt: new Date('2024-01-15')
-    },
-    {
-      id: '2',
-      firstName: 'María',
-      secondName: 'Isabel',
-      paternalLastName: 'López',
-      maternalLastName: 'Silva',
-      rut: '22.222.222-2', // 
-      email: 'maria.lopez@gymhealth.com',
-      profileId: '3',
-      profileName: 'Recepcionista',
-      branchId: '2',
-      branchName: 'Sucursal Norte',
-      isActive: true,
-      hasEnrollment: true,
-      enrollmentLocked: false,
-      lastEnrollment: '15/01/2025',
-      createdAt: new Date('2024-02-20')
-    },
-    {
-      id: '3',
-      firstName: 'Pedro',
-      secondName: 'Antonio',
-      paternalLastName: 'Ramírez',
-      maternalLastName: 'Fernández',
-      rut: '33.333.333-3', 
-      email: 'pedro.ramirez@gymhealth.com',
-      profileId: '2',
-      profileName: 'Entrenador',
-      branchId: '1',
-      branchName: 'Sucursal Centro',
-      isActive: true,
-      hasEnrollment: false,
-      enrollmentLocked: false,
-      createdAt: new Date('2024-03-10')
-    }
-  ];
-}
+  private getMockStaff(): StaffMember[] {
+    return [
+      {
+        id: '1',
+        firstName: 'Juan',
+        secondName: 'Carlos',
+        paternalLastName: 'Pérez',
+        maternalLastName: 'González',
+        rut: '11.111.111-1',
+        email: 'juan.perez@gymhealth.com',
+        profileId: '1',
+        profileName: 'Administrador',
+        branchId: '1',
+        branchName: 'Sucursal Centro',
+        isActive: true,
+        hasEnrollment: false,
+        enrollmentLocked: false,
+        createdAt: new Date('2024-01-15')
+      },
+      {
+        id: '2',
+        firstName: 'María',
+        secondName: 'Isabel',
+        paternalLastName: 'López',
+        maternalLastName: 'Silva',
+        rut: '22.222.222-2',
+        email: 'maria.lopez@gymhealth.com',
+        profileId: '3',
+        profileName: 'Recepcionista',
+        branchId: '2',
+        branchName: 'Sucursal Norte',
+        isActive: true,
+        hasEnrollment: true,
+        enrollmentLocked: false,
+        lastEnrollment: '15/01/2025',
+        createdAt: new Date('2024-02-20')
+      },
+      {
+        id: '3',
+        firstName: 'Pedro',
+        secondName: 'Antonio',
+        paternalLastName: 'Ramírez',
+        maternalLastName: 'Fernández',
+        rut: '33.333.333-3',
+        email: 'pedro.ramirez@gymhealth.com',
+        profileId: '2',
+        profileName: 'Entrenador',
+        branchId: '1',
+        branchName: 'Sucursal Centro',
+        isActive: true,
+        hasEnrollment: false,
+        enrollmentLocked: false,
+        createdAt: new Date('2024-03-10')
+      }
+    ];
+  }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'Error desconocido';

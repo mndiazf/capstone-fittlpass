@@ -97,6 +97,12 @@ export class SidebarService {
           icon: 'event_note',
           label: 'Mantenedor de horarios',
           route: '/management/staff-schedule'
+        },
+        {
+          id: 'management-branch-schedule',
+          icon: 'schedule',
+          label: 'Horarios de Sucursal',
+          route: '/management/branch-schedule'
         }
       ]
     }
