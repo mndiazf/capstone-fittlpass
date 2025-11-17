@@ -4,8 +4,42 @@
   <div class="dashboard">
     <!-- Header -->
     <div class="dashboard__header">
-      <h1 class="dashboard__title">Bienvenido a GymHealth Admin</h1>
-      <p class="dashboard__subtitle">Sistema de administración de gimnasio - Panel de control</p>
+      <h1 class="dashboard__title">Bienvenido a GymHealth</h1>
+      <p class="dashboard__subtitle">Panel de Control</p>
+    </div>
+
+    <!-- Occupancy Card -->
+    <div class="dashboard__occupancy">
+      <mat-card class="occupancy-card">
+        <div class="occupancy-card__header">
+          <div class="occupancy-card__title-section">
+            <mat-icon class="occupancy-card__icon">people</mat-icon>
+            <div>
+              <h3 class="occupancy-card__title">Ocupación Actual</h3>
+              <p class="occupancy-card__subtitle">{{ getOccupancyStatus() }}</p>
+            </div>
+          </div>
+          <div class="occupancy-card__stats">
+            <span class="occupancy-card__current">{{ branchOccupancy().current }}</span>
+            <span class="occupancy-card__separator">/</span>
+            <span class="occupancy-card__capacity">{{ branchOccupancy().capacity }}</span>
+          </div>
+        </div>
+        
+        <div class="occupancy-card__progress">
+          <mat-progress-bar 
+            mode="determinate" 
+            [value]="branchOccupancy().percentage"
+            [ngClass]="'progress-bar--' + getOccupancyColor()">
+          </mat-progress-bar>
+          <span class="occupancy-card__percentage">{{ branchOccupancy().percentage.toFixed(1) }}%</span>
+        </div>
+
+        <div class="occupancy-card__footer">
+          <mat-icon>info</mat-icon>
+          <span>Actualizado en tiempo real</span>
+        </div>
+      </mat-card>
     </div>
 
     <!-- Statistics Cards -->
@@ -26,34 +60,22 @@
     <!-- Recent Activity -->
     <div class="dashboard__content">
       <mat-card class="content-card">
-        <h2 class="content-card__title">Actividad Reciente</h2>
-        <p class="content-card__text">
-          Aquí se mostrará la actividad reciente del gimnasio, como nuevos miembros registrados, 
-          pagos recibidos, clases completadas y más.
-        </p>
+        <div class="content-card__header">
+          <h2 class="content-card__title">Actividad Reciente</h2>
+          <mat-icon class="content-card__refresh">refresh</mat-icon>
+        </div>
         
         <div class="activity-list">
-          <div class="activity-item">
-            <mat-icon class="activity-item__icon">person_add</mat-icon>
-            <div class="activity-item__content">
-              <p class="activity-item__title">Nuevo miembro registrado</p>
-              <p class="activity-item__time">Hace 5 minutos</p>
+          <div 
+            *ngFor="let activity of activities" 
+            class="activity-item"
+            [ngClass]="'activity-item--' + activity.type">
+            <div [ngClass]="'activity-item__icon activity-item__icon--' + activity.type">
+              <mat-icon>{{ activity.icon }}</mat-icon>
             </div>
-          </div>
-
-          <div class="activity-item">
-            <mat-icon class="activity-item__icon">payment</mat-icon>
             <div class="activity-item__content">
-              <p class="activity-item__title">Pago recibido - $80</p>
-              <p class="activity-item__time">Hace 15 minutos</p>
-            </div>
-          </div>
-
-          <div class="activity-item">
-            <mat-icon class="activity-item__icon">fitness_center</mat-icon>
-            <div class="activity-item__content">
-              <p class="activity-item__title">Clase de Yoga completada</p>
-              <p class="activity-item__time">Hace 1 hora</p>
+              <p class="activity-item__title">{{ activity.title }}</p>
+              <p class="activity-item__time">{{ activity.time }}</p>
             </div>
           </div>
         </div>
