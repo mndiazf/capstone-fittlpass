@@ -41,21 +41,50 @@
         <div class="permissions-section">
           <div class="permissions-header">
             <mat-icon>fact_check</mat-icon>
-            <h3>Permisos (Interfaces que puede ver)</h3>
+            <h3>Permisos (Módulos y funcionalidades)</h3>
             <span class="selected-count">{{ selectedPermissions().length }} seleccionados</span>
           </div>
 
-          <div class="permissions-grid">
-            @for (perm of availablePermissions(); track perm.id) {
-              <mat-checkbox
-                class="permission-checkbox"
-                [checked]="isPermissionSelected(perm.id)"
-                (change)="togglePermission(perm.id, $event.checked)">
-                <div class="permission-item">
-                  <strong>{{ perm.name }}</strong>
-                  <span class="permission-desc">{{ perm.description }}</span>
+          <div class="permissions-container">
+            @for (group of getGroupedPermissions(); track $index) {
+              <div class="permission-group">
+                <!-- Permiso Padre (si existe) -->
+                @if (group.parent) {
+                  <div class="parent-permission">
+                    <mat-checkbox
+                      class="permission-checkbox parent-checkbox"
+                      [checked]="isPermissionSelected(group.parent.id)"
+                      (change)="togglePermission(group.parent.id, $event.checked)">
+                      <div class="permission-item">
+                        <div class="permission-header">
+                          <strong>{{ group.parent.name }}</strong>
+                        </div>
+                        <span class="permission-desc">{{ group.parent.description }}</span>
+                      </div>
+                    </mat-checkbox>
+                  </div>
+                }
+
+                <!-- Permisos Hijos -->
+                <div class="children-permissions" [class.indented]="group.parent">
+                  @for (perm of group.children; track perm.id) {
+                    <mat-checkbox
+                      class="permission-checkbox child-checkbox"
+                      [class.required-permission]="isPermissionRequired(perm.id)"
+                      [checked]="isPermissionSelected(perm.id)"
+                      [disabled]="isPermissionRequired(perm.id)"
+                      (change)="togglePermission(perm.id, $event.checked)">
+                      <div class="permission-item">
+                        <div class="permission-header">
+                          <mat-icon>{{ perm.icon }}</mat-icon>
+                          <strong>{{ perm.name }}</strong>
+                        </div>
+                        <span class="permission-desc">{{ perm.description }}</span>
+                      </div>
+                    </mat-checkbox>
+                  }
                 </div>
-              </mat-checkbox>
+              </div>
             }
           </div>
         </div>
