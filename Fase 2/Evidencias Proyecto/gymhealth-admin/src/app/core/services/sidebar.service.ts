@@ -22,7 +22,7 @@ export class SidebarService {
       label: 'Dashboard', 
       route: '/dashboard' 
     },
-        { 
+    { 
       id: 'members', 
       icon: 'group', 
       label: 'Miembros',
@@ -33,7 +33,6 @@ export class SidebarService {
           label: 'Enrolamiento',
           route: '/enrollment'
         },
-        // 👇 NUEVAS RUTAS
         {
           id: 'member-search',
           icon: 'person_search',
@@ -48,7 +47,7 @@ export class SidebarService {
         }
       ]
     },
-        { 
+    { 
       id: 'salesandpayment', 
       icon: 'point_of_sale', 
       label: 'Ventas y Pagos',
@@ -59,23 +58,23 @@ export class SidebarService {
           label: 'Venta Presencial',
           route: '/sales/presential'
         }
-   
-        // {
-        //   id: 'payment-history',
-        //   icon: 'history',
-        //   label: 'Historial de Pagos',
-        //   route: '/sales/history'
-        // },
-        // {
-        //   id: 'reports',
-        //   icon: 'assessment',
-        //   label: 'Reportes',
-        //   route: '/sales/reports'
-        // }
       ]
     },
-    
-   { 
+
+    { 
+      id: 'reports', 
+      icon: 'assessment', 
+      label: 'Reportes',
+      children: [
+        {
+          id: 'access-report',
+          icon: 'login',
+          label: 'Reporte de Accesos',
+          route: '/reports/access'
+        }
+      ]
+    },
+    { 
       id: 'management', 
       icon: 'settings', 
       label: 'Mantenedor',
@@ -107,9 +106,7 @@ export class SidebarService {
       ]
     }
   ];
-  
 
-  // ← SOLO NOTIFICACIONES - Configuración ahora está en el perfil de usuario
   bottomMenuItems: MenuItem[] = [
     { 
       id: 'notifications', 

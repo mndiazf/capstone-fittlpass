@@ -61,6 +61,14 @@ export const routes: Routes = [
         loadComponent: () => import('./features/salesandpayment/presential-sale/presential-sale.component')
           .then(m => m.PresentialSaleComponent)
       },
+      
+       {
+        path: 'reports/access',
+        loadComponent: () => import('./features/reports/access-report/access-report.component')
+          .then(m => m.AccessReportComponent),
+        title: 'Reporte de Accesos - GymHealth'
+      },
+
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component')

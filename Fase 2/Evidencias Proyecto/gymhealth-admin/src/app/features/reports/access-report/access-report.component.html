@@ -1,0 +1,256 @@
+<!-- src/app/features/reports/access-report/access-report.component.html -->
+
+<div class="report-wrapper">
+  <div class="report-container">
+    <!-- Header -->
+    <div class="report-header">
+      <div class="report-header__title-section">
+        <mat-icon class="report-header__icon">assessment</mat-icon>
+        <div>
+          <h1 class="report-header__title">Reporte de Accesos</h1>
+          <p class="report-header__subtitle">Consulta y exporta los registros de acceso al gimnasio</p>
+        </div>
+      </div>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        class="refresh-btn"
+        (click)="refreshData()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+
+    <!-- Filtros -->
+    <mat-card class="filters-card">
+      <h2 class="filters-card__title">
+        <mat-icon>filter_list</mat-icon>
+        Filtros
+      </h2>
+
+      <form [formGroup]="filterForm" class="filters-form">
+        <div class="filters-row">
+          <!-- Filtro de Sucursal (solo para Super Admin) -->
+          <mat-form-field appearance="outline" class="filter-field" *ngIf="isSuperAdmin">
+            <mat-label>Sucursal</mat-label>
+            <mat-select formControlName="branchId">
+              <mat-option [value]="null">Todas las Sucursales</mat-option>
+              <mat-option *ngFor="let branch of availableBranches" [value]="branch.id">
+                {{ branch.name }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix>store</mat-icon>
+          </mat-form-field>
+
+          <!-- Tipo de Persona -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo de Persona</mat-label>
+            <mat-select formControlName="personType">
+              <mat-option value="all">Todos</mat-option>
+              <mat-option value="Miembro">Miembros</mat-option>
+              <mat-option value="Colaborador">Colaboradores</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>people</mat-icon>
+          </mat-form-field>
+
+          <!-- Fecha Inicio -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Fecha Inicio</mat-label>
+            <input 
+              matInput 
+              [matDatepicker]="startPicker" 
+              formControlName="startDate"
+              placeholder="DD/MM/YYYY">
+            <mat-datepicker-toggle matPrefix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Fecha Fin -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Fecha Fin</mat-label>
+            <input 
+              matInput 
+              [matDatepicker]="endPicker" 
+              formControlName="endDate"
+              placeholder="DD/MM/YYYY">
+            <mat-datepicker-toggle matPrefix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Botones de Acción -->
+          <div class="filter-actions">
+            <button 
+              mat-stroked-button 
+              type="button"
+              (click)="clearFilters()">
+              <mat-icon>clear</mat-icon>
+              Limpiar
+            </button>
+            <button 
+              mat-raised-button 
+              color="accent"
+              type="button"
+              (click)="exportToExcel()">
+              <mat-icon>file_download</mat-icon>
+              Exportar Excel
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Resumen de Filtros Activos -->
+      <div class="active-filters" *ngIf="(isSuperAdmin && filterForm.value.branchId != null) || 
+                                         filterForm.value.personType !== 'all' || 
+                                         filterForm.value.startDate || 
+                                         filterForm.value.endDate">
+        <span class="active-filters__label">Filtros activos:</span>
+        
+        <mat-chip *ngIf="isSuperAdmin && filterForm.value.branchId != null">
+          {{ getBranchName(filterForm.value.branchId!) }}
+          <mat-icon matChipRemove (click)="filterForm.patchValue({branchId: null})">cancel</mat-icon>
+        </mat-chip>
+
+        <mat-chip *ngIf="filterForm.value.personType !== 'all'">
+          {{ filterForm.value.personType }}
+          <mat-icon matChipRemove (click)="filterForm.patchValue({personType: 'all'})">cancel</mat-icon>
+        </mat-chip>
+
+        <mat-chip *ngIf="filterForm.value.startDate">
+          Desde: {{ formatDate(filterForm.value.startDate) }}
+          <mat-icon matChipRemove (click)="filterForm.patchValue({startDate: null})">cancel</mat-icon>
+        </mat-chip>
+
+        <mat-chip *ngIf="filterForm.value.endDate">
+          Hasta: {{ formatDate(filterForm.value.endDate) }}
+          <mat-icon matChipRemove (click)="filterForm.patchValue({endDate: null})">cancel</mat-icon>
+        </mat-chip>
+      </div>
+    </mat-card>
+
+    <!-- Tabla de Resultados -->
+    <mat-card class="table-card">
+      <div class="table-header">
+        <h2 class="table-header__title">
+          <mat-icon>list</mat-icon>
+          Últimos 20 Accesos
+        </h2>
+        <span class="table-header__count">
+          {{ filteredRecords().length }} registros
+        </span>
+      </div>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="filteredRecords()" class="access-table">
+          
+          <!-- Fecha -->
+          <ng-container matColumnDef="date">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let record">
+              {{ formatDate(record.date) }}
+            </td>
+          </ng-container>
+
+          <!-- Hora -->
+          <ng-container matColumnDef="time">
+            <th mat-header-cell *matHeaderCellDef>Hora</th>
+            <td mat-cell *matCellDef="let record">
+              <span class="time-badge">
+                <mat-icon>schedule</mat-icon>
+                {{ record.time }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Nombre -->
+          <ng-container matColumnDef="personName">
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
+            <td mat-cell *matCellDef="let record" class="name-cell">
+              {{ record.personName }}
+            </td>
+          </ng-container>
+
+          <!-- RUT -->
+          <ng-container matColumnDef="personRut">
+            <th mat-header-cell *matHeaderCellDef>RUT</th>
+            <td mat-cell *matCellDef="let record">
+              {{ record.personRut }}
+            </td>
+          </ng-container>
+
+          <!-- Tipo de Persona -->
+          <ng-container matColumnDef="personType">
+            <th mat-header-cell *matHeaderCellDef>Tipo</th>
+            <td mat-cell *matCellDef="let record">
+              <span class="person-type-badge" 
+                    [class.person-type--miembro]="record.personType === 'Miembro'"
+                    [class.person-type--colaborador]="record.personType === 'Colaborador'">
+                <mat-icon>{{ record.personType === 'Miembro' ? 'person' : 'badge' }}</mat-icon>
+                {{ record.personType }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Tipo de Acceso -->
+          <ng-container matColumnDef="accessType">
+            <th mat-header-cell *matHeaderCellDef>Acceso</th>
+            <td mat-cell *matCellDef="let record">
+              <span class="access-type" [class.access-type--entrada]="record.accessType === 'Entrada'"
+                                        [class.access-type--salida]="record.accessType === 'Salida'">
+                <mat-icon>{{ getAccessTypeIcon(record.accessType) }}</mat-icon>
+                {{ record.accessType }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Sucursal -->
+          <ng-container matColumnDef="branchName">
+            <th mat-header-cell *matHeaderCellDef>Sucursal</th>
+            <td mat-cell *matCellDef="let record">
+              <span class="branch-badge">
+                <mat-icon>store</mat-icon>
+                {{ record.branchName }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let record">
+              <span class="status-badge" [ngClass]="getStatusClass(record.status)">
+                <mat-icon>{{ record.status === 'Exitoso' ? 'check_circle' : 'cancel' }}</mat-icon>
+                {{ record.status }}
+              </span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+          <!-- Sin resultados -->
+          <tr class="mat-row no-data-row" *matNoDataRow>
+            <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+              <div class="no-data">
+                <mat-icon>info</mat-icon>
+                <p>No se encontraron registros con los filtros aplicados</p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </mat-card>
+
+    <!-- Info Footer -->
+    <div class="info-footer">
+      <mat-icon>info</mat-icon>
+      <p>
+        <span *ngIf="!isSuperAdmin">
+          <strong>Sucursal Actual:</strong> {{ getCurrentUserBranchName() }}. 
+        </span>
+        La tabla muestra los últimos 20 registros con los filtros aplicados. 
+        Al exportar a Excel, se incluirán <strong>TODOS</strong> los registros que cumplan 
+        con el rango de fechas y filtros seleccionados (sin límite de 20).
+      </p>
+    </div>
+  </div>
+</div>

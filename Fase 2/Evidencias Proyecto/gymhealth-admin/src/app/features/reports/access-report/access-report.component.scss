@@ -1,0 +1,774 @@
+// src/app/features/reports/access-report/access-report.component.scss
+
+// ============================================
+// LAYOUT PRINCIPAL
+// ============================================
+.report-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  padding: 2rem;
+  background: transparent;
+}
+
+.report-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+// ============================================
+// HEADER
+// ============================================
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+
+  &__title-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: #f97316;
+  }
+
+  &__title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f97316;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 1rem;
+    color: #22d3ee;
+    font-weight: 600;
+    margin: 0.25rem 0 0 0;
+  }
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+// Tema claro - Header
+:host([data-theme="light"]) {
+  .report-header__icon,
+  .report-header__title {
+    color: #EA580C !important;
+  }
+
+  .report-header__subtitle {
+    color: #00B8AC !important;
+  }
+}
+
+// ============================================
+// FILTERS CARD
+// ============================================
+.filters-card {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(151, 71, 255, 0.2) !important;
+  border-radius: 1rem !important;
+  padding: 2rem !important;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 1.5rem 0;
+
+    mat-icon {
+      color: #22d3ee;
+    }
+  }
+}
+
+.filters-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.filters-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.filter-field {
+  width: 100%;
+
+  &--wide {
+    grid-column: span 2;
+  }
+}
+
+.filter-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  button {
+    white-space: nowrap;
+    font-weight: 600;
+    
+    mat-icon {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+// Estilos específicos para botones de filtros en modo oscuro
+:host([data-theme="dark"]) {
+  .filter-actions {
+    button[mat-stroked-button] {
+      background: rgba(30, 41, 59, 0.8) !important;
+      border: 2px solid rgba(151, 71, 255, 0.5) !important;
+      color: #e2e8f0 !important;
+
+      &:hover {
+        background: rgba(30, 41, 59, 1) !important;
+        border-color: rgba(151, 71, 255, 0.8) !important;
+      }
+    }
+
+    button[mat-raised-button] {
+      background: linear-gradient(135deg, #9747FF 0%, #B47CFF 100%) !important;
+      color: white !important;
+      box-shadow: 0 4px 12px rgba(151, 71, 255, 0.4) !important;
+
+      &:hover {
+        background: linear-gradient(135deg, #B47CFF 0%, #9747FF 100%) !important;
+        box-shadow: 0 6px 16px rgba(151, 71, 255, 0.6) !important;
+      }
+    }
+  }
+
+  .refresh-btn {
+    background: linear-gradient(135deg, #9747FF 0%, #B47CFF 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(151, 71, 255, 0.4) !important;
+
+    &:hover {
+      background: linear-gradient(135deg, #B47CFF 0%, #9747FF 100%) !important;
+      box-shadow: 0 6px 16px rgba(151, 71, 255, 0.6) !important;
+    }
+  }
+}
+
+// Active Filters
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(151, 71, 255, 0.2);
+
+  &__label {
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  mat-chip {
+    background: rgba(34, 211, 238, 0.2) !important;
+    color: #22d3ee !important;
+    font-weight: 500;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+
+    mat-icon {
+      color: #22d3ee;
+      opacity: 0.8;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// Tema claro - Filters
+:host([data-theme="light"]) {
+  .filters-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+
+    &__title {
+      color: #0F172A !important;
+
+      mat-icon {
+        color: #00B8AC !important;
+      }
+    }
+  }
+
+  .active-filters {
+    border-top-color: #E2E8F0;
+
+    &__label {
+      color: #64748B !important;
+    }
+
+    mat-chip {
+      background: #ECFEFF !important;
+      color: #0891B2 !important;
+      border-color: #CFFAFE;
+
+      mat-icon {
+        color: #0891B2 !important;
+      }
+    }
+  }
+}
+
+// ============================================
+// TABLE CARD
+// ============================================
+.table-card {
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(151, 71, 255, 0.2) !important;
+  border-radius: 1rem !important;
+  padding: 2rem !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+
+    mat-icon {
+      color: #22d3ee;
+    }
+  }
+
+  &__count {
+    background: rgba(34, 211, 238, 0.2);
+    color: #22d3ee;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+  }
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(151, 71, 255, 0.2);
+}
+
+// Tema claro - Table Card
+:host([data-theme="light"]) {
+  .table-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .table-header {
+    &__title {
+      color: #0F172A !important;
+
+      mat-icon {
+        color: #00B8AC !important;
+      }
+    }
+
+    &__count {
+      background: #ECFEFF;
+      color: #0891B2;
+      border-color: #CFFAFE;
+    }
+  }
+
+  .table-container {
+    border-color: #E2E8F0;
+  }
+}
+
+// ============================================
+// TABLE STYLES
+// ============================================
+.access-table {
+  width: 100%;
+  background: transparent !important;
+
+  th {
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #22d3ee !important;
+    font-weight: 700 !important;
+    font-size: 0.875rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem !important;
+    border-bottom: 2px solid rgba(34, 211, 238, 0.3) !important;
+  }
+
+  td {
+    color: #e2e8f0 !important;
+    padding: 1rem !important;
+    border-bottom: 1px solid rgba(151, 71, 255, 0.1) !important;
+  }
+
+  tr:hover {
+    background: rgba(151, 71, 255, 0.1) !important;
+  }
+}
+
+.name-cell {
+  font-weight: 600;
+}
+
+// Badges y Estados
+.time-badge,
+.branch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+// NUEVO: Person Type Badges
+.person-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: capitalize;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &.person-type--miembro {
+    background: rgba(151, 71, 255, 0.2);
+    color: #B47CFF;
+    border: 1px solid rgba(151, 71, 255, 0.4);
+  }
+
+  &.person-type--colaborador {
+    background: rgba(34, 211, 238, 0.2);
+    color: #22d3ee;
+    border: 1px solid rgba(34, 211, 238, 0.4);
+  }
+}
+
+.access-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+
+  &--entrada {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  &--salida {
+    background: rgba(249, 115, 22, 0.2);
+    color: #fb923c;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+  }
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+
+  mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &.status-success {
+    background: rgba(34, 211, 238, 0.2);
+    color: #22d3ee;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+  }
+
+  &.status-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+}
+
+// No Data
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #64748b;
+
+  mat-icon {
+    font-size: 3rem;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+}
+
+// Tema claro - Table
+:host([data-theme="light"]) {
+  .access-table {
+    th {
+      background: #F8FAFC !important;
+      color: #00B8AC !important;
+      border-bottom-color: #CFFAFE !important;
+    }
+
+    td {
+      color: #0F172A !important;
+      border-bottom-color: #E2E8F0 !important;
+    }
+
+    tr:hover {
+      background: #F8FAFC !important;
+    }
+  }
+
+  .time-badge,
+  .branch-badge {
+    color: #475569 !important;
+  }
+
+  // Person Type en modo claro
+  .person-type-badge {
+    &.person-type--miembro {
+      background: #F3E8FF;
+      color: #7C3AED;
+      border-color: #DDD6FE;
+    }
+
+    &.person-type--colaborador {
+      background: #ECFEFF;
+      color: #0891B2;
+      border-color: #CFFAFE;
+    }
+  }
+
+  .access-type {
+    &--entrada {
+      background: #ECFDF5;
+      color: #047857;
+      border-color: #D1FAE5;
+    }
+
+    &--salida {
+      background: #FFEDD5;
+      color: #C2410C;
+      border-color: #FED7AA;
+    }
+  }
+
+  .status-badge {
+    &.status-success {
+      background: #ECFEFF;
+      color: #0891B2;
+      border-color: #CFFAFE;
+    }
+
+    &.status-error {
+      background: #FEE2E2;
+      color: #DC2626;
+      border-color: #FECACA;
+    }
+  }
+
+  .no-data {
+    color: #94a3b8 !important;
+  }
+}
+
+// ============================================
+// INFO FOOTER
+// ============================================
+.info-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 0.75rem;
+  color: #67e8f9;
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #22d3ee;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+}
+
+:host([data-theme="light"]) {
+  .info-footer {
+    background: #ECFEFF;
+    border-color: #CFFAFE;
+    color: #0891B2;
+
+    mat-icon {
+      color: #00B8AC;
+    }
+  }
+}
+
+// ============================================
+// FORM FIELDS (Material)
+// ============================================
+::ng-deep {
+  // Modo oscuro
+  [data-theme="dark"] {
+    .mat-mdc-form-field {
+      .mat-mdc-text-field-wrapper {
+        background: rgba(30, 41, 59, 0.8) !important;
+      }
+
+      .mat-mdc-form-field-focus-overlay {
+        background: rgba(34, 211, 238, 0.1) !important;
+      }
+
+      .mdc-text-field--outlined {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: rgba(151, 71, 255, 0.5) !important;
+        }
+      }
+
+      &.mat-focused {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: #22d3ee !important;
+          border-width: 2px !important;
+        }
+
+        .mat-mdc-floating-label {
+          color: #22d3ee !important;
+        }
+      }
+
+      input,
+      .mat-mdc-select,
+      .mat-mdc-select-value {
+        color: #e2e8f0 !important;
+      }
+
+      .mat-mdc-floating-label {
+        color: #94a3b8 !important;
+      }
+
+      mat-icon {
+        color: #22d3ee !important;
+      }
+
+      // Botón del datepicker
+      .mat-datepicker-toggle {
+        color: #22d3ee !important;
+      }
+
+      .mat-mdc-icon-button {
+        color: #22d3ee !important;
+      }
+    }
+
+    // Botones en modo oscuro
+    .mat-mdc-button,
+    .mat-mdc-raised-button,
+    .mat-mdc-stroked-button {
+      &:not([color]) {
+        color: #e2e8f0 !important;
+        border-color: rgba(151, 71, 255, 0.5) !important;
+      }
+    }
+
+    .mat-mdc-stroked-button {
+      border-color: rgba(151, 71, 255, 0.5) !important;
+      background: rgba(30, 41, 59, 0.6) !important;
+
+      &:hover {
+        background: rgba(30, 41, 59, 0.9) !important;
+        border-color: rgba(151, 71, 255, 0.8) !important;
+      }
+    }
+  }
+
+  // Modo claro
+  [data-theme="light"] {
+    .mat-mdc-form-field {
+      .mat-mdc-text-field-wrapper {
+        background: #F8FAFC !important;
+      }
+
+      .mdc-text-field--outlined {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: #E2E8F0 !important;
+        }
+      }
+
+      &.mat-focused {
+        .mdc-notched-outline__leading,
+        .mdc-notched-outline__notch,
+        .mdc-notched-outline__trailing {
+          border-color: #00B8AC !important;
+        }
+
+        .mat-mdc-floating-label {
+          color: #00B8AC !important;
+        }
+      }
+
+      input,
+      .mat-mdc-select {
+        color: #0F172A !important;
+      }
+
+      .mat-mdc-floating-label {
+        color: #64748B !important;
+      }
+
+      mat-icon {
+        color: #00B8AC !important;
+      }
+    }
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 1200px) {
+  .filters-row {
+    grid-template-columns: 1fr;
+    
+    .filter-field--wide {
+      grid-column: span 1;
+    }
+  }
+
+  .filter-actions {
+    flex-direction: column;
+    width: 100%;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .report-wrapper {
+    padding: 1rem;
+  }
+
+  .report-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+
+    &__title {
+      font-size: 1.5rem;
+    }
+
+    .refresh-btn {
+      width: 100%;
+    }
+  }
+
+  .filters-card,
+  .table-card {
+    padding: 1.5rem !important;
+  }
+
+  .table-container {
+    overflow-x: scroll;
+  }
+
+  .access-table {
+    min-width: 800px;
+  }
+}
