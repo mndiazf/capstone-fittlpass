@@ -85,40 +85,8 @@
     </ul>
   </nav>
 
-  <!-- Bottom Menu -->
+  <!-- Bottom: solo menú de usuario -->
   <div class="sidebar__bottom">
-    <nav class="sidebar__bottom-menu">
-      <ul class="menu-list">
-        <li 
-          *ngFor="let item of bottomMenuItems" 
-          class="menu-item"
-          [class.menu-item--active]="isActiveItem(item.id)">
-          <button 
-            class="menu-item__button"
-            (click)="onMenuItemClick(item)"
-            [matTooltip]="!isOpen ? item.label : ''"
-            matTooltipPosition="right">
-            
-            <mat-icon class="menu-item__icon">{{ item.icon }}</mat-icon>
-            
-            <span class="menu-item__label" *ngIf="isOpen">{{ item.label }}</span>
-            
-            <span 
-              *ngIf="item.badge && isOpen" 
-              class="menu-item__badge menu-item__badge--warn">
-              {{ item.badge }}
-            </span>
-            
-            <span 
-              *ngIf="item.badge && !isOpen" 
-              class="menu-item__badge-dot menu-item__badge-dot--warn">
-              {{ item.badge }}
-            </span>
-          </button>
-        </li>
-      </ul>
-    </nav>
-
     <!-- User Profile expandible -->
     <div class="sidebar__profile-menu" *ngIf="isOpen">
       <div 
@@ -129,12 +97,14 @@
           (click)="toggleUserMenu()">
           
           <div class="profile-avatar">
-            <span class="profile-avatar__text">AD</span>
+            <!-- Iniciales dinámicas desde el JWT -->
+            <span class="profile-avatar__text">{{ userInitials }}</span>
           </div>
           
           <div class="profile-info">
-            <p class="profile-info__name">Admin</p>
-            <p class="profile-info__email">admin@gymhealth.com</p>
+            <!-- Nombre y email dinámicos desde el JWT -->
+            <p class="profile-info__name">{{ userName }}</p>
+            <p class="profile-info__email">{{ userEmail }}</p>
           </div>
 
           <mat-icon class="menu-item__expand-icon">

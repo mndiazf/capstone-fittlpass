@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService } from '../../../core/services/auth.service';  // ← AGREGAR ESTE IMPORT
+import { Auth } from '../../../core/services/auth/auth';
 
 @Component({
   selector: 'app-login',
@@ -29,6 +29,7 @@ import { AuthService } from '../../../core/services/auth.service';  // ← AGREG
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
+  // Puede ser email o RUT, pero dejo el nombre "email" para no romper la template
   email: string = '';
   password: string = '';
   errorMessage: string = '';
@@ -37,41 +38,48 @@ export class LoginComponent {
 
   constructor(
     private router: Router,
-    private authService: AuthService  // ← AGREGAR AuthService
+    private auth: Auth
   ) {
-    // Si ya está logueado, redirigir al dashboard
-    if (this.authService.isAuthenticated) {
+    // Si ya está logueado y el token sigue vigente, redirigir al dashboard
+    if (this.auth.isAuthenticated) {
       this.router.navigate(['/dashboard']);
     }
   }
 
-  async onLogin(): Promise<void> {
+  onLogin(): void {
     this.errorMessage = '';
 
     // Validaciones básicas
     if (!this.email || !this.password) {
-      this.errorMessage = 'Por favor ingrese email y contraseña';
-      return;
-    }
-
-    if (!this.isValidEmail(this.email)) {
-      this.errorMessage = 'Por favor ingrese un email válido';
+      this.errorMessage = 'Por favor ingrese email/RUT y contraseña';
       return;
     }
 
     this.isLoading = true;
 
-    // Usar el AuthService en lugar de código manual
-    this.authService.login(this.email, this.password).subscribe({
-      next: (user) => {
-        console.log('✅ Login exitoso:', user);
+    // Llamar al backend admin: /api/admin/auth/login
+    this.auth.login(this.email, this.password).subscribe({
+      next: (payload) => {
+        console.log('✅ Login admin exitoso. Payload JWT:', payload);
         this.isLoading = false;
-        // El AuthService ya inició el monitoreo de sesión automáticamente
-        this.router.navigate(['/dashboard']);
+
+        // Aquí puedes leer branch actual, roles, etc. desde el servicio
+        // const branch = this.auth.currentBranch;
+
+        this.router.navigate(['/dashboard']); // o '/admin/dashboard' si lo prefieres
       },
       error: (error) => {
-        console.error('❌ Error en login:', error);
-        this.errorMessage = error.message || 'Email o contraseña incorrectos';
+        console.error('❌ Error en login admin:', error);
+
+        // Mensaje amigable desde el backend si viene definido
+        if (error?.error?.message) {
+          this.errorMessage = error.error.message;
+        } else if (error?.message) {
+          this.errorMessage = error.message;
+        } else {
+          this.errorMessage = 'Credenciales inválidas o error en el servidor';
+        }
+
         this.isLoading = false;
       }
     });
@@ -79,11 +87,6 @@ export class LoginComponent {
 
   goToForgotPassword(): void {
     this.router.navigate(['/auth/forgot-password']);
-  }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   }
 
   togglePasswordVisibility(): void {

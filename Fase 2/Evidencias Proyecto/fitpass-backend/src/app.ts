@@ -5,6 +5,8 @@ import { logger } from './utils/logger';
 import { catalogRouter } from './routes/catalog.routes';
 import { checkoutRouter } from './routes/checkout.routes';
 import { authRouter } from './routes/auth.routes';
+import adminAuthRouter from './routes/admin-auth.routes'; 
+import { memberProfileRouter } from './routes/member-profile.routes';
 
 const app: Application = express();
 
@@ -33,6 +35,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use('/api', catalogRouter);
 app.use('/api', checkoutRouter);
 app.use('/api', authRouter); // 👈 añade esto
+app.use('/api/admin/auth', adminAuthRouter);
+app.use('/api', memberProfileRouter);
 
 // 404 para rutas no encontradas
 app.use((req: Request, res: Response) => {

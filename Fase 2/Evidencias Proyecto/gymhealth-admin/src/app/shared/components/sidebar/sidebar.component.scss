@@ -28,9 +28,11 @@ $text-secondary: #94a3b8;
   position: relative;
   width: $sidebar-width;
   height: 100vh;
-  background: linear-gradient(180deg, 
-    rgba($secondary, 0.3) 0%, 
-    rgba($bg, 0.9) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba($secondary, 0.3) 0%,
+    rgba($bg, 0.9) 100%
+  );
   backdrop-filter: blur(20px);
   border-right: 1px solid $line;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
@@ -232,7 +234,7 @@ $text-secondary: #94a3b8;
     font-size: 0.75rem;
     font-weight: 700;
     flex-shrink: 0;
-    
+
     &--primary {
       background-color: $primary;
       color: $bg;
@@ -280,9 +282,11 @@ $text-secondary: #94a3b8;
 
   &--active {
     .menu-item__button {
-      background: linear-gradient(90deg, 
-        rgba($primary, 0.2), 
-        rgba($secondary, 0.2));
+      background: linear-gradient(
+        90deg,
+        rgba($primary, 0.2),
+        rgba($secondary, 0.2)
+      );
       color: $primary;
       box-shadow: 0 4px 12px rgba($primary, 0.1);
 
@@ -306,11 +310,12 @@ $text-secondary: #94a3b8;
 
 // Fondo oscuro SOLO para modo dark
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   .submenu-list {
     background: rgba($surface, 0.5);
   }
 }
+
 .submenu-item {
   position: relative;
 
@@ -356,9 +361,11 @@ $text-secondary: #94a3b8;
 
   &--active {
     .submenu-item__button {
-      background: linear-gradient(90deg, 
-        rgba($primary, 0.15), 
-        rgba($secondary, 0.15));
+      background: linear-gradient(
+        90deg,
+        rgba($primary, 0.15),
+        rgba($secondary, 0.15)
+      );
       color: $primary;
 
       .submenu-item__icon {
@@ -376,19 +383,17 @@ $text-secondary: #94a3b8;
   padding: 0.75rem;
 }
 
-.sidebar__bottom-menu {
-  margin-bottom: 0.75rem;
-}
-
 // ============================================
-// USER PROFILE - AHORA CLICKEABLE
+// USER PROFILE (tarjeta antigua, por si la reutilizas)
 // ============================================
 .sidebar__profile {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(90deg, 
-    rgba($secondary, 0.3), 
-    rgba($surface, 0.5));
+  background: linear-gradient(
+    90deg,
+    rgba($secondary, 0.3),
+    rgba($surface, 0.5)
+  );
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
@@ -399,9 +404,7 @@ $text-secondary: #94a3b8;
   position: relative;
 
   &:hover {
-    background: linear-gradient(90deg, 
-      rgba($calipso, 0.2), 
-      rgba($secondary, 0.3));
+    background: linear-gradient(90deg, rgba($calipso, 0.2), rgba($secondary, 0.3));
     border-color: rgba($calipso, 0.4);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba($calipso, 0.2);
@@ -473,7 +476,7 @@ $text-secondary: #94a3b8;
 ::ng-deep .user-menu {
   .mat-mdc-menu-panel {
     min-width: 220px !important;
-    background: rgba($bg, 0.95) !important; // ← Fondo más oscuro
+    background: rgba($bg, 0.95) !important;
     border: 1px solid rgba($calipso, 0.2) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
     backdrop-filter: blur(10px) !important;
@@ -525,7 +528,6 @@ $text-secondary: #94a3b8;
     }
   }
 
-  // Separador personalizado
   .menu-divider {
     height: 1px;
     background: rgba($calipso, 0.15);
@@ -549,25 +551,22 @@ $text-secondary: #94a3b8;
   }
 }
 
-
-
-
 // ============================================
 // MODO CLARO - LIGHT THEME
-// REEMPLAZAR toda la sección [data-theme="light"] con esto
 // ============================================
-[data-theme="light"] {
+[data-theme='light'] {
   .sidebar {
-    background: linear-gradient(180deg, 
-      rgba(255, 255, 255, 0.98) 0%, 
-      rgba(248, 250, 252, 0.95) 100%) !important;
-    border-right-color: #E2E8F0 !important;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(248, 250, 252, 0.95) 100%
+    ) !important;
+    border-right-color: #e2e8f0 !important;
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08) !important;
   }
 
-  // Header
   .sidebar__header {
-    border-bottom-color: #E2E8F0 !important;
+    border-bottom-color: #e2e8f0 !important;
   }
 
   .logo-icon {
@@ -576,24 +575,23 @@ $text-secondary: #94a3b8;
 
   .logo-text {
     &__gym {
-      color: #00B8AC !important;
+      color: #00b8ac !important;
     }
 
     &__health {
-      color: #EA580C !important;
+      color: #ea580c !important;
     }
   }
 
   .sidebar__toggle {
-    color: #64748B !important;
+    color: #64748b !important;
 
     &:hover {
       background-color: rgba(0, 184, 172, 0.1) !important;
-      color: #00B8AC !important;
+      color: #00b8ac !important;
     }
   }
 
-  // Main menu
   .sidebar__main-menu {
     &::-webkit-scrollbar-thumb {
       background: rgba(0, 184, 172, 0.2);
@@ -604,7 +602,6 @@ $text-secondary: #94a3b8;
     }
   }
 
-  // Menu items
   .menu-item {
     &__button {
       color: #475569 !important;
@@ -612,55 +609,56 @@ $text-secondary: #94a3b8;
 
       &:hover {
         background-color: rgba(0, 184, 172, 0.12) !important;
-        color: #00B8AC !important;
+        color: #00b8ac !important;
 
         .menu-item__icon {
-          color: #00B8AC !important;
+          color: #00b8ac !important;
         }
       }
     }
 
     &__icon {
-      color: #64748B !important;
+      color: #64748b !important;
     }
 
     &__indicator {
-      background: linear-gradient(180deg, #00B8AC, #8B35FF) !important;
+      background: linear-gradient(180deg, #00b8ac, #8b35ff) !important;
     }
 
     &--active {
       .menu-item__button {
-        background: linear-gradient(90deg, 
-          rgba(0, 184, 172, 0.18), 
-          rgba(139, 53, 255, 0.12)) !important;
-        color: #00B8AC !important;
+        background: linear-gradient(
+          90deg,
+          rgba(0, 184, 172, 0.18),
+          rgba(139, 53, 255, 0.12)
+        ) !important;
+        color: #00b8ac !important;
         box-shadow: 0 2px 8px rgba(0, 184, 172, 0.2) !important;
 
         .menu-item__icon {
-          color: #00B8AC !important;
+          color: #00b8ac !important;
         }
       }
     }
 
     &__badge {
       &--primary {
-        background-color: #00B8AC !important;
+        background-color: #00b8ac !important;
         color: white !important;
       }
 
       &--accent {
         background-color: rgba(139, 53, 255, 0.15) !important;
-        color: #8B35FF !important;
+        color: #8b35ff !important;
       }
 
       &--warn {
-        background-color: #EA580C !important;
+        background-color: #ea580c !important;
         color: white !important;
       }
     }
   }
 
-  // Submenu - MORADO SIN GRIS
   .submenu-list {
     background: rgba(139, 53, 255, 0.18) !important;
     border: 1px solid rgba(139, 53, 255, 0.3) !important;
@@ -673,53 +671,34 @@ $text-secondary: #94a3b8;
 
       &:hover {
         background-color: rgba(139, 53, 255, 0.28) !important;
-        color: #8B35FF !important;
+        color: #8b35ff !important;
 
         .submenu-item__icon {
-          color: #8B35FF !important;
+          color: #8b35ff !important;
         }
       }
     }
 
     &__icon {
-      color: #64748B !important;
+      color: #64748b !important;
     }
 
     &--active {
       .submenu-item__button {
         background: rgba(139, 53, 255, 0.35) !important;
-        color: #8B35FF !important;
+        color: #8b35ff !important;
 
         .submenu-item__icon {
-          color: #8B35FF !important;
+          color: #8b35ff !important;
         }
       }
     }
   }
 
-  // Bottom section
   .sidebar__bottom {
-    border-top-color: #E2E8F0 !important;
+    border-top-color: #e2e8f0 !important;
   }
 
-  .sidebar__bottom-menu {
-    .menu-item__button {
-      background: rgba(139, 53, 255, 0.15) !important;
-      border: 1px solid rgba(139, 53, 255, 0.25) !important;
-      
-      &:hover {
-        background: rgba(139, 53, 255, 0.28) !important;
-        border-color: rgba(139, 53, 255, 0.45) !important;
-        color: #8B35FF !important;
-        
-        .menu-item__icon {
-          color: #8B35FF !important;
-        }
-      }
-    }
-  }
-
-  // User profile - MORADO SIN GRIS
   .sidebar__profile {
     background: rgba(139, 53, 255, 0.18) !important;
     border: 1px solid rgba(139, 53, 255, 0.3) !important;
@@ -730,26 +709,25 @@ $text-secondary: #94a3b8;
       box-shadow: 0 4px 12px rgba(139, 53, 255, 0.3) !important;
 
       .profile-menu-icon {
-        color: #8B35FF !important;
+        color: #8b35ff !important;
       }
     }
   }
 
   .profile-info {
     &__name {
-      color: #0F172A !important;
+      color: #0f172a !important;
     }
 
     &__email {
-      color: #64748B !important;
+      color: #64748b !important;
     }
   }
 
   .profile-menu-icon {
-    color: #94A3B8 !important;
+    color: #94a3b8 !important;
   }
 
-  // User menu dropdown - MORADO SIN GRIS
   ::ng-deep .user-menu {
     .mat-mdc-menu-panel {
       background: rgba(255, 255, 255, 0.98) !important;
@@ -763,15 +741,15 @@ $text-secondary: #94a3b8;
       border-radius: 0.5rem !important;
 
       mat-icon {
-        color: #64748B !important;
+        color: #64748b !important;
       }
 
       &:hover {
         background: rgba(139, 53, 255, 0.28) !important;
-        color: #8B35FF !important;
+        color: #8b35ff !important;
 
         mat-icon {
-          color: #8B35FF !important;
+          color: #8b35ff !important;
         }
       }
 

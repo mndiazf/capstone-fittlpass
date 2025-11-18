@@ -1,6 +1,14 @@
 // src/app/features/members/enrollment/enrollment.component.ts
 
-import { Component, inject, ViewChild, ElementRef, AfterViewInit, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  inject,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -13,7 +21,7 @@ import { MatChipsModule } from '@angular/material/chips';
 
 import { RutService } from '../../../core/services/rut.service';
 import { RutFormatDirective } from '../../../shared/directives/rut-format.directive';
-import { EnrollmentService, MemberUiModel } from '../../../core/services/enrollment-service';
+import { Enrollment, MemberUiModel } from '../../../core/services/enrollment/enrollment';
 
 @Component({
   selector: 'app-enrollment',
@@ -28,17 +36,17 @@ import { EnrollmentService, MemberUiModel } from '../../../core/services/enrollm
     MatIconModule,
     MatProgressSpinnerModule,
     MatChipsModule,
-    RutFormatDirective
+    RutFormatDirective,
   ],
   templateUrl: './enrollment.component.html',
   styleUrls: ['./enrollment.component.scss'],
   host: {
-    '[attr.data-theme]': 'currentTheme'
-  }
+    '[attr.data-theme]': 'currentTheme',
+  },
 })
 export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   private rutService = inject(RutService);
-  private enrollmentSvc = inject(EnrollmentService);
+  private enrollmentSvc = inject(Enrollment);
 
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
@@ -46,13 +54,25 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   currentTheme: string = 'dark';
   private themeObserver?: MutationObserver;
 
-  currentView: 'search' | 'member-info' | 'camera' | 'review' | 'processing' | 'success' | 'error' = 'search';
-  
+  currentView:
+    | 'search'
+    | 'member-info'
+    | 'camera'
+    | 'review'
+    | 'processing'
+    | 'success'
+    | 'error' = 'search';
+
   searchRut = '';
   isSearching = false;
   searchError = '';
 
   memberData: MemberUiModel | null = null;
+
+  /**
+   * new     -> nunca ha tenido embedding (enrollmentStatus = 'not_enrolled')
+   * update  -> ya tenía embedding y se va a reenrolar (enrollmentStatus = 'enrolled')
+   */
   operationType: 'new' | 'update' = 'new';
 
   faceDetected = false;
@@ -69,7 +89,8 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   unlockError = '';
 
   ngOnInit(): void {
-    this.currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    this.currentTheme =
+      document.documentElement.getAttribute('data-theme') || 'dark';
     this.observeThemeChanges();
   }
 
@@ -79,14 +100,15 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.themeObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'data-theme') {
-          this.currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+          this.currentTheme =
+            document.documentElement.getAttribute('data-theme') || 'dark';
         }
       });
     });
 
     this.themeObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme']
+      attributeFilter: ['data-theme'],
     });
   }
 
@@ -95,6 +117,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   // =========================
   searchMember(): void {
     this.searchError = '';
+    this.memberData = null;
 
     const rutError = this.rutService.getErrorMessage(this.searchRut);
     if (rutError) {
@@ -110,21 +133,28 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.enrollmentSvc.getProfileByRut(formattedRut).subscribe({
       next: (member) => {
-        // Asegurar que lo que mostramos también esté formateado
         member.rut = this.rutService.formatRut(member.rut);
         this.memberData = member;
 
-        this.operationType = member.enrollmentStatus === 'enrolled' ? 'update' : 'new';
+        this.operationType =
+          member.enrollmentStatus === 'enrolled' ? 'update' : 'new';
+
         this.currentView = 'member-info';
         this.isSearching = false;
       },
-      error: (err: Error) => {
-        this.searchError = err.message || 'Error al buscar.';
+      error: (err: any) => {
+        this.searchError =
+          err?.error?.message ||
+          err?.message ||
+          'Error al buscar el miembro.';
         this.isSearching = false;
-      }
+      },
     });
   }
 
+  // =========================
+  // FLUJO DE CÁMARA / FOTO
+  // =========================
   async startEnrollment(): Promise<void> {
     this.currentView = 'camera';
     setTimeout(() => this.startCamera(), 100);
@@ -133,8 +163,12 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   async startCamera(): Promise<void> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: false
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user',
+        },
+        audio: false,
       });
 
       if (this.videoElement?.nativeElement) {
@@ -143,26 +177,29 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error al acceder a la cámara:', error);
-      this.errorMessage = 'No se pudo acceder a la cámara. Verifica los permisos.';
+      this.errorMessage =
+        'No se pudo acceder a la cámara. Verifica los permisos.';
       this.currentView = 'error';
     }
   }
 
   private simulateFaceDetection(): void {
-    setTimeout(() => { this.faceDetected = true; }, 2000);
+    setTimeout(() => {
+      this.faceDetected = true;
+    }, 2000);
   }
 
   captureImage(): void {
     const video = this.videoElement?.nativeElement;
     const canvas = this.canvasElement?.nativeElement;
-    
+
     if (!video || !canvas) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     this.capturedImage = canvas.toDataURL('image/jpeg', 0.9);
     this.stopCamera();
@@ -170,7 +207,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ======================================
-  // ENROLAR (POST imagen al endpoint FACE)
+  // ENROLAR / REENROLAR (POST imagen FACE)
   // ======================================
   confirmEnrollment(): void {
     if (!this.memberData?.id || !this.capturedImage) {
@@ -186,15 +223,19 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.enrollmentSvc.enrollFace(this.memberData.id, blob).subscribe({
       next: () => {
-        this.successMessage = this.operationType === 'new'
-          ? '¡Enrolamiento exitoso!'
-          : '¡Actualización de enrolamiento exitosa!';
+        this.successMessage =
+          this.operationType === 'new'
+            ? '¡Enrolamiento exitoso!'
+            : '¡Actualización de enrolamiento exitosa!';
         this.currentView = 'success';
       },
-      error: (err: Error) => {
-        this.errorMessage = err.message || 'Error al enrolar.';
+      error: (err: any) => {
+        this.errorMessage =
+          err?.error?.message ||
+          err?.message ||
+          'Error al procesar el enrolamiento.';
         this.currentView = 'error';
-      }
+      },
     });
   }
 
@@ -207,7 +248,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   stopCamera(): void {
     if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
+      this.stream.getTracks().forEach((track) => track.stop());
       this.stream = null;
     }
     if (this.videoElement?.nativeElement) {
@@ -216,6 +257,9 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.faceDetected = false;
   }
 
+  // =========================
+  // RESET / ESTADOS
+  // =========================
   reset(): void {
     this.stopCamera();
     this.searchRut = '';
@@ -223,12 +267,26 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.memberData = null;
     this.capturedImage = '';
     this.currentView = 'search';
+    this.operationType = 'new';
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
+  /**
+   * Puede enrolar / reenrolar si:
+   * - membresía activa
+   * - enrolamiento NO bloqueado
+   */
   canEnroll(): boolean {
-    return this.memberData?.membershipStatus === 'active' && !this.memberData?.enrollmentLocked;
+    return (
+      this.memberData?.membershipStatus === 'active' &&
+      !this.memberData?.enrollmentLocked
+    );
   }
 
+  // =========================
+  // DIALOGO DESBLOQUEO
+  // =========================
   openUnlockDialog(): void {
     this.showUnlockDialog = true;
   }
@@ -252,23 +310,52 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 1000);
   }
 
-  getMembershipStatusClass(status: MemberUiModel['membershipStatus'] | string): string {
+  // =========================
+  // HELPERS DE ESTILO
+  // =========================
+  getMembershipStatusClass(
+    status: MemberUiModel['membershipStatus'] | string,
+  ): string {
     switch (status) {
-      case 'active': return 'status--active';
-      case 'inactive': return 'status--inactive';
-      case 'expired': return 'status--expired';
-      default: return '';
+      case 'active':
+        return 'status--active';
+      case 'inactive':
+        return 'status--inactive';
+      case 'expired':
+        return 'status--expired';
+      default:
+        return '';
     }
   }
 
-  getEnrollmentStatusClass(status: MemberUiModel['enrollmentStatus'] | string): string {
+  getEnrollmentStatusClass(
+    status: MemberUiModel['enrollmentStatus'] | string,
+  ): string {
     switch (status) {
-      case 'enrolled': return 'status--enrolled';
-      case 'locked': return 'status--locked';
-      default: return 'status--inactive';
+      case 'enrolled':
+        return 'status--enrolled';
+      case 'locked':
+        return 'status--locked';
+      default:
+        return 'status--inactive';
     }
   }
 
+  getInitials(fullName: string | null | undefined): string {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) {
+      return parts[0].charAt(0).toUpperCase();
+    }
+    return (
+      parts[0].charAt(0).toUpperCase() +
+      parts[parts.length - 1].charAt(0).toUpperCase()
+    );
+  }
+
+  // =========================
+  // DESTROY
+  // =========================
   ngOnDestroy(): void {
     this.stopCamera();
     if (this.themeObserver) {

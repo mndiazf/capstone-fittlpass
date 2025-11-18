@@ -1,10 +1,12 @@
-<!-- src/app/features/enrollment/enrollment.component.html -->
+<!-- src/app/features/members/enrollment/enrollment.component.html -->
 
 <div class="enrollment">
   <div class="enrollment__header">
     <div>
       <h1 class="enrollment__title">Enrolamiento Facial</h1>
-      <p class="enrollment__subtitle">Sistema de registro y actualización biométrica</p>
+      <p class="enrollment__subtitle">
+        Sistema de registro y actualización biométrica
+      </p>
     </div>
   </div>
 
@@ -15,82 +17,104 @@
       <h2>Buscar Miembro</h2>
       <p>Ingresa el RUT del miembro para comenzar</p>
 
-      <!-- Contenedor flex para input y botón -->
       <div class="search-input-group">
-        <mat-form-field appearance="outline" floatLabel="always" class="input-field">
+        <mat-form-field
+          appearance="outline"
+          floatLabel="always"
+          class="input-field"
+        >
           <mat-label>RUT</mat-label>
           <mat-icon matPrefix>badge</mat-icon>
-          <input 
-            matInput 
-            [(ngModel)]="searchRut" 
+          <input
+            matInput
+            [(ngModel)]="searchRut"
             appRutFormat
-            placeholder="12345678-9"
+            placeholder="12.345.678-9"
             (keyup.enter)="searchMember()"
             [disabled]="isSearching"
-            maxlength="12">
+            maxlength="12"
+          />
         </mat-form-field>
 
-        <button 
-          mat-raised-button 
-          color="primary" 
+        <button
+          mat-raised-button
+          color="primary"
           (click)="searchMember()"
           [disabled]="isSearching"
-          class="search-button">
+          class="search-button"
+        >
           <mat-spinner *ngIf="isSearching" diameter="20"></mat-spinner>
           <mat-icon *ngIf="!isSearching">search</mat-icon>
           {{ isSearching ? 'Buscando...' : 'Buscar' }}
         </button>
       </div>
 
-      <!-- Error abajo del grupo (SIN DUPLICAR) -->
       <p class="error-text" *ngIf="searchError">{{ searchError }}</p>
     </div>
   </mat-card>
 
   <!-- 2. INFORMACIÓN DEL MIEMBRO -->
-  <mat-card class="step-card" *ngIf="currentView === 'member-info' && memberData">
+  <mat-card
+    class="step-card"
+    *ngIf="currentView === 'member-info' && memberData as m"
+  >
     <div class="member-section">
       <div class="member-header">
         <div class="member-avatar">
-          {{ memberData.firstName.charAt(0) }}{{ memberData.middleName?.charAt(0) || '' }}
+          <span class="avatar-text">
+            {{ getInitials(m.fullName) }}
+          </span>
         </div>
         <div class="member-details">
-          <h2>{{ memberData.firstName }} {{ memberData.middleName }} {{ memberData.lastName }} {{ memberData.secondLastName }}</h2>
-          <p class="member-email">{{ memberData.email }}</p>
-          <p class="member-rut">RUT: {{ memberData.rut }}</p>
+          <h2>{{ m.fullName }}</h2>
+          <p class="member-email">{{ m.email }}</p>
+          <p class="member-rut">RUT: {{ m.rut }}</p>
+          <p class="member-phone" *ngIf="m.phone">
+            Teléfono: {{ m.phone }}
+          </p>
         </div>
       </div>
 
       <div class="member-status">
         <div class="status-item">
           <span class="status-label">Membresía:</span>
-          <mat-chip [class]="getMembershipStatusClass(memberData.membershipStatus)">
-            {{ memberData.membership || 'Sin membresía' }}
+          <mat-chip [class]="getMembershipStatusClass(m.membershipStatus)">
+            {{ m.membershipName || m.membershipType || 'Sin membresía' }}
             <span class="status-indicator">
-              {{ memberData.membershipStatus === 'active' ? '● Activa' : 
-                 memberData.membershipStatus === 'inactive' ? '● Inactiva' : '● Expirada' }}
+              {{
+                m.membershipStatus === 'active'
+                  ? '● Activa'
+                  : m.membershipStatus === 'inactive'
+                  ? '● Inactiva'
+                  : '● Expirada'
+              }}
             </span>
           </mat-chip>
         </div>
 
         <div class="status-item">
           <span class="status-label">Enrolamiento:</span>
-          <mat-chip [class]="getEnrollmentStatusClass(memberData.enrollmentStatus)">
-            {{ memberData.enrollmentStatus === 'enrolled' ? '✓ Enrolado' : 
-               memberData.enrollmentStatus === 'locked' ? '🔒 Bloqueado' : '○ No enrolado' }}
+          <mat-chip [class]="getEnrollmentStatusClass(m.enrollmentStatus)">
+            {{
+              m.enrollmentStatus === 'enrolled'
+                ? '✓ Enrolado'
+                : m.enrollmentStatus === 'locked'
+                ? '🔒 Bloqueado'
+                : '○ No enrolado'
+            }}
           </mat-chip>
-          <span class="enrollment-date" *ngIf="memberData.lastEnrollment">
-            Último: {{ memberData.lastEnrollment }}
-          </span>
         </div>
       </div>
 
       <!-- BLOQUEO -->
-      <div class="lock-warning" *ngIf="memberData.enrollmentLocked">
+      <div class="lock-warning" *ngIf="m.enrollmentLocked">
         <mat-icon>lock</mat-icon>
         <div>
           <h3>Enrolamiento Bloqueado</h3>
-          <p>Este usuario tiene el enrolamiento bloqueado. Debe desbloquearse para poder enrolar.</p>
+          <p>
+            Este usuario tiene el enrolamiento bloqueado. Debe desbloquearse
+            para poder enrolar.
+          </p>
           <button mat-raised-button color="warn" (click)="openUnlockDialog()">
             <mat-icon>lock_open</mat-icon>
             Desbloquear
@@ -99,7 +123,7 @@
       </div>
 
       <!-- MEMBRESÍA INACTIVA -->
-      <div class="membership-warning" *ngIf="memberData.membershipStatus !== 'active'">
+      <div class="membership-warning" *ngIf="m.membershipStatus !== 'active'">
         <mat-icon>warning</mat-icon>
         <div>
           <h3>Membresía Inactiva</h3>
@@ -114,16 +138,19 @@
           Buscar Otro
         </button>
 
-        <button 
-          mat-raised-button 
+        <button
+          mat-raised-button
           color="primary"
-          *ngIf="operationType === 'new'"
           [disabled]="!canEnroll()"
-          (click)="startEnrollment()">
+          (click)="startEnrollment()"
+        >
           <mat-icon>face</mat-icon>
-          Enrolar
+          {{
+            operationType === 'new'
+              ? 'Enrolar rostro'
+              : 'Reenrolar rostro'
+          }}
         </button>
-
       </div>
     </div>
   </mat-card>
@@ -131,12 +158,18 @@
   <!-- 3. CÁMARA -->
   <mat-card class="step-card" *ngIf="currentView === 'camera'">
     <div class="camera-section">
-      <h2>{{ operationType === 'new' ? 'Capturar Rostro' : 'Actualizar Rostro' }}</h2>
+      <h2>
+        {{
+          operationType === 'new'
+            ? 'Capturar Rostro'
+            : 'Actualizar Rostro'
+        }}
+      </h2>
       <p>Posiciona tu rostro dentro del círculo</p>
 
       <div class="camera-container">
         <video #videoElement autoplay playsinline></video>
-        <canvas #canvasElement style="display: none;"></canvas>
+        <canvas #canvasElement style="display: none"></canvas>
 
         <div class="face-overlay" [class.face-detected]="faceDetected">
           <div class="face-circle"></div>
@@ -147,15 +180,20 @@
       </div>
 
       <div class="camera-controls">
-        <button mat-stroked-button class="search-another-btn" (click)="currentView = 'member-info'; stopCamera()">
+        <button
+          mat-stroked-button
+          class="search-another-btn"
+          (click)="currentView = 'member-info'; stopCamera()"
+        >
           <mat-icon>arrow_back</mat-icon>
           Cancelar
         </button>
-        <button 
-          mat-raised-button 
+        <button
+          mat-raised-button
           color="accent"
           [disabled]="!faceDetected"
-          (click)="captureImage()">
+          (click)="captureImage()"
+        >
           <mat-icon>camera_alt</mat-icon>
           Capturar
         </button>
@@ -170,7 +208,7 @@
       <p>Verifica que la imagen sea clara</p>
 
       <div class="captured-preview">
-        <img [src]="capturedImage" alt="Rostro capturado">
+        <img [src]="capturedImage" alt="Rostro capturado" />
       </div>
 
       <div class="review-controls">
@@ -196,11 +234,17 @@
   </mat-card>
 
   <!-- 6. ÉXITO -->
-  <mat-card class="step-card step-card--success" *ngIf="currentView === 'success'">
+  <mat-card
+    class="step-card step-card--success"
+    *ngIf="currentView === 'success'"
+  >
     <div class="success-section">
       <mat-icon class="success-icon">check_circle</mat-icon>
       <h2>{{ successMessage }}</h2>
-      <p *ngIf="memberData">{{ memberData.firstName }} {{ memberData.lastName }} enrolado correctamente</p>
+      <p *ngIf="memberData">
+        {{ memberData.fullName || ('Usuario ' + memberData.rut) }} enrolado
+        correctamente
+      </p>
       <button mat-raised-button color="primary" (click)="reset()">
         <mat-icon>add</mat-icon>
         Enrolar Otro
@@ -209,7 +253,10 @@
   </mat-card>
 
   <!-- 7. ERROR -->
-  <mat-card class="step-card step-card--error" *ngIf="currentView === 'error'">
+  <mat-card
+    class="step-card step-card--error"
+    *ngIf="currentView === 'error'"
+  >
     <div class="error-section">
       <mat-icon class="error-icon">error</mat-icon>
       <h2>Error</h2>
@@ -234,28 +281,36 @@
       <div class="unlock-modal__body">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Razón del desbloqueo</mat-label>
-          <textarea 
-            matInput 
+          <textarea
+            matInput
             [(ngModel)]="unlockReason"
             rows="3"
-            placeholder="Ej: Cambio estético, cirugía facial, etc."></textarea>
+            placeholder="Ej: Cambio estético, cirugía facial, etc."
+          ></textarea>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Contraseña de Admin</mat-label>
-          <input 
-            matInput 
+          <input
+            matInput
             type="password"
             [(ngModel)]="unlockPassword"
-            (keyup.enter)="unlockEnrollment()">
+            (keyup.enter)="unlockEnrollment()"
+          />
           <mat-icon matPrefix>key</mat-icon>
         </mat-form-field>
 
         <p class="error-text" *ngIf="unlockError">{{ unlockError }}</p>
 
         <div class="modal-actions">
-          <button mat-stroked-button (click)="closeUnlockDialog()">Cancelar</button>
-          <button mat-raised-button color="primary" (click)="unlockEnrollment()">
+          <button mat-stroked-button (click)="closeUnlockDialog()">
+            Cancelar
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="unlockEnrollment()"
+          >
             <mat-icon>lock_open</mat-icon>
             Desbloquear
           </button>

@@ -1,5 +1,5 @@
-import { query } from '../config/db';
-import { logger } from '../utils/logger';
+import { query } from '../../config/db';
+import { logger } from '../../utils/logger';
 
 type PeriodUnit = 'WEEK' | 'MONTH' | 'TOTAL';
 type PlanScope = 'ONECLUB' | 'MULTICLUB';

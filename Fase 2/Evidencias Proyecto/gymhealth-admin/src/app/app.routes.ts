@@ -1,6 +1,8 @@
+// src/app/app.routes.ts (o donde tengas las rutas)
 import { Routes } from '@angular/router';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
-import { authGuard } from './core/guards/auth.guard';
+// ❌ IMPORT ANTIGUO (elimínalo)
+// import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -26,11 +28,11 @@ export const routes: Routes = [
     ]
   },
 
-  // Rutas protegidas (todas requieren solo login)
+  // Rutas de la app (POR AHORA SIN GUARD)
   {
     path: '',
     component: AdminLayoutComponent,
-    canActivate: [authGuard],
+    // ❌ canActivate: [authGuard],  // <- quitado
     children: [
       {
         path: 'dashboard',
@@ -42,7 +44,7 @@ export const routes: Routes = [
         loadComponent: () => import('./features/members/enrollment/enrollment.component')
           .then(m => m.EnrollmentComponent)
       },
-       {
+      {
         path: 'members/search',
         loadComponent: () => import('./features/members/member-search/member-search.component')
           .then(m => m.MemberSearchComponent),
@@ -54,21 +56,17 @@ export const routes: Routes = [
           .then(m => m.MemberBlockComponent),
         title: 'Registro de Infracciones - GymHealth'
       },
-      
-      // Venta Presencial
       {
         path: 'sales/presential',
         loadComponent: () => import('./features/salesandpayment/presential-sale/presential-sale.component')
           .then(m => m.PresentialSaleComponent)
       },
-      
-       {
+      {
         path: 'reports/access',
         loadComponent: () => import('./features/reports/access-report/access-report.component')
           .then(m => m.AccessReportComponent),
         title: 'Reporte de Accesos - GymHealth'
       },
-
       {
         path: 'notifications',
         loadComponent: () => import('./features/notifications/notifications.component')
@@ -79,7 +77,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/settings.component')
           .then(m => m.SettingsComponent)
       },
-      // Management - Rutas existentes
       {
         path: 'management/users',
         loadComponent: () => import('./features/management/users/user-management.component')
@@ -90,8 +87,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/management/profile/profile-management.component')
           .then(m => m.ProfileManagementComponent)
       },
-      
-      // 👇 GESTIÓN DE TURNOS
       {
         path: 'management/staff-schedule',
         loadComponent: () => import('./features/management/staff-schedule/staff-schedule.component')
@@ -101,11 +96,10 @@ export const routes: Routes = [
       {
         path: 'management/staff-schedule/detail/:id',
         loadComponent: () => import('./features/management/staff-schedule-detail/staff-schedule-detail.component')
-          //                      
           .then(m => m.StaffScheduleDetailComponent),
         title: 'Configuración Avanzada - GymHealth'
       },
-       {
+      {
         path: 'management/branch-schedule',
         loadComponent: () => import('./features/management/branch-schedule/branch-schedule.component')
           .then(m => m.BranchScheduleComponent),
@@ -113,7 +107,7 @@ export const routes: Routes = [
       }
     ]
   },
-  
+
   {
     path: '**',
     redirectTo: '/auth/login'
