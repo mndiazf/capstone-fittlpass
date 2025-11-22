@@ -35,7 +35,7 @@ export class LoginComponent implements OnChanges {
       ]],
       password: ['', [
         Validators.required,
-        Validators.minLength(8),
+        Validators.minLength(6),
         // Descomenta si quieres password fuerte:
         // Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]+$/)
       ]]

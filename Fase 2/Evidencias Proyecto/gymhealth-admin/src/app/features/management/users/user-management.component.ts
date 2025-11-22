@@ -1,9 +1,27 @@
 import {
-  Component, signal, ViewChild, ElementRef, OnDestroy, HostBinding,
-  OnInit, Inject
+  Component,
+  signal,
+  ViewChild,
+  ElementRef,
+  OnDestroy,
+  HostBinding,
+  OnInit,
+  Inject,
+  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule, DOCUMENT } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  CommonModule,
+  DOCUMENT,
+  isPlatformBrowser,
+} from '@angular/common';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,22 +33,51 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RutService } from '../../../core/services/rut.service';
-import { StaffService, StaffMember } from '../../../core/services/staff.service';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
-interface Profile {
+import { RutService } from '../../../core/services/rut.service';
+import {
+  StaffUserDto,
+  StaffUserSearchResult,
+  CreateStaffUserPayload,
+  UpdateStaffUserPayload,
+  StaffManagement,
+} from '../../../core/services/staff/staff-management';
+// ⬇️ Usamos el servicio Enrollment para el endpoint de embedding
+
+import {
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  switchMap,
+  catchError,
+} from 'rxjs/operators';
+import { of, Subscription } from 'rxjs';
+import {
+  ProfileDto,
+  ProfileManagement,
+} from '../../../core/services/profiles/profile-management';
+import { Enrollment } from '../../../core/services/enrollment/enrollment';
+
+type EnrollmentView = 'form' | 'camera' | 'review' | 'processing' | 'success';
+
+/**
+ * ViewModel local para el selector de perfiles.
+ */
+interface StaffProfileVM {
   id: string;
   name: string;
-  color: string;
+  description: string | null;
+  branchId: string;
+  isDefault: boolean;
   requiresPassword: boolean;
 }
 
-interface Branch {
-  id: string;
-  name: string;
-}
-
-type EnrollmentView = 'form' | 'camera' | 'review' | 'processing' | 'success';
+/** Nombres de perfiles que SÍ usan contraseña (según seed) */
+const PASSWORD_PROFILE_NAMES = [
+  'Administrador de Sucursal',
+  'Recepcionista',
+];
 
 @Component({
   selector: 'app-user-management',
@@ -48,24 +95,34 @@ type EnrollmentView = 'form' | 'camera' | 'review' | 'processing' | 'success';
     MatCheckboxModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './user-management.component.html',
-  styleUrls: ['./user-management.component.scss']
+  styleUrls: ['./user-management.component.scss'],
 })
 export class UserManagementComponent implements OnInit, OnDestroy {
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
-  /** Solo reflejamos el tema global en este host (no tocamos el global) */
+  /** Tema local */
   @HostBinding('attr.data-theme') dataTheme: 'light' | 'dark' | null = null;
   private themeObserver?: MutationObserver;
 
   userForm: FormGroup;
   searchForm: FormGroup;
-  profiles = signal<Profile[]>([]);
-  branches = signal<Branch[]>([]);
-  editingUser = signal<StaffMember | null>(null);
+
+  profiles = signal<StaffProfileVM[]>([]);
+  searchResults = signal<StaffUserSearchResult[]>([]);
+
+  // Sucursal actual (desde JWT / payload)
+  currentBranchId = signal<string | null>(null);
+  currentBranchName = signal<string | null>(null);
+
+  editingUser = signal<
+    (StaffUserDto & { hasEnrollment?: boolean; lastEnrollment?: string | null }) | null
+  >(null);
+
   isEditMode = signal(false);
   isSearching = signal(false);
 
@@ -76,15 +133,20 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   capturedImage = signal('');
   private stream: MediaStream | null = null;
 
+  private searchSub?: Subscription;
+
   constructor(
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
     private rutService: RutService,
-    private staffService: StaffService,
-    @Inject(DOCUMENT) private document: Document
+    private managementService: StaffManagement,
+    private enrollmentService: Enrollment, // <- servicio que llama al endpoint de embedding
+    private profileManagement: ProfileManagement, // perfiles
+    @Inject(DOCUMENT) private document: Document,
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {
     this.searchForm = this.fb.group({
-      searchTerm: ['', [Validators.required]]
+      searchTerm: [''],
     });
 
     this.userForm = this.fb.group({
@@ -96,34 +158,65 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       email: ['', [Validators.required, Validators.email, this.emailValidator]],
       password: [''],
       profileId: ['', Validators.required],
-      branchId: ['', Validators.required],
+      branchId: [''], // se setea automáticamente
       isActive: [true],
-      hasEnrollment: [false]
+      hasEnrollment: [false],
     });
 
-    this.initializeProfiles();
-    this.loadBranches();
-
+    // Cambios de perfil => recalcular validación de password
     this.userForm.get('profileId')?.valueChanges.subscribe(() => {
       this.updatePasswordValidation();
     });
+
+    // Autocomplete de buscador (por nombre o RUT)
+    const searchControl = this.searchForm.get('searchTerm');
+    if (searchControl) {
+      this.searchSub = searchControl.valueChanges
+        .pipe(
+          debounceTime(300),
+          distinctUntilChanged(),
+          filter((value) => !!value && typeof value === 'string'),
+          switchMap((value: string) => {
+            const term = value.trim();
+            if (term.length < 2) {
+              this.searchResults.set([]);
+              return of<StaffUserSearchResult[]>([]);
+            }
+
+            this.isSearching.set(true);
+            const branchId = this.currentBranchId() ?? undefined;
+
+            return this.managementService.searchStaffUsers(term, branchId).pipe(
+              catchError((err) => {
+                console.error('Error buscando colaboradores:', err);
+                this.showMessage('Error buscando colaboradores');
+                return of<StaffUserSearchResult[]>([]);
+              }),
+            );
+          }),
+        )
+        .subscribe((results) => {
+          this.searchResults.set(results);
+          this.isSearching.set(false);
+        });
+    }
   }
 
   // ============================================
-  // THEME: seguir data-theme del <html> sin tocarlo
+  // THEME + INICIALIZACIÓN
   // ============================================
   ngOnInit(): void {
     this.syncThemeFromHtml();
     this.observeGlobalTheme();
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadCurrentBranchFromToken();
+    }
   }
 
   private syncThemeFromHtml(): void {
     const t = this.document?.documentElement?.getAttribute('data-theme');
-    if (t === 'light' || t === 'dark') {
-      this.dataTheme = t;          // activa tus selectores :host([data-theme="..."])
-    } else {
-      this.dataTheme = null;       // sin atributo => estilos por defecto del componente
-    }
+    this.dataTheme = t === 'light' || t === 'dark' ? t : null;
   }
 
   private observeGlobalTheme(): void {
@@ -131,22 +224,68 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.themeObserver = new MutationObserver(() => this.syncThemeFromHtml());
     this.themeObserver.observe(this.document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme']
+      attributeFilter: ['data-theme'],
     });
   }
 
+  /**
+   * Lee la sucursal actual desde localStorage / JWT y carga perfiles
+   */
+  private loadCurrentBranchFromToken(): void {
+    try {
+      let payload: any | null = null;
+
+      const storedPayload =
+        localStorage.getItem('fitpass_admin_payload') ||
+        localStorage.getItem('fitpass_payload');
+
+      if (storedPayload) {
+        payload = JSON.parse(storedPayload);
+      } else {
+        const token =
+          localStorage.getItem('fitpass_admin_token') ||
+          localStorage.getItem('fitpass_token');
+
+        if (token) {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const json = atob(base64);
+            payload = JSON.parse(json);
+          }
+        }
+      }
+
+      const branch = payload?.branches?.[0];
+      if (branch?.id) {
+        this.currentBranchId.set(branch.id);
+        this.currentBranchName.set(branch.name || branch.code || 'Sucursal actual');
+
+        this.userForm.patchValue({ branchId: branch.id }, { emitEvent: false });
+
+        this.loadProfilesForBranch(branch.id);
+      } else {
+        console.warn('No se encontraron branches en el payload JWT');
+        this.showMessage('✗ No se pudo obtener la sucursal actual. Verifica tu sesión.');
+      }
+    } catch (err) {
+      console.error('Error leyendo sucursal desde token:', err);
+      this.showMessage('✗ Error obteniendo sucursal actual. Verifica tu sesión.');
+    }
+  }
+
   // ============================================
-  // VALIDADORES PERSONALIZADOS
+  // VALIDADORES
   // ============================================
   emailValidator(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
     if (!value) return null;
 
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const emailRegex =
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(value)) {
       return { invalidEmail: true };
     }
-
     return null;
   }
 
@@ -182,89 +321,145 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // INICIALIZACIÓN
+  // CARGA DE PERFILES (desde ProfileManagement)
   // ============================================
-  initializeProfiles(): void {
-    const defaultProfiles: Profile[] = [
-      { id: '1', name: 'Administrador',    color: '#9747FF', requiresPassword: true  },
-      { id: '2', name: 'Recepcionista',    color: '#06b6d4', requiresPassword: true  },
-      { id: '3', name: 'Personal Trainer', color: '#f97316', requiresPassword: false }
-    ];
+  private loadProfilesForBranch(branchId: string): void {
+    this.profileManagement.getAllProfiles(branchId).subscribe({
+      next: (profiles: ProfileDto[]) => {
+        const mapped: StaffProfileVM[] = profiles.map((p) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          branchId: p.branchId,
+          isDefault: p.isDefault,
+          // Sólo ADMIN y RECEPCIONISTA usan contraseña
+          requiresPassword: PASSWORD_PROFILE_NAMES.includes(p.name),
+        }));
 
-    localStorage.setItem('gymhealth_profiles', JSON.stringify(defaultProfiles));
-    this.profiles.set(defaultProfiles);
-    console.log('✅ Perfiles inicializados:', this.profiles());
+        this.profiles.set(mapped);
+        this.updatePasswordValidation();
+      },
+      error: (err) => {
+        console.error('Error cargando perfiles:', err);
+        this.showMessage('Error al cargar perfiles de la sucursal');
+        this.profiles.set([]);
+        this.updatePasswordValidation();
+      },
+    });
   }
 
-  loadBranches(): void {
-    const stored = localStorage.getItem('gymhealth_branches');
-    if (stored) {
-      this.branches.set(JSON.parse(stored));
-    } else {
-      const defaultBranches: Branch[] = [
-        { id: '1', name: 'Sucursal Centro' },
-        { id: '2', name: 'Sucursal Norte' },
-        { id: '3', name: 'Sucursal Sur' }
-      ];
-      this.branches.set(defaultBranches);
-      localStorage.setItem('gymhealth_branches', JSON.stringify(defaultBranches));
-    }
+  // ============================================
+  // BUSCADOR
+  // ============================================
+  displaySearchOption(option: StaffUserSearchResult | string | null): string {
+    if (!option) return '';
+    if (typeof option === 'string') return option;
+    return `${option.fullName} (${option.rut})`;
   }
 
-  // ============================================
-  // BÚSQUEDA
-  // ============================================
+  clearSearch(): void {
+    this.searchForm.patchValue({ searchTerm: '' }, { emitEvent: false });
+    this.searchResults.set([]);
+  }
+
+  onSearchOptionSelected(option: StaffUserSearchResult): void {
+    if (!option?.id) return;
+    this.loadUserById(option.id);
+  }
+
   searchUser(): void {
-    const searchTerm = this.searchForm.get('searchTerm')?.value?.trim();
+    const controlValue = this.searchForm.get('searchTerm')?.value;
 
-    if (!searchTerm) {
-      this.showMessage('Ingresa un RUT para buscar');
+    if (controlValue && typeof controlValue === 'object' && 'id' in controlValue) {
+      this.onSearchOptionSelected(controlValue as StaffUserSearchResult);
       return;
     }
 
-    const rutError = this.rutService.getErrorMessage(searchTerm);
-    if (rutError) {
-      this.showMessage(rutError);
+    const term = (controlValue ?? '').toString().trim();
+    if (!term) {
+      this.showMessage('Ingresa nombre o RUT para buscar');
       return;
     }
 
     this.isSearching.set(true);
-    const formattedRut = this.rutService.formatRut(searchTerm);
+    const branchId = this.currentBranchId() ?? undefined;
 
-    this.staffService.getByRut(formattedRut).subscribe({
-      next: (staff: StaffMember) => {
-        this.loadUserData(staff);
-        this.showMessage('✓ Usuario encontrado - Puedes modificar los datos');
+    this.managementService.searchStaffUsers(term, branchId).subscribe({
+      next: (results) => {
+        this.searchResults.set(results);
+        this.isSearching.set(false);
+
+        if (results.length === 1) {
+          this.loadUserById(results[0].id);
+        } else if (results.length === 0) {
+          this.showMessage(
+            'Sin resultados. Completa el formulario para crear un nuevo colaborador.',
+          );
+        } else {
+          this.showMessage(
+            `${results.length} resultados. Selecciona uno desde la lista.`,
+          );
+        }
+      },
+      error: (err) => {
+        console.error('Error buscando colaboradores:', err);
+        this.showMessage('Error buscando colaboradores');
         this.isSearching.set(false);
       },
-      error: () => {
-        this.clearFormKeepSearch();
-        this.showMessage('⚠ Usuario no encontrado - Completa el formulario para crear uno nuevo');
-        this.userForm.patchValue({ rut: formattedRut });
-        this.isSearching.set(false);
-      }
     });
   }
 
-  loadUserData(staff: StaffMember): void {
-    this.editingUser.set(staff);
-    this.isEditMode.set(true);
-    const { password, ...staffWithoutPassword } = staff as any;
-    this.userForm.patchValue(staffWithoutPassword);
-    this.searchForm.patchValue({ searchTerm: staff.rut });
+  private loadUserById(userId: string): void {
+    this.managementService.getStaffUserById(userId).subscribe({
+      next: (user) => {
+        this.loadUserData(user as any);
 
-    // Importante: refresca validación luego de cargar
-    setTimeout(() => this.updatePasswordValidation(), 100);
+        // Limpia el input y los resultados después de seleccionar
+        this.searchForm.patchValue({ searchTerm: '' }, { emitEvent: false });
+        this.searchResults.set([]);
+
+        this.showMessage('✓ Usuario encontrado - Puedes modificar los datos');
+      },
+      error: (err) => {
+        console.error('Error obteniendo colaborador:', err);
+        this.showMessage('Error obteniendo datos del colaborador');
+      },
+    });
+  }
+
+  loadUserData(
+    user: StaffUserDto & { hasEnrollment?: boolean; lastEnrollment?: string | null },
+  ): void {
+    this.editingUser.set(user);
+    this.isEditMode.set(true);
+
+    this.userForm.patchValue(
+      {
+        firstName: user.firstName,
+        secondName: user.middleName ?? '',
+        paternalLastName: user.lastName,
+        maternalLastName: user.secondLastName ?? '',
+        rut: user.rut,
+        email: user.email,
+        profileId: user.profileId,
+        branchId: user.branchId,
+        isActive: user.active,
+        hasEnrollment: user.hasEnrollment ?? false,
+      },
+      { emitEvent: false },
+    );
+
+    setTimeout(() => this.updatePasswordValidation(), 50);
   }
 
   // ============================================
-  // GUARDAR (CREAR O ACTUALIZAR)
+  // GUARDAR (CREAR / ACTUALIZAR)
   // ============================================
   saveUser(): void {
     const formData = this.userForm.value;
 
     if (!formData.firstName || !formData.paternalLastName || !formData.maternalLastName) {
-      this.showMessage('⚠ Por favor completa todos los nombres requeridos');
+      this.showMessage('⚠ Completa todos los nombres requeridos');
       return;
     }
 
@@ -274,7 +469,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     }
 
     const emailControl = this.userForm.get('email');
-    if (!formData.email || emailControl?.hasError('invalidEmail')) {
+    if (
+      !formData.email ||
+      emailControl?.hasError('invalidEmail') ||
+      emailControl?.hasError('email')
+    ) {
       this.showMessage('⚠ Ingresa un email válido (ejemplo@correo.com)');
       return;
     }
@@ -284,8 +483,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!formData.branchId) {
-      this.showMessage('⚠ Debes seleccionar una sucursal');
+    const branchId = this.currentBranchId();
+    if (!branchId) {
+      this.showMessage('✗ No se pudo determinar la sucursal actual');
       return;
     }
 
@@ -295,95 +495,110 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const profile = this.profiles().find(p => p.id === formData.profileId);
+    const formattedRut = this.rutService.formatRut(formData.rut);
+    const profile = this.profiles().find((p) => p.id === formData.profileId);
+    const passwordControl = this.userForm.get('password');
 
-    // Validar contraseña SOLO si el perfil lo requiere Y es usuario nuevo
+    // Contraseña obligatoria SOLO al crear si el perfil la requiere
     if (!this.isEditMode() && profile?.requiresPassword) {
-      const passwordControl = this.userForm.get('password');
-
       if (!formData.password) {
         this.showMessage('⚠ La contraseña es requerida para este perfil');
         return;
       }
 
-      if (passwordControl?.hasError('minLength')) {
-        this.showMessage('⚠ La contraseña debe tener al menos 8 caracteres');
-        return;
-      }
-
-      if (passwordControl?.hasError('uppercase')) {
-        this.showMessage('⚠ La contraseña debe contener al menos una mayúscula');
-        return;
-      }
-
-      if (passwordControl?.hasError('lowercase')) {
-        this.showMessage('⚠ La contraseña debe contener al menos una minúscula');
-        return;
-      }
-
-      if (passwordControl?.hasError('number')) {
-        this.showMessage('⚠ La contraseña debe contener al menos un número');
-        return;
-      }
-
-      if (passwordControl?.hasError('special')) {
-        this.showMessage('⚠ La contraseña debe contener al menos un carácter especial (!@#$%^&*)');
+      if (passwordControl?.errors) {
+        this.showMessage(
+          this.getPasswordErrorMessage() || '⚠ La contraseña no cumple los requisitos',
+        );
         return;
       }
     }
 
-    const branch = this.branches().find(b => b.id === formData.branchId);
-    const formattedRut = this.rutService.formatRut(formData.rut);
+    if (!this.isEditMode()) {
+      const payload: CreateStaffUserPayload = {
+        firstName: formData.firstName.trim(),
+        middleName: formData.secondName || null,
+        lastName: formData.paternalLastName.trim(),
+        secondLastName: formData.maternalLastName.trim(),
+        rut: formattedRut,
+        email: formData.email.trim(),
+        phone: null,
+        branchId,
+        profileId: formData.profileId,
+        isActive: formData.isActive,
+        password: profile?.requiresPassword ? formData.password : undefined,
+      };
 
-    const staffData: any = {
-      firstName: formData.firstName,
-      secondName: formData.secondName || '',
-      paternalLastName: formData.paternalLastName,
-      maternalLastName: formData.maternalLastName,
-      rut: formattedRut,
-      email: formData.email,
-      profileId: formData.profileId,
-      profileName: profile?.name || '',
-      branchId: formData.branchId,
-      branchName: branch?.name || '',
-      isActive: formData.isActive,
-      hasEnrollment: this.editingUser()?.hasEnrollment || false,
-      enrollmentLocked: false
+      this.managementService.createStaffUser(payload).subscribe({
+        next: (created) => this.afterSaveSuccess(created as any, false),
+        error: (err) => {
+          console.error('Error creando usuario:', err);
+          this.showMessage(
+            '✗ Error al crear usuario: ' +
+              (err?.error?.message || err.message || 'Error desconocido'),
+          );
+        },
+      });
+    } else {
+      const payload: UpdateStaffUserPayload = {
+        firstName: formData.firstName.trim(),
+        middleName: formData.secondName || null,
+        lastName: formData.paternalLastName.trim(),
+        secondLastName: formData.maternalLastName.trim(),
+        email: formData.email.trim(),
+        branchId,
+        profileId: formData.profileId,
+        isActive: formData.isActive,
+      };
+
+      if (profile?.requiresPassword && formData.password) {
+        payload.password = formData.password;
+      }
+
+      const userId = this.editingUser()?.id;
+      if (!userId) {
+        this.showMessage('✗ Error interno: falta ID de usuario');
+        return;
+      }
+
+      this.managementService.updateStaffUser(userId, payload).subscribe({
+        next: (updated) => this.afterSaveSuccess(updated as any, true),
+        error: (err) => {
+          console.error('Error actualizando usuario:', err);
+          this.showMessage(
+            '✗ Error al actualizar usuario: ' +
+              (err?.error?.message || err.message || 'Error desconocido'),
+          );
+        },
+      });
+    }
+  }
+
+  private afterSaveSuccess(user: StaffUserDto, wasEdit: boolean): void {
+    const previousEnroll = this.editingUser()?.hasEnrollment ?? false;
+    const previousLast = this.editingUser()?.lastEnrollment ?? null;
+
+    const enriched = {
+      ...(user as any),
+      hasEnrollment: previousEnroll,
+      lastEnrollment: previousLast,
     };
 
-    if (this.editingUser()?.id) {
-      staffData.id = this.editingUser()!.id;
+    this.loadUserData(enriched);
+    this.userForm.patchValue({ password: '' }, { emitEvent: false });
+    this.updatePasswordValidation();
+
+    if (wasEdit) {
+      this.showMessage('✓ Usuario actualizado correctamente');
+    } else {
+      this.showMessage(
+        '✓ Usuario creado correctamente - Ahora puedes enrolarlo facialmente',
+      );
     }
-
-    // Agregar contraseña SOLO si no es Personal Trainer
-    if (profile?.name !== 'Personal Trainer' && formData.password) {
-      staffData.password = formData.password;
-    }
-
-    this.staffService.save(staffData).subscribe({
-      next: (saved: StaffMember) => {
-        if (this.isEditMode()) {
-          this.showMessage('✓ Usuario actualizado correctamente');
-        } else {
-          this.showMessage('✓ Usuario creado correctamente - Ahora puedes enrolarlo facialmente');
-        }
-
-        this.editingUser.set(saved);
-        this.isEditMode.set(true);
-
-        const { password, ...savedWithoutPassword } = saved as any;
-        this.userForm.patchValue(savedWithoutPassword);
-        this.updatePasswordValidation();
-      },
-      error: (err) => {
-        console.error('❌ Error al guardar usuario:', err);
-        this.showMessage('✗ Error al guardar usuario: ' + (err.message || 'Error desconocido'));
-      }
-    });
   }
 
   // ============================================
-  // ENROLLMENT FACIAL
+  // ENROLLMENT FACIAL (usa Enrollment)
   // ============================================
   openEnrollmentModal(): void {
     if (!this.editingUser()) {
@@ -398,8 +613,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   async startCamera(): Promise<void> {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: false
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user',
+        },
+        audio: false,
       });
 
       if (this.videoElement?.nativeElement) {
@@ -416,7 +635,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   captureImage(): void {
     const video = this.videoElement?.nativeElement;
     const canvas = this.canvasElement?.nativeElement;
-
     if (!video || !canvas) return;
 
     canvas.width = video.videoWidth;
@@ -448,12 +666,17 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
     this.enrollmentView.set('processing');
 
-    const blob = this.staffService.dataUrlToBlob(image);
+    // 🔥 Usamos el servicio Enrollment para convertir la imagen y llamar al endpoint:
+    const blob = this.enrollmentService.dataUrlToBlob(image);
 
-    this.staffService.enrollFace(user.id, blob).subscribe({
+    this.enrollmentService.enrollFace(user.id, blob).subscribe({
       next: () => {
         this.enrollmentView.set('success');
-        const updated = { ...user, hasEnrollment: true, lastEnrollment: new Date().toLocaleDateString('es-CL') };
+        const updated = {
+          ...user,
+          hasEnrollment: true,
+          lastEnrollment: new Date().toLocaleDateString('es-CL'),
+        };
         this.editingUser.set(updated);
         this.userForm.patchValue({ hasEnrollment: true });
 
@@ -463,7 +686,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         console.error('Error al enrolar:', err);
         this.showMessage('✗ Error al enrolar usuario');
         this.closeEnrollmentModal();
-      }
+      },
     });
   }
 
@@ -477,7 +700,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   stopCamera(): void {
     if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
+      this.stream.getTracks().forEach((track) => track.stop());
       this.stream = null;
     }
     if (this.videoElement?.nativeElement) {
@@ -491,51 +714,47 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   clearForm(): void {
     this.editingUser.set(null);
     this.isEditMode.set(false);
-    this.userForm.reset({ isActive: true, hasEnrollment: false });
+    this.userForm.reset({
+      isActive: true,
+      hasEnrollment: false,
+      branchId: this.currentBranchId(),
+    });
     this.searchForm.reset();
+    this.searchResults.set([]);
     this.updatePasswordValidation();
     this.showMessage('✓ Formulario limpiado - Listo para nuevo usuario');
   }
 
-  clearFormKeepSearch(): void {
-    this.editingUser.set(null);
-    this.isEditMode.set(false);
-    this.userForm.reset({ isActive: true, hasEnrollment: false });
-    this.updatePasswordValidation();
-  }
-
   updatePasswordValidation(): void {
     const passwordControl = this.userForm.get('password');
-    const profileId = this.userForm.get('profileId')?.value;
-    const profile = this.profiles().find(p => p.id === profileId);
+    if (!passwordControl) return;
 
-    if (!this.isEditMode() && profile?.requiresPassword) {
-      passwordControl?.setValidators([
-        Validators.required,
-        this.strongPasswordValidator
-      ]);
+    const profileId = this.userForm.get('profileId')?.value;
+    const profile = this.profiles().find((p) => p.id === profileId);
+
+    if (profile?.requiresPassword) {
+      const validators: any[] = [this.strongPasswordValidator];
+      if (!this.isEditMode()) {
+        validators.unshift(Validators.required);
+      }
+      passwordControl.setValidators(validators);
     } else {
-      passwordControl?.clearValidators();
+      // si el perfil NO usa contraseña, limpiamos value y validadores
+      passwordControl.setValue('', { emitEvent: false });
+      passwordControl.clearValidators();
     }
 
-    passwordControl?.updateValueAndValidity();
+    passwordControl.updateValueAndValidity();
   }
 
   requiresPassword(): boolean {
     const profileId = this.userForm.get('profileId')?.value;
-    const profile = this.profiles().find(p => p.id === profileId);
-
-    // Mostrar campo SOLO si NO es modo edición Y el perfil requiere contraseña
-    if (!this.isEditMode() && profile?.requiresPassword) {
-      return true;
-    }
-
-    return false;
+    const profile = this.profiles().find((p) => p.id === profileId);
+    return !!profile?.requiresPassword;
   }
 
   formatRut(event: any): void {
     let value = event.target.value.replace(/[^0-9kK]/g, '');
-
     if (value.length === 0) return;
 
     const dv = value.slice(-1);
@@ -557,7 +776,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     }
 
     formatted = formatted + '-' + dv.toUpperCase();
-
     this.userForm.patchValue({ rut: formatted }, { emitEvent: false });
   }
 
@@ -565,12 +783,13 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.snackBar.open(message, 'Cerrar', {
       duration: 4000,
       horizontalPosition: 'end',
-      verticalPosition: 'top'
+      verticalPosition: 'top',
     });
   }
 
   ngOnDestroy(): void {
     this.themeObserver?.disconnect();
     this.stopCamera();
+    this.searchSub?.unsubscribe();
   }
 }

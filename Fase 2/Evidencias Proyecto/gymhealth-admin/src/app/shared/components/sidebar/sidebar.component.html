@@ -102,8 +102,11 @@
           </div>
           
           <div class="profile-info">
-            <!-- Nombre y email dinámicos desde el JWT -->
+            <!-- Nombre dinámico -->
             <p class="profile-info__name">{{ userName }}</p>
+            <!-- 👉 RoleName dinámico entre nombre y correo -->
+            <p class="profile-info__role" *ngIf="userRoleName">{{ userRoleName }}</p>
+            <!-- Email dinámico -->
             <p class="profile-info__email">{{ userEmail }}</p>
           </div>
 

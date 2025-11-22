@@ -17,12 +17,26 @@ const KEY_TOKEN = 'fitpass_token';
  * TYPES
  * ============================ */
 
-/** Ahora el plan puede ser cualquiera (MULTICLUB_ANUAL, ONECLUB_ANUAL_SCL_CENTRO, etc.) */
+/** Ahora el plan puede ser cualquiera (MULTICLUB_ANUAL, ONECLUB_MENSUAL, TRIAL_3D_WEEK, etc.) */
 export type MembershipType = string;
 
 export type MembershipStatus = 'ACTIVE' | 'EXPIRED';
 export type AccessStatus = 'NO_ENROLADO' | 'ACTIVO' | 'BLOQUEADO';
 export type EnrollmentStatus = 'NOT_ENROLLED' | 'ENROLLED';
+
+// Debe alinear con el backend (PeriodUnit de membership-plan.repository.ts)
+export type PeriodUnit = 'WEEK' | 'MONTH' | 'TOTAL';
+
+export interface MembershipUsage {
+  isUsageLimited: boolean;
+  maxDaysPerPeriod: number | null;
+  periodUnit: PeriodUnit | null;
+  periodLength: number | null;
+  usedDaysInCurrentPeriod: number;
+  remainingDaysInCurrentPeriod: number | null;
+  limitReached: boolean;
+  message?: string;
+}
 
 export interface UserProfile {
   id: string;
@@ -46,6 +60,9 @@ export interface UserProfile {
   membershipBranchId?: string | null;
   membershipBranchName?: string | null;
   membershipBranchCode?: string | null;
+
+  /** Info de uso de membresía (trial 3 días, planes limitados, etc.) */
+  membershipUsage?: MembershipUsage | null;
 }
 
 /** DTOs para el checkout de membresías */
@@ -67,11 +84,12 @@ export interface CheckoutPaymentDTO {
 }
 
 export interface CheckoutMembershipPayload {
-  planCode: string;          // ej: "MULTICLUB_ANUAL" o "ONECLUB_ANUAL_SCL_CENTRO"
-  branchId?: string | null;  // requerido para ONECLUB, opcional para MULTICLUB
+  planCode: string;          // ej: "MULTICLUB_ANUAL" o "ONECLUB_MENSUAL"
+  branchId: string | null;   // ONECLUB → id sucursal, MULTICLUB → null
   user: CheckoutUserDTO;
   payment: CheckoutPaymentDTO;
 }
+
 
 
 /** ============================
@@ -123,14 +141,18 @@ export class AuthService {
       )
       .pipe(
         tap((resp) => {
+          // 1) Guardar token
           saveToken(resp.token);
 
+          // 2) Decodificar
           const decoded = decodeJwt(resp.token);
           if (!decoded) return;
 
+          // 3) Mapear a UserProfile (incluyendo usage y branch)
           const profile = mapJwtToProfile(decoded);
-          saveProfile(profile);
 
+          // 4) Persistir perfil + actualizar estado global
+          saveProfile(profile);
           this.profileSubject.next(profile);
         })
       );
@@ -156,7 +178,7 @@ export class AuthService {
           const decoded = decodeJwt(resp.token);
           if (!decoded) return;
 
-          // 3) Mapear a UserProfile
+          // 3) Mapear a UserProfile (incluyendo usage)
           const profile = mapJwtToProfile(decoded);
 
           // 4) Guardar perfil + actualizar estado global
@@ -217,6 +239,7 @@ function decodeJwt(token: string): any | null {
 function mapJwtToProfile(payload: any): UserProfile {
   const user = payload.user ?? {};
   const membership = payload.membership ?? {};
+  const usage = membership.usage ?? null;
 
   const statusRaw = (user.status ?? '').toString().toLowerCase();
   const statusMapped =
@@ -224,6 +247,21 @@ function mapJwtToProfile(payload: any): UserProfile {
     statusRaw === 'pending' ? 'pending' :
     statusRaw === 'inactive' ? 'inactive' :
     'active';
+
+  // Mapear usage del JWT a MembershipUsage fuertemente tipado
+  let membershipUsage: MembershipUsage | null = null;
+  if (usage) {
+    membershipUsage = {
+      isUsageLimited: !!usage.isUsageLimited,
+      maxDaysPerPeriod: usage.maxDaysPerPeriod ?? null,
+      periodUnit: usage.periodUnit ?? null,
+      periodLength: usage.periodLength ?? null,
+      usedDaysInCurrentPeriod: usage.usedDaysInCurrentPeriod ?? 0,
+      remainingDaysInCurrentPeriod: usage.remainingDaysInCurrentPeriod ?? null,
+      limitReached: !!usage.limitReached,
+      message: usage.message ?? undefined,
+    };
+  }
 
   return {
     id: user.id,
@@ -247,6 +285,8 @@ function mapJwtToProfile(payload: any): UserProfile {
     membershipBranchId: membership.branchId ?? null,
     membershipBranchName: membership.branchName ?? null,
     membershipBranchCode: membership.branchCode ?? null,
+
+    membershipUsage,
   };
 }
 
@@ -269,7 +309,11 @@ function clearToken() {
 function loadProfile(): UserProfile | null {
   const raw = localStorage.getItem(KEY_PROFILE);
   if (!raw) return null;
-  try { return JSON.parse(raw) as UserProfile; } catch { return null; }
+  try {
+    return JSON.parse(raw) as UserProfile;
+  } catch {
+    return null;
+  }
 }
 
 function saveProfile(profile: UserProfile) {

@@ -1,5 +1,5 @@
 // ============================================
-// member-search.component.scss - CORREGIDO
+// member-search.component.scss - AJUSTADO
 // ============================================
 
 // HOST - El componente necesita data-theme vía HostBinding
@@ -8,13 +8,13 @@
 }
 
 // ============================================
-// ESTILOS BASE (usan variables CSS)
+// ESTILOS BASE
 // ============================================
 .member-search {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  background: var(#111a2d);
+  background: var(--bg-primary, #111a2d);
   min-height: 100vh;
 
   &__header {
@@ -87,8 +87,8 @@
 // Ajuste específico para modo claro - card blanca limpia
 :host([data-theme="light"]) {
   .step-card {
-    background: #FFFFFF !important;
-    border: 1px solid #E2E8F0 !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
   }
 }
 
@@ -283,53 +283,6 @@
       color: var(--orange-accent);
     }
   }
-
-  &.editing {
-    padding: 1rem;
-    background: rgba(0, 210, 198, 0.08);
-    border-color: var(--calipso);
-    box-shadow: 0 0 0 3px rgba(0, 210, 198, 0.1);
-    flex-direction: column;
-    gap: 0;
-
-    mat-icon {
-      align-self: flex-start;
-      margin-bottom: 0.5rem;
-    }
-
-    .info-content {
-      width: 100%;
-
-      .edit-field {
-        width: 100%;
-        margin: 0;
-
-        ::ng-deep {
-          .mat-mdc-text-field-wrapper {
-            background: var(--bg-primary);
-          }
-
-          input {
-            color: var(--text-primary) !important;
-            font-weight: 600 !important;
-          }
-
-          .mat-mdc-floating-label {
-            color: var(--calipso) !important;
-          }
-
-          .mat-mdc-input-element::placeholder {
-            color: var(--text-secondary) !important;
-          }
-
-          .mat-mdc-form-field-error {
-            color: var(--orange-accent);
-            font-weight: 600;
-          }
-        }
-      }
-    }
-  }
 }
 
 .member-status {
@@ -407,7 +360,8 @@
 
 .lock-warning,
 .membership-warning,
-.warning-box {
+.warning-box,
+.lock-info {
   display: flex;
   gap: 1rem;
   padding: 1.5rem;
@@ -452,6 +406,19 @@
 
   mat-icon {
     color: #ef4444;
+  }
+}
+
+.lock-info {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+
+  mat-icon {
+    color: #10b981;
+  }
+
+  h3 {
+    color: #10b981;
   }
 }
 
@@ -686,74 +653,6 @@
     font-size: 1rem;
     color: var(--text-secondary);
     margin: 0;
-  }
-}
-
-::ng-deep .mat-mdc-menu-panel {
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-color);
-  
-  .mat-mdc-menu-item {
-    color: var(--text-primary) !important;
-    
-    &:hover {
-      background: var(--bg-secondary) !important;
-    }
-    
-    mat-icon {
-      color: var(--calipso);
-    }
-    
-    &.danger-item {
-      color: #ef4444 !important;
-      
-      mat-icon {
-        color: #ef4444;
-      }
-    }
-  }
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-
-  h3 {
-    margin-bottom: 0 !important;
-  }
-
-  .edit-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(249, 115, 22, 0.15);
-    border: 1px solid rgba(249, 115, 22, 0.4);
-    border-radius: 2rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--orange-accent);
-
-    mat-icon {
-      font-size: 1.125rem;
-      width: 1.125rem;
-      height: 1.125rem;
-      color: var(--orange-accent);
-    }
-  }
-}
-
-.emergency-checkbox {
-  ::ng-deep {
-    .mdc-checkbox__background {
-      border-color: var(--calipso) !important;
-    }
-
-    &.mat-mdc-checkbox-checked .mdc-checkbox__background {
-      background-color: var(--calipso) !important;
-    }
   }
 }
 

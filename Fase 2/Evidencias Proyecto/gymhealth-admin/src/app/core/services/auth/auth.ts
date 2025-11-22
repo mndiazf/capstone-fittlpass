@@ -1,4 +1,4 @@
-// src/app/core/services/auth/auth.ts  (ajusta la ruta según tu estructura)
+// src/app/core/services/auth/auth.ts
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -12,7 +12,6 @@ export interface AdminLoginResponse {
   tokenType: string; // "Bearer"
 }
 
-// 👇 estructura del payload según el JWT que me mostraste
 export interface AdminJwtPayloadUser {
   id: string;
   email: string;
@@ -41,12 +40,20 @@ export interface AdminJwtPayloadRole {
   roleName: string;
 }
 
+// 👇 tipamos bien los permisos (para usar code)
+export interface AdminJwtPermission {
+  code: string;
+  name: string;
+  canView: boolean;
+  canEdit: boolean;
+}
+
 export interface AdminJwtPayloadProfile {
   profileId: string;
   profileName: string;
   profileDescription: string;
   branch: AdminJwtPayloadBranch;
-  permissions: unknown[];
+  permissions: AdminJwtPermission[];
 }
 
 export interface AdminJwtPayload {
@@ -64,7 +71,7 @@ export interface AdminJwtPayload {
   providedIn: 'root',
 })
 export class Auth {
-  // ⚠️ ajusta al endpoint real de tu backend
+  // ⚠️ ajusta si cambias el endpoint del backend
   private readonly baseUrl = 'http://localhost:3000/api/admin/auth';
 
   private currentPayloadSubject = new BehaviorSubject<AdminJwtPayload | null>(
@@ -147,7 +154,7 @@ export class Auth {
     return diffSec > 0 ? Math.floor(diffSec / 60) : 0;
   }
 
-  // ========== INFO CONVENIENTE ==========
+  // ========== INFO CONVENIENTE (usuario / rol / branch) ==========
 
   /** Usuario admin logueado (datos del JWT) */
   get currentUser(): AdminJwtPayloadUser | null {
@@ -170,7 +177,12 @@ export class Auth {
     return this.currentPayloadSubject.value?.profiles ?? [];
   }
 
-  // 👉 NUEVOS GETTERS PARA EL SIDEBAR
+  /** Nombre del role principal (por ahora el primero) → para el sidebar */
+  get adminRoleName(): string | null {
+    const r = this.roles;
+    if (!r || r.length === 0) return null;
+    return r[0].roleName;
+  }
 
   get adminEmail(): string | null {
     return this.currentUser?.email ?? null;
@@ -179,7 +191,7 @@ export class Auth {
   get adminName(): string | null {
     const u = this.currentUser;
     if (!u) return null;
-    // Puedes ajustar si quieres incluir secondLastName
+    // Puedes agregar secondLastName si quieres
     return [u.firstName, u.lastName].filter(Boolean).join(' ');
   }
 
@@ -194,6 +206,35 @@ export class Auth {
       .toUpperCase();
 
     return initials || null;
+  }
+
+  /** Todos los códigos de permisos de UI asignados al usuario */
+  get permissionCodes(): string[] {
+    const payload = this.currentPayloadSubject.value;
+    if (!payload) return [];
+
+    const codes = new Set<string>();
+
+    for (const profile of payload.profiles ?? []) {
+      for (const perm of profile.permissions ?? []) {
+        if (perm && perm.code) {
+          codes.add(perm.code);
+        }
+      }
+    }
+
+    return Array.from(codes);
+  }
+
+  /** Helper para guards y lógica de UI */
+  hasPermission(code: string): boolean {
+    return this.permissionCodes.includes(code);
+  }
+
+  /** Helper para cuando una ruta admite varios permisos posibles */
+  hasAnyPermission(codes: string[]): boolean {
+    const current = this.permissionCodes;
+    return codes.some(c => current.includes(c));
   }
 
   // ========== PRIVADOS ==========
@@ -236,7 +277,7 @@ export class Auth {
 
       return payload;
     } catch {
-        return null;
+      return null;
     }
   }
 }

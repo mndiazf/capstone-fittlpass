@@ -1,8 +1,7 @@
-// src/controllers/auth.controller.ts
+// src/controllers/auth/auth.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../../services/auth/auth.service';
 import { logger } from '../../utils/logger';
-
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -50,6 +49,11 @@ export class AuthController {
           case 'JWT_SECRET_NOT_CONFIGURED':
             res.status(500).json({
               message: 'JWT no configurado en el servidor',
+            });
+            return;
+          case 'STAFF_LOGIN_NOT_ALLOWED':
+            res.status(403).json({
+              message: 'Este inicio de sesión es solo para miembros (no staff).',
             });
             return;
         }

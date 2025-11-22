@@ -1,5 +1,3 @@
-// src/app/features/members/enrollment/enrollment.component.ts
-
 import {
   Component,
   inject,
@@ -21,7 +19,10 @@ import { MatChipsModule } from '@angular/material/chips';
 
 import { RutService } from '../../../core/services/rut.service';
 import { RutFormatDirective } from '../../../shared/directives/rut-format.directive';
-import { Enrollment, MemberUiModel } from '../../../core/services/enrollment/enrollment';
+import {
+  Enrollment,
+  MemberUiModel,
+} from '../../../core/services/enrollment/enrollment';
 
 @Component({
   selector: 'app-enrollment',
@@ -94,7 +95,9 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.observeThemeChanges();
   }
 
-  ngAfterViewInit(): void {}
+  ngAfterViewInit(): void {
+    // nada especial por ahora
+  }
 
   private observeThemeChanges(): void {
     this.themeObserver = new MutationObserver((mutations) => {
@@ -133,6 +136,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.enrollmentSvc.getProfileByRut(formattedRut).subscribe({
       next: (member) => {
+        // Normalizamos también el RUT de respuesta
         member.rut = this.rutService.formatRut(member.rut);
         this.memberData = member;
 
@@ -274,7 +278,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /**
    * Puede enrolar / reenrolar si:
-   * - membresía activa
+   * - membresía activa (ya viene normalizada: expired si fecha pasó)
    * - enrolamiento NO bloqueado
    */
   canEnroll(): boolean {

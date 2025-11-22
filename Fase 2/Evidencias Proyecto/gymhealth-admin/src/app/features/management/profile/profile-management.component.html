@@ -11,12 +11,12 @@
   <mat-card class="form-card">
     <mat-card-header>
       <mat-card-title class="form-card__title">
-        @if (editingProfile) { 
+        @if (editingProfile) {
           <mat-icon>edit</mat-icon>
-          Editar Perfil 
-        } @else { 
+          Editar Perfil
+        } @else {
           <mat-icon>add_circle</mat-icon>
-          Nuevo Perfil 
+          Nuevo Perfil
         }
       </mat-card-title>
     </mat-card-header>
@@ -42,7 +42,9 @@
           <div class="permissions-header">
             <mat-icon>fact_check</mat-icon>
             <h3>Permisos (Módulos y funcionalidades)</h3>
-            <span class="selected-count">{{ selectedPermissions().length }} seleccionados</span>
+            <span class="selected-count">
+              {{ selectedPermissions().length }} seleccionados
+            </span>
           </div>
 
           <div class="permissions-container">
@@ -54,12 +56,15 @@
                     <mat-checkbox
                       class="permission-checkbox parent-checkbox"
                       [checked]="isPermissionSelected(group.parent.id)"
-                      (change)="togglePermission(group.parent.id, $event.checked)">
+                      (change)="togglePermission(group.parent.id, $event.checked)"
+                    >
                       <div class="permission-item">
                         <div class="permission-header">
                           <strong>{{ group.parent.name }}</strong>
                         </div>
-                        <span class="permission-desc">{{ group.parent.description }}</span>
+                        <span class="permission-desc">
+                          {{ group.parent.description || '' }}
+                        </span>
                       </div>
                     </mat-checkbox>
                   </div>
@@ -73,13 +78,16 @@
                       [class.required-permission]="isPermissionRequired(perm.id)"
                       [checked]="isPermissionSelected(perm.id)"
                       [disabled]="isPermissionRequired(perm.id)"
-                      (change)="togglePermission(perm.id, $event.checked)">
+                      (change)="togglePermission(perm.id, $event.checked)"
+                    >
                       <div class="permission-item">
                         <div class="permission-header">
                           <mat-icon>{{ perm.icon }}</mat-icon>
                           <strong>{{ perm.name }}</strong>
                         </div>
-                        <span class="permission-desc">{{ perm.description }}</span>
+                        <span class="permission-desc">
+                          {{ perm.description || '' }}
+                        </span>
                       </div>
                     </mat-checkbox>
                   }
@@ -92,10 +100,17 @@
         <div class="form-actions">
           @if (editingProfile) {
             <button mat-button (click)="cancelEdit()" class="btn-cancel">
-              <mat-icon>close</mat-icon> Cancelar
+              <mat-icon>close</mat-icon>
+              Cancelar
             </button>
           }
-          <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="profileForm.invalid" class="btn-save">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="saveProfile()"
+            [disabled]="profileForm.invalid || saving"
+            class="btn-save"
+          >
             <mat-icon>{{ editingProfile ? 'save' : 'add' }}</mat-icon>
             {{ editingProfile ? 'Guardar Cambios' : 'Agregar Perfil' }}
           </button>
@@ -116,12 +131,14 @@
     <mat-card-content>
       <div class="table-container">
         <table mat-table [dataSource]="profiles()" class="profiles-table">
-
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Perfil</th>
             <td mat-cell *matCellDef="let profile">
               <div class="profile-name-cell">
-                <span class="color-indicator" [style.background-color]="getColor(profile.color)"></span>
+                <span
+                  class="color-indicator"
+                  [style.background-color]="getColor(profile.color)"
+                ></span>
                 <span class="profile-name">{{ profile.name }}</span>
               </div>
             </td>
@@ -131,9 +148,12 @@
             <th mat-header-cell *matHeaderCellDef>Permisos Asignados</th>
             <td mat-cell *matCellDef="let profile">
               <div class="permissions-badges">
-                @for (permId of profile.permissions; track permId) {
-                  <span class="permission-badge" [matTooltip]="getPermissionDescription(permId)">
-                    {{ getPermissionName(permId) }}
+                @for (perm of profile.permissions; track perm.id) {
+                  <span
+                    class="permission-badge"
+                    [matTooltip]="perm.description || ''"
+                  >
+                    {{ perm.name }}
                   </span>
                 }
               </div>
@@ -143,24 +163,41 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Acciones</th>
             <td mat-cell *matCellDef="let profile">
-              <button mat-icon-button color="primary" (click)="editProfile(profile)" matTooltip="Editar">
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="editProfile(profile)"
+                matTooltip="Editar"
+              >
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="deleteProfile(profile)" matTooltip="Eliminar">
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="deleteProfile(profile)"
+                matTooltip="Eliminar"
+              >
                 <mat-icon>delete</mat-icon>
               </button>
             </td>
           </ng-container>
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
         </table>
 
-        @if (profiles().length === 0) {
+        @if (profiles().length === 0 && !loading) {
           <div class="empty-state">
             <mat-icon>shield</mat-icon>
             <p>No hay perfiles creados</p>
             <p class="hint">Crea tu primer perfil usando el formulario</p>
+          </div>
+        }
+
+        @if (loading) {
+          <div class="empty-state">
+            <mat-icon>hourglass_top</mat-icon>
+            <p>Cargando perfiles...</p>
           </div>
         }
       </div>

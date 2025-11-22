@@ -37,19 +37,23 @@ export class AdminAuthService {
       throw new Error('INVALID_CREDENTIALS');
     }
 
-    // 3) Cargar roles STAFF
+    // 3) Cargar roles STAFF (si existen)
     const allRoles: StaffRoleRow[] =
       await this.staffAccessRepo.findRolesByUserId(user.id);
 
     const staffRoles = allRoles.filter((r) => r.role_kind === 'STAFF');
-    if (staffRoles.length === 0) {
-      // no es staff → no puede entrar al backoffice
-      throw new Error('NOT_STAFF');
-    }
 
     // 4) Cargar perfiles + permisos
     const profiles: StaffProfileRow[] =
       await this.staffAccessRepo.findProfilesByUserId(user.id);
+
+    // ⚠️ Aquí el cambio importante:
+    // - Antes: si no tenía roles STAFF → NOT_STAFF
+    // - Ahora: es staff si tiene al menos UN rol STAFF O al menos UN perfil.
+    if (staffRoles.length === 0 && profiles.length === 0) {
+      // no tiene roles staff ni perfiles de staff → no entra al backoffice
+      throw new Error('NOT_STAFF');
+    }
 
     const profileIds = Array.from(
       new Set(profiles.map((p) => p.profile_id)),
@@ -80,12 +84,14 @@ export class AdminAuthService {
         })),
     }));
 
-    // 5) Sucursales a las que tiene acceso como staff (por roles)
+    // 5) Sucursales a las que tiene acceso como staff
+    //    Las sacamos de ROLES y también de PERFILES.
     const branchesMap = new Map<
       string,
       { id: string; code: string | null; name: string | null }
     >();
 
+    // Desde roles STAFF
     staffRoles.forEach((r) => {
       if (!r.branch_id) return;
       if (!branchesMap.has(r.branch_id)) {
@@ -97,8 +103,21 @@ export class AdminAuthService {
       }
     });
 
+    // Desde perfiles (por si no hay roles para usuarios creados en el mantenedor)
+    profiles.forEach((p) => {
+      if (!p.branch_id) return;
+      if (!branchesMap.has(p.branch_id)) {
+        branchesMap.set(p.branch_id, {
+          id: p.branch_id,
+          code: p.branch_code,
+          name: p.branch_name,
+        });
+      }
+    });
+
     const branches = Array.from(branchesMap.values());
 
+    // Vista de roles STAFF (puede quedar vacío para usuarios creados solo con perfil)
     const rolesView = staffRoles.map((r) => ({
       branchId: r.branch_id,
       branchCode: r.branch_code,
@@ -136,10 +155,10 @@ export class AdminAuthService {
         status: user.status,
       },
 
-      // Sucursales donde tiene algún rol STAFF
+      // Sucursales donde tiene algún rol/perfil de staff
       branches,
 
-      // Roles STAFF por sucursal
+      // Roles STAFF por sucursal (puede ser [])
       roles: rolesView,
 
       // Perfiles + permisos

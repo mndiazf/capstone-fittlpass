@@ -1,4 +1,3 @@
-// src/repositories/member/member-profile.repository.ts
 import { query } from '../../config/db';
 
 export interface AppUserRow {
@@ -7,7 +6,7 @@ export interface AppUserRow {
   email: string;
   phone: string | null;
   first_name: string;
-  middle_name: string | null;      // 👈 AGREGAR
+  middle_name: string | null;
   last_name: string;
   second_last_name: string | null;
   access_status: 'NO_ENROLADO' | 'ACTIVO' | 'BLOQUEADO';
@@ -17,8 +16,8 @@ export interface AppUserRow {
 export interface MembershipRow {
   membership_id: string;
   membership_status: 'ACTIVE' | 'EXPIRED';
-  start_date: string;   // date
-  end_date: string;     // date
+  start_date: string;   // 'YYYY-MM-DD'
+  end_date: string;     // 'YYYY-MM-DD'
   branch_id: string | null;
   branch_name: string | null;
   plan_code: string;
@@ -51,7 +50,7 @@ export class PgMemberProfileRepository implements MemberProfileRepository {
         email,
         phone,
         first_name,
-        middle_name,        -- 👈 AGREGAR
+        middle_name,
         last_name,
         second_last_name,
         access_status,
@@ -73,14 +72,14 @@ export class PgMemberProfileRepository implements MemberProfileRepository {
     const result = await query<MembershipRow>(
       `
       SELECT
-        m.id         AS membership_id,
-        m.status     AS membership_status,
-        m.start_date AS start_date,
-        m.end_date   AS end_date,
-        m.branch_id  AS branch_id,
-        b.name       AS branch_name,
-        mp.code      AS plan_code,
-        mp.name      AS plan_name,
+        m.id          AS membership_id,
+        m.status      AS membership_status,
+        m.start_date  AS start_date,
+        m.end_date    AS end_date,
+        m.branch_id   AS branch_id,
+        b.name        AS branch_name,
+        mp.code       AS plan_code,
+        mp.name       AS plan_name,
         mp.plan_scope AS plan_scope
       FROM public.user_membership m
       JOIN public.membership_plan mp
@@ -89,8 +88,10 @@ export class PgMemberProfileRepository implements MemberProfileRepository {
         ON b.id = m.branch_id
       WHERE m.user_id = $1
         AND (
+          -- ONECLUB → sólo válido si la membresía está asociada a esta sucursal
           (mp.plan_scope = 'ONECLUB'   AND m.branch_id = $2)
           OR
+          -- MULTICLUB → branch_id NULL, válida para todas las sucursales
           (mp.plan_scope = 'MULTICLUB' AND m.branch_id IS NULL)
         )
       ORDER BY

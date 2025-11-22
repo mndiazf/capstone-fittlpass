@@ -1,4 +1,3 @@
-// src/routes/member-profile.routes.ts
 import { Router } from 'express';
 import { PgMemberProfileRepository } from '../repositories/members/member-profile.repository';
 import { MemberProfileService } from '../services/members/member-profile.service';

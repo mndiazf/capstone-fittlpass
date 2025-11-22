@@ -1,5 +1,5 @@
-import { query } from "../../config/db";
-
+// src/repositories/user/user.repository.ts
+import { query } from '../../config/db';
 
 export interface CreateUserInput {
   email: string;
@@ -28,8 +28,21 @@ export interface UserRow {
   updated_at: Date;
 }
 
+const STAFF_PROFILE_NAMES = [
+  'Administrador de Sucursal',
+  'Recepcionista',
+  'Personal Trainer',
+  'Profesor de Clases',
+  'Personal de Aseo',
+] as const;
+
+export type StaffProfileName = (typeof STAFF_PROFILE_NAMES)[number];
+
 export class PgUserRepository {
-  public async findByEmailOrRut(email: string, rut: string): Promise<UserRow | null> {
+  public async findByEmailOrRut(
+    email: string,
+    rut: string,
+  ): Promise<UserRow | null> {
     const result = await query<UserRow>(
       `
       SELECT *
@@ -38,7 +51,7 @@ export class PgUserRepository {
          OR rut   = $2
       LIMIT 1
       `,
-      [email, rut]
+      [email, rut],
     );
 
     return result.rows[0] ?? null;
@@ -91,9 +104,36 @@ export class PgUserRepository {
         input.rut,
         input.secondLastName ?? null,
         now,
-      ]
+      ],
     );
 
     return result.rows[0];
+  }
+
+  /**
+   * Determina si el usuario tiene algún perfil de STAFF activo.
+   * (ADMIN, Recepcionista, Personal Trainer, Profesor de Clases, Aseo)
+   */
+  public async hasAnyStaffProfile(userId: string): Promise<boolean> {
+    const result = await query<{ count: number }>(
+      `
+      SELECT COUNT(*)::int AS count
+      FROM public.app_user_profile aup
+      JOIN public.user_profile up ON up.id = aup.profile_id
+      WHERE aup.user_id = $1
+        AND aup.active = true
+        AND up.name IN (
+          'Administrador de Sucursal',
+          'Recepcionista',
+          'Personal Trainer',
+          'Profesor de Clases',
+          'Personal de Aseo'
+        );
+      `,
+      [userId],
+    );
+
+    const rawCount = result.rows[0]?.count ?? 0;
+    return Number(rawCount) > 0;
   }
 }

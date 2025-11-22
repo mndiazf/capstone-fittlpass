@@ -12,15 +12,12 @@ interface BranchAdminSeed {
   branchId: string;
 }
 
-// 👉 IDs fijos para rol y perfil temporal
-const BRANCH_ADMIN_ROLE_ID = 'role-branch-admin';
-const BRANCH_ADMIN_ROLE_CODE = 'BRANCH_ADMIN';
-
-const BRANCH_ADMIN_PROFILE_ID = 'profile-branch-admin-temp';
-const BRANCH_ADMIN_PROFILE_NAME = 'BRANCH_ADMIN_TEMP';
+// 👉 Nombre del perfil de administrador creado en seedUserProfiles
+const BRANCH_ADMIN_PROFILE_NAME = 'Administrador de Sucursal';
 
 // ⚠️ Contraseña hash temporal (ajusta cuando tengas auth real)
-const TEMP_PASSWORD_HASH = '$2a$12$yFMseVnsQPRbtW5EMYSYg.6rimVqeHnp9pnSK9zuE1MPSoYRbaFjS';
+const TEMP_PASSWORD_HASH =
+  '$2a$12$yFMseVnsQPRbtW5EMYSYg.6rimVqeHnp9pnSK9zuE1MPSoYRbaFjS';
 
 const admins: BranchAdminSeed[] = [
   {
@@ -64,51 +61,8 @@ const admins: BranchAdminSeed[] = [
 export const seedBranchAdmins = async (): Promise<void> => {
   logger.info('🌱 Seed: branch admins (staff)');
 
-  // 1) Rol BRANCH_ADMIN (STAFF)
-  await query(
-    `
-    INSERT INTO public.user_role (
-      id, code, name, description, role_kind, created_at, updated_at
-    )
-    VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-    ON CONFLICT (code) DO UPDATE
-    SET name        = EXCLUDED.name,
-        description = EXCLUDED.description,
-        role_kind   = EXCLUDED.role_kind,
-        updated_at  = NOW();
-    `,
-    [
-      BRANCH_ADMIN_ROLE_ID,
-      BRANCH_ADMIN_ROLE_CODE,
-      'Administrador de Sucursal',
-      'Rol de staff administrador de una sucursal FitPass',
-      'STAFF',
-    ],
-  );
-
-  // 2) Perfil temporal BRANCH_ADMIN_TEMP
-  await query(
-    `
-    INSERT INTO public.user_profile (
-      id, "name", description, is_default, created_at, updated_at
-    )
-    VALUES ($1, $2, $3, false, NOW(), NOW())
-    ON CONFLICT ("name") DO UPDATE
-    SET description = EXCLUDED.description,
-        updated_at  = NOW();
-    `,
-    [
-      BRANCH_ADMIN_PROFILE_ID,
-      BRANCH_ADMIN_PROFILE_NAME,
-      'Perfil temporal para administradores de sucursal (ajustar permisos luego)',
-    ],
-  );
-
-  // 3) Por cada sucursal/admin
-  let templateIndex = 1;
-
   for (const admin of admins) {
-    // 3.1) Usuario base en app_user
+    // 1) Usuario base en app_user (estos SÍ tienen contraseña)
     await query(
       `
       INSERT INTO public.app_user (
@@ -148,6 +102,7 @@ export const seedBranchAdmins = async (): Promise<void> => {
           phone         = EXCLUDED.phone,
           status        = EXCLUDED.status,
           access_status = EXCLUDED.access_status,
+          password_hash = EXCLUDED.password_hash,
           updated_at    = NOW();
       `,
       [
@@ -161,88 +116,56 @@ export const seedBranchAdmins = async (): Promise<void> => {
       ],
     );
 
-    // 3.2) Relación user_role (BRANCH_ADMIN en esa sucursal)
-    const appUserRoleId = `aur-${templateIndex}`;
-    await query(
+    // 2) Buscar el perfil "Administrador de Sucursal" de esa sucursal
+    const profileRes = await query<{ id: string }>(
       `
-      INSERT INTO public.app_user_role (
-        id, user_id, role_id, branch_id, active, created_at, ended_at
-      )
-      VALUES ($1, $2, $3, $4, true, NOW(), NULL)
-      ON CONFLICT (user_id, role_id, branch_id) DO UPDATE
-      SET active   = true,
-          ended_at = NULL;
+      SELECT id
+      FROM public.user_profile
+      WHERE branch_id = $1
+        AND "name" = $2;
       `,
-      [appUserRoleId, admin.userId, BRANCH_ADMIN_ROLE_ID, admin.branchId],
+      [admin.branchId, BRANCH_ADMIN_PROFILE_NAME],
     );
 
-    // 3.3) Relación user_profile (perfil temporal para esa sucursal)
-    const appUserProfileId = `aup-${templateIndex}`;
+    if (profileRes.rows.length === 0) {
+      throw new Error(
+        `ADMIN_PROFILE_NOT_FOUND: no existe perfil "${BRANCH_ADMIN_PROFILE_NAME}" para branch_id=${admin.branchId}. ` +
+          'Asegúrate de ejecutar primero seedUserProfiles().',
+      );
+    }
+
+    const profileId = profileRes.rows[0].id;
+
+    // 3) Relación app_user_profile (asignar el perfil admin de esa sucursal)
     await query(
       `
       INSERT INTO public.app_user_profile (
-        id, user_id, profile_id, branch_id, active, created_at, ended_at
+        id,
+        user_id,
+        profile_id,
+        branch_id,
+        active,
+        created_at,
+        ended_at
       )
-      VALUES ($1, $2, $3, $4, true, NOW(), NULL)
+      VALUES (
+        gen_random_uuid(),
+        $1,
+        $2,
+        $3,
+        true,
+        NOW(),
+        NULL
+      )
       ON CONFLICT (user_id, profile_id, branch_id) DO UPDATE
       SET active   = true,
           ended_at = NULL;
       `,
-      [appUserProfileId, admin.userId, BRANCH_ADMIN_PROFILE_ID, admin.branchId],
+      [admin.userId, profileId, admin.branchId],
     );
-
-    // 3.4) Plantilla de acceso 24/7 para BRANCH_ADMIN en esta sucursal
-    const templateId = `rat-admin-${templateIndex}`;
-    const templateName = 'BRANCH_ADMIN_24_7';
-
-    await query(
-      `
-      INSERT INTO public.role_access_template (
-        id, role_id, branch_id, "name", is_default, created_at, updated_at
-      )
-      VALUES ($1, $2, $3, $4, true, NOW(), NOW())
-      ON CONFLICT (role_id, branch_id, "name") DO UPDATE
-      SET is_default = EXCLUDED.is_default,
-          updated_at = NOW();
-      `,
-      [templateId, BRANCH_ADMIN_ROLE_ID, admin.branchId, templateName],
-    );
-
-    // 3.5) Slots 24/7 (7 días x 24 horas)
-    for (let day = 1; day <= 7; day++) {
-      for (let hour = 0; hour < 24; hour++) {
-        const slotId = `ras-admin-${templateIndex}-${day}-${hour}`;
-        await query(
-          `
-          INSERT INTO public.role_access_slot (
-            id, template_id, day_of_week, "hour", allow
-          )
-          VALUES ($1, $2, $3, $4, true)
-          ON CONFLICT (template_id, day_of_week, "hour") DO UPDATE
-          SET allow = true;
-          `,
-          [slotId, templateId, day, hour],
-        );
-      }
-    }
-
-    // 3.6) Asignación de plantilla de acceso al admin (activo desde hoy, sin fin)
-    const assignmentId = `uaa-admin-${templateIndex}`;
-    await query(
-      `
-      INSERT INTO public.user_access_assignment (
-        id, user_id, template_id, valid_from, valid_to, is_active
-      )
-      VALUES ($1, $2, $3, CURRENT_DATE, NULL, true)
-      ON CONFLICT (user_id, template_id, valid_from) DO UPDATE
-      SET is_active = true,
-          valid_to  = NULL;
-      `,
-      [assignmentId, admin.userId, templateId],
-    );
-
-    templateIndex++;
   }
 
-  logger.info(`✅ Seed branch admins ok (${admins.length} admins con acceso 24/7)`);
+  logger.info(
+    `✅ Seed branch admins ok (${admins.length} admins con perfil "Administrador de Sucursal")`,
+  );
 };

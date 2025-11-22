@@ -1,7 +1,9 @@
-// src/services/member/member-profile.service.ts
-
-import { AppUserRow, FaceEnrollmentRow, MemberProfileRepository, MembershipRow } from "../../repositories/members/member-profile.repository";
-
+import {
+  AppUserRow,
+  FaceEnrollmentRow,
+  MemberProfileRepository,
+  MembershipRow,
+} from '../../repositories/members/member-profile.repository';
 
 export interface MemberProfileDto {
   id: string;
@@ -44,15 +46,24 @@ export class MemberProfileService {
       throw err;
     }
 
-    // 2) Membresía aplicable a la sucursal (ONECLUB en branch, MULTICLUB null)
+    // 2) Membresía aplicable a la sucursal
     const membership: MembershipRow | null =
       await this.repo.findMembershipForUserAndBranch(user.id, branchId);
+
+    // 👉 Regla que me pediste:
+    //    si NO hay membresía válida para ese branchId,
+    //    no devolvemos el usuario, disparamos error.
+    if (!membership) {
+      const err: any = new Error('MEMBERSHIP_NOT_ALLOWED_FOR_BRANCH');
+      err.status = 403;
+      throw err;
+    }
 
     // 3) Último estado de enrolamiento facial
     const face: FaceEnrollmentRow | null =
       await this.repo.findLastFaceEnrollment(user.id);
 
-    // 4) Mapear membershipStatus
+    // 4) Mapear membershipStatus con override por fecha de vencimiento
     let membershipStatus: 'active' | 'expired' | 'inactive' = 'inactive';
     let membershipType: string | null = null;
     let membershipName: string | null = null;
@@ -62,20 +73,28 @@ export class MemberProfileService {
     let membershipStart: string | null = null;
     let membershipEnd: string | null = null;
 
-    if (membership) {
-      membershipType = membership.plan_code;
-      membershipName = membership.plan_name;
-      membershipScope = membership.plan_scope;
-      membershipBranchId = membership.branch_id;
-      membershipBranchName = membership.branch_name;
-      membershipStart = membership.start_date;
-      membershipEnd = membership.end_date;
+    // aquí membership SIEMPRE existe (ya filtramos antes)
+    membershipType = membership.plan_code;
+    membershipName = membership.plan_name;
+    membershipScope = membership.plan_scope;
+    membershipBranchId = membership.branch_id;
+    membershipBranchName = membership.branch_name;
+    membershipStart = membership.start_date;
+    membershipEnd = membership.end_date;
 
-      membershipStatus =
-        membership.membership_status === 'ACTIVE' ? 'active' : 'expired';
+    const todayStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    const endDateStr = membership.end_date;                  // 'YYYY-MM-DD'
+
+    if (endDateStr < todayStr) {
+      // fecha ya vencida → marcar como expired aunque en BD diga ACTIVE
+      membershipStatus = 'expired';
+    } else if (membership.membership_status === 'EXPIRED') {
+      membershipStatus = 'expired';
+    } else {
+      membershipStatus = 'active';
     }
 
-    // 5) Estado de enrolamiento
+    // 5) Estado de enrolamiento / bloqueo
     let enrollmentStatus: 'enrolled' | 'not_enrolled' | 'locked' = 'not_enrolled';
     let enrollmentLocked = false;
 

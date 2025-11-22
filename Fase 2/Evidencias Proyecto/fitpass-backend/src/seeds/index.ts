@@ -6,6 +6,8 @@ import { logger } from '../utils/logger';
 import { seedBranches } from './branches/branches.seed';
 import { seedMembershipPlans } from './membership/membership-plans.seed';
 import { seedBranchAdmins } from './staff/branch-admins.seed';
+import { seedUiPermissions } from './admin/ui-permissions.seed';
+import { seedUserProfiles } from './admin/user-profiles.seed';
 
 const runSeeds = async (): Promise<void> => {
   try {
@@ -14,10 +16,16 @@ const runSeeds = async (): Promise<void> => {
     // 1) Sucursales
     await seedBranches();
 
-    // 2) Planes de membresía (incluyen reglas de uso en las columnas)
+    // 2) Planes de membresía
     await seedMembershipPlans();
 
-    // 3) Admins por sucursal (rol + perfil temporal + acceso 24/7)
+    // 3) Permisos de UI
+    await seedUiPermissions();
+
+    // 4) Perfiles por sucursal (ADMIN, Recepcionista, etc.)
+    await seedUserProfiles();          // 👈 ESTE VA ANTES DE los admins
+
+    // 5) Admins por sucursal (usan el perfil "Administrador de Sucursal")
     await seedBranchAdmins();
 
     logger.info('🎉 Seeds completados');

@@ -9,12 +9,14 @@ export interface CreateMembershipPaymentInput {
   cardLast4: string;
   cardType: string;
   cardBrand: string;
+  branchId: string | null;          // 👈 nuevo campo
 }
 
 export interface MembershipPaymentRow {
   id: string;
   membership_id: string;
   user_id: string;
+  branch_id: string | null;         // 👈 nuevo campo en el row
   amount: number;
   currency: string;
   paid_at: Date;
@@ -35,6 +37,7 @@ export class PgMembershipPaymentRepository {
         id,
         membership_id,
         user_id,
+        branch_id,
         amount,
         currency,
         paid_at,
@@ -51,13 +54,15 @@ export class PgMembershipPaymentRepository {
         $5,
         $6,
         $7,
-        $8
+        $8,
+        $9
       )
       RETURNING *
       `,
       [
         input.membershipId,
         input.userId,
+        input.branchId,      // 👈 se guarda la sucursal del pago (puede ser null)
         input.amount,
         input.currency,
         now,
@@ -70,7 +75,7 @@ export class PgMembershipPaymentRepository {
     return result.rows[0];
   }
 
-    // 👇 NUEVO: último pago de una membresía
+  // 👇 último pago de una membresía (no cambia la firma)
   public async findLastByMembershipId(
     membershipId: string
   ): Promise<MembershipPaymentRow | null> {

@@ -1,8 +1,18 @@
 // src/app/features/reports/access-report/access-report.component.ts
 
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  signal,
+  computed,
+  inject,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,20 +21,84 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import {
+  MatNativeDateModule,
+  MAT_DATE_LOCALE,
+  DateAdapter,
+  MAT_DATE_FORMATS,
+  NativeDateAdapter,
+} from '@angular/material/core';
 import { MatChipsModule } from '@angular/material/chips';
-import * as XLSX from 'xlsx';
+
 import { AuthService } from '../../../core/services/auth.service';
+import {
+  Reports,
+  AccessLogReportItem,
+  AccessReportFilters,
+  PersonTypeFilter,
+} from '../../../core/services/reports/reports';
+
+/** ===== Adapter y formatos para dd/MM/yyyy ===== */
+
+export class EsClDateAdapter extends NativeDateAdapter {
+  override parse(value: any): Date | null {
+    // Permitimos string tipo "dd/MM/yyyy"
+    if (typeof value === 'string' && value.trim().length) {
+      const parts = value.trim().split('/');
+      if (parts.length === 3) {
+        const day = Number(parts[0]);
+        const month = Number(parts[1]) - 1; // 0-based
+        const year = Number(parts[2]);
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+          return new Date(year, month, day);
+        }
+      }
+    }
+
+    // Fallback al comportamiento por defecto
+    const timestamp =
+      typeof value === 'number' ? value : Date.parse(value);
+    return isNaN(timestamp) ? null : new Date(timestamp);
+  }
+
+  override format(date: Date, displayFormat: Object): string {
+    if (!date) return '';
+    const day = this._to2digit(date.getDate());
+    const month = this._to2digit(date.getMonth() + 1);
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  private _to2digit(n: number): string {
+    return ('00' + n).slice(-2);
+  }
+}
+
+export const ES_CL_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    // El adapter ignora el formato y siempre devuelve dd/MM/yyyy,
+    // pero dejamos esto por semántica
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: { year: 'numeric', month: 'short' },
+    dateA11yLabel: { year: 'numeric', month: 'long', day: 'numeric' },
+    monthYearA11yLabel: { year: 'numeric', month: 'long' },
+  },
+};
+
+/** ====== Modelo del reporte ====== */
 
 export interface AccessRecord {
-  id: number;
+  id: string;
   date: Date;
   time: string;
   personName: string;
   personRut: string;
-  personType: 'Miembro' | 'Colaborador';
-  accessType: 'Entrada' | 'Salida';
-  branchId: number;
+  personType: 'Miembro' | 'Colaborador' | 'Desconocido';
+  accessType: 'Entrada';
+  branchId: string;
   branchName: string;
   status: 'Exitoso' | 'Rechazado';
 }
@@ -44,27 +118,33 @@ export interface AccessRecord {
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatChipsModule
+    MatChipsModule,
   ],
   templateUrl: './access-report.component.html',
   styleUrls: ['./access-report.component.scss'],
   host: {
-    '[attr.data-theme]': 'currentTheme'
-  }
+    '[attr.data-theme]': 'currentTheme',
+  },
+  providers: [
+    // Locale en español Chile
+    { provide: MAT_DATE_LOCALE, useValue: 'es-CL' },
+    // Adapter custom que parsea y formatea dd/MM/yyyy
+    { provide: DateAdapter, useClass: EsClDateAdapter },
+    { provide: MAT_DATE_FORMATS, useValue: ES_CL_DATE_FORMATS },
+  ],
 })
 export class AccessReportComponent implements OnInit {
   private authService = inject(AuthService);
-  
+  private reports = inject(Reports);
+
   currentTheme: string = 'dark';
-  
-  // Contexto de sucursal
-  currentUserBranchId: number | null = null;
+
+  // Contexto de sucursal (string porque en BD es varchar/uuid)
+  currentUserBranchId: string | null = null;
   isSuperAdmin: boolean = false;
-  availableBranches: { id: number; name: string }[] = [
-    { id: 1, name: 'Sucursal Centro' },
-    { id: 2, name: 'Sucursal Norte' },
-    { id: 3, name: 'Sucursal Providencia' }
-  ];
+
+  // (A futuro puedes poblar esto desde un catálogo real)
+  availableBranches: { id: string; name: string }[] = [];
 
   // Columnas de la tabla
   displayedColumns: string[] = [
@@ -75,68 +155,61 @@ export class AccessReportComponent implements OnInit {
     'personType',
     'accessType',
     'branchName',
-    'status'
+    'status',
   ];
 
-  // Filtros como FormGroup (para el HTML)
+  // Filtros (usados por el template)
   filterForm = new FormGroup({
-    branchId: new FormControl<number | null>(null),
-    personType: new FormControl<string>('all'),
+    branchId: new FormControl<string | null>(null),
+    personType: new FormControl<'all' | 'member' | 'staff'>('all'),
     searchText: new FormControl<string>(''),
     startDate: new FormControl<Date | null>(null),
-    endDate: new FormControl<Date | null>(null)
+    endDate: new FormControl<Date | null>(null),
   });
 
-  // 🆕 Filtros como SIGNALS (para reactividad en computed)
-  private filterBranchId = signal<number | null>(null);
-  private filterPersonType = signal<string>('all');
+  // Signals internos para que los computed reaccionen
+  private filterBranchId = signal<string | null>(null);
+  private filterPersonType = signal<'all' | 'member' | 'staff'>('all');
   private filterSearchText = signal<string>('');
   private filterStartDate = signal<Date | null>(null);
   private filterEndDate = signal<Date | null>(null);
 
-  // Datos
+  // Datos crudos desde el backend (últimos N accesos)
   private allAccessRecords = signal<AccessRecord[]>([]);
-  
+  isLoading = signal(false);
+
   /**
-   * 📊 VISTA EN TABLA: Últimos 20 registros con filtros aplicados
-   * Ahora SÍ es reactivo gracias a los signals
+   * Vista filtrada (máx. 20 registros) para la tabla.
    */
   filteredRecords = computed(() => {
     const records = this.allAccessRecords();
-    const personType = this.filterPersonType();  // ✅ Ahora lee del signal
-    const searchText = this.filterSearchText();  // ✅ Ahora lee del signal
-    const startDate = this.filterStartDate();    // ✅ Ahora lee del signal
-    const endDate = this.filterEndDate();        // ✅ Ahora lee del signal
-    const selectedBranchId = this.filterBranchId(); // ✅ Ahora lee del signal
+    const personTypeFilter = this.filterPersonType();
+    const searchText = this.filterSearchText();
+    const startDate = this.filterStartDate();
+    const endDate = this.filterEndDate();
+    const selectedBranchId = this.filterBranchId();
 
-    console.log('🔄 Recalculando filteredRecords con:', {
-      personType,
-      searchText,
-      selectedBranchId,
-      startDate,
-      endDate,
-      totalRecords: records.length
-    });
-
-    const filtered = records.filter(record => {
-      // 🔒 FILTRO 1: Sucursal (según permisos)
+    const filtered = records.filter((record) => {
+      // 1) Sucursal
       if (this.isSuperAdmin) {
-        if (selectedBranchId !== null && record.branchId !== selectedBranchId) {
+        if (selectedBranchId && record.branchId !== selectedBranchId) {
           return false;
         }
-      } else {
-        if (this.currentUserBranchId !== null && record.branchId !== this.currentUserBranchId) {
+      } else if (this.currentUserBranchId) {
+        if (record.branchId !== this.currentUserBranchId) {
           return false;
         }
       }
 
-      // 👥 FILTRO 2: Tipo de persona (Miembro/Colaborador/Todos)
-      if (personType !== 'all' && record.personType !== personType) {
-        console.log(`❌ Vista: Excluido ${record.personName} (${record.personType}) - Filtro: ${personType}`);
+      // 2) Tipo de persona
+      if (personTypeFilter === 'member' && record.personType !== 'Miembro') {
+        return false;
+      }
+      if (personTypeFilter === 'staff' && record.personType !== 'Colaborador') {
         return false;
       }
 
-      // 🔍 FILTRO 3: Búsqueda por nombre o RUT
+      // 3) Búsqueda por nombre o RUT
       if (searchText) {
         const searchLower = searchText.toLowerCase();
         const matchesName = record.personName.toLowerCase().includes(searchLower);
@@ -146,7 +219,7 @@ export class AccessReportComponent implements OnInit {
         }
       }
 
-      // 📅 FILTRO 4: Rango de fechas
+      // 4) Rango de fechas
       if (startDate && record.date < startDate) {
         return false;
       }
@@ -158,36 +231,40 @@ export class AccessReportComponent implements OnInit {
         }
       }
 
-      console.log(`✅ Vista: Incluido ${record.personName} (${record.personType})`);
       return true;
     });
 
-    console.log(`📊 Vista - Registros filtrados: ${filtered.length}`);
-    
-    // 📊 Limitar a 20 registros para la vista
+    // La UI solo muestra los últimos 20
     return filtered.slice(0, 20);
   });
 
-  ngOnInit() {
-    this.currentUserBranchId = this.authService.getCurrentUserBranchId();
+  ngOnInit(): void {
+    // Normalizamos el branchId que viene del AuthService (number | null) a string | null
+    const branchFromAuth = this.authService.getCurrentUserBranchId(); // number | null
+    this.currentUserBranchId =
+      branchFromAuth !== null && branchFromAuth !== undefined
+        ? String(branchFromAuth)
+        : null;
+
     this.isSuperAdmin = this.authService.isSuperAdmin();
-    
+
     if (this.isSuperAdmin) {
       this.filterForm.patchValue({ branchId: null });
       this.filterBranchId.set(null);
     } else {
+      this.filterForm.patchValue({ branchId: this.currentUserBranchId });
       this.filterBranchId.set(this.currentUserBranchId);
     }
-    
-    this.currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+
+    this.currentTheme =
+      document.documentElement.getAttribute('data-theme') || 'dark';
     this.observeThemeChanges();
-    
+
+    // Carga inicial de accesos (desde backend)
     this.loadAccessData();
-    
-    // 🆕 CRÍTICO: Sincronizar FormGroup con Signals
-    this.filterForm.valueChanges.subscribe(values => {
-      console.log('📝 Filtros cambiados:', values);
-      
+
+    // Sincroniza FormGroup -> signals
+    this.filterForm.valueChanges.subscribe((values) => {
       this.filterBranchId.set(values.branchId ?? null);
       this.filterPersonType.set(values.personType ?? 'all');
       this.filterSearchText.set(values.searchText ?? '');
@@ -196,219 +273,114 @@ export class AccessReportComponent implements OnInit {
     });
   }
 
-  private observeThemeChanges() {
+  private observeThemeChanges(): void {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'data-theme') {
-          this.currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+          this.currentTheme =
+            document.documentElement.getAttribute('data-theme') || 'dark';
         }
       });
     });
 
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-theme']
+      attributeFilter: ['data-theme'],
     });
   }
 
-  private loadAccessData() {
-    // TODO: Reemplazar con llamada real al backend
-    const mockData: AccessRecord[] = [
-      {
-        id: 1,
-        date: new Date(2025, 10, 16, 14, 30),
-        time: '14:30',
-        personName: 'Juan Pérez González',
-        personRut: '12.345.678-9',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 1,
-        branchName: 'Sucursal Centro',
-        status: 'Exitoso'
-      },
-      {
-        id: 2,
-        date: new Date(2025, 10, 16, 14, 25),
-        time: '14:25',
-        personName: 'María González Silva',
-        personRut: '23.456.789-0',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 1,
-        branchName: 'Sucursal Centro',
-        status: 'Exitoso'
-      },
-      {
-        id: 3,
-        date: new Date(2025, 10, 16, 14, 20),
-        time: '14:20',
-        personName: 'Carlos Rodríguez',
-        personRut: '15.678.901-2',
-        personType: 'Colaborador',
-        accessType: 'Entrada',
-        branchId: 1,
-        branchName: 'Sucursal Centro',
-        status: 'Exitoso'
-      },
-      {
-        id: 4,
-        date: new Date(2025, 10, 16, 14, 15),
-        time: '14:15',
-        personName: 'Ana Martínez López',
-        personRut: '19.876.543-K',
-        personType: 'Miembro',
-        accessType: 'Salida',
-        branchId: 2,
-        branchName: 'Sucursal Norte',
-        status: 'Exitoso'
-      },
-      {
-        id: 5,
-        date: new Date(2025, 10, 16, 14, 10),
-        time: '14:10',
-        personName: 'Pedro Sánchez',
-        personRut: '16.543.210-9',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 2,
-        branchName: 'Sucursal Norte',
-        status: 'Rechazado'
-      },
-      {
-        id: 6,
-        date: new Date(2025, 10, 16, 13, 45),
-        time: '13:45',
-        personName: 'Laura Fernández',
-        personRut: '18.234.567-8',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 3,
-        branchName: 'Sucursal Providencia',
-        status: 'Exitoso'
-      },
-      {
-        id: 7,
-        date: new Date(2025, 10, 16, 13, 30),
-        time: '13:30',
-        personName: 'Diego Torres Muñoz',
-        personRut: '17.654.321-0',
-        personType: 'Colaborador',
-        accessType: 'Entrada',
-        branchId: 1,
-        branchName: 'Sucursal Centro',
-        status: 'Exitoso'
-      },
-      {
-        id: 8,
-        date: new Date(2025, 10, 16, 13, 15),
-        time: '13:15',
-        personName: 'Sofía Vargas',
-        personRut: '20.111.222-3',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 2,
-        branchName: 'Sucursal Norte',
-        status: 'Exitoso'
-      },
-      {
-        id: 9,
-        date: new Date(2025, 10, 16, 13, 0),
-        time: '13:00',
-        personName: 'Roberto Díaz',
-        personRut: '14.333.444-5',
-        personType: 'Miembro',
-        accessType: 'Salida',
-        branchId: 1,
-        branchName: 'Sucursal Centro',
-        status: 'Exitoso'
-      },
-      {
-        id: 10,
-        date: new Date(2025, 10, 16, 12, 45),
-        time: '12:45',
-        personName: 'Valentina Ruiz',
-        personRut: '21.555.666-7',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 3,
-        branchName: 'Sucursal Providencia',
-        status: 'Exitoso'
-      },
-      {
-        id: 11,
-        date: new Date(2025, 10, 16, 12, 30),
-        time: '12:30',
-        personName: 'Andrés Morales',
-        personRut: '22.666.777-8',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 1,
-        branchName: 'Sucursal Centro',
-        status: 'Exitoso'
-      },
-      {
-        id: 12,
-        date: new Date(2025, 10, 16, 12, 15),
-        time: '12:15',
-        personName: 'Carolina Vega',
-        personRut: '13.888.999-K',
-        personType: 'Colaborador',
-        accessType: 'Entrada',
-        branchId: 2,
-        branchName: 'Sucursal Norte',
-        status: 'Exitoso'
-      },
-      {
-        id: 13,
-        date: new Date(2025, 10, 16, 12, 0),
-        time: '12:00',
-        personName: 'Tomás Silva',
-        personRut: '24.123.456-7',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 3,
-        branchName: 'Sucursal Providencia',
-        status: 'Rechazado'
-      },
-      {
-        id: 14,
-        date: new Date(2025, 10, 16, 11, 45),
-        time: '11:45',
-        personName: 'Francisca Rojas',
-        personRut: '25.234.567-8',
-        personType: 'Miembro',
-        accessType: 'Salida',
-        branchId: 1,
-        branchName: 'Sucursal Centro',
-        status: 'Exitoso'
-      },
-      {
-        id: 15,
-        date: new Date(2025, 10, 16, 11, 30),
-        time: '11:30',
-        personName: 'Ignacio Castro',
-        personRut: '26.345.678-9',
-        personType: 'Miembro',
-        accessType: 'Entrada',
-        branchId: 2,
-        branchName: 'Sucursal Norte',
-        status: 'Exitoso'
-      }
-    ];
+  /**
+   * Llama al backend para obtener los últimos accesos
+   * de la sucursal actual (el backend ya filtra por branchId).
+   */
+  private loadAccessData(): void {
+    this.isLoading.set(true);
 
-    this.allAccessRecords.set(mockData);
+    this.reports.getRecentAccessLogs(20).subscribe({
+      next: (response) => {
+        const mapped: AccessRecord[] = response.items.map((item) =>
+          this.mapApiItemToRecord(item),
+        );
+
+        this.allAccessRecords.set(mapped);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error cargando accesos recientes', err);
+        this.allAccessRecords.set([]);
+        this.isLoading.set(false);
+      },
+    });
   }
 
-  clearFilters() {
+  /**
+   * El backend envía date como string "22-11-2025" (dd-MM-yyyy).
+   */
+  private parseBackendDate(dateStr: string): Date {
+    if (!dateStr) {
+      return new Date(NaN);
+    }
+
+    const parts = dateStr.split('-');
+
+    // dd-MM-yyyy
+    if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
+      const day = Number(parts[0]);
+      const month = Number(parts[1]) - 1; // 0-based
+      const year = Number(parts[2]);
+      return new Date(year, month, day);
+    }
+
+    // yyyy-MM-dd
+    if (parts.length === 3 && parts[0].length === 4) {
+      const year = Number(parts[0]);
+      const month = Number(parts[1]) - 1;
+      const day = Number(parts[2]);
+      return new Date(year, month, day);
+    }
+
+    return new Date(dateStr);
+  }
+
+  private mapApiItemToRecord(item: AccessLogReportItem): AccessRecord {
+    const dateObj = this.parseBackendDate(item.date);
+
+    let personType: AccessRecord['personType'] = 'Desconocido';
+    if (item.personType === 'MEMBER') {
+      personType = 'Miembro';
+    } else if (item.personType === 'STAFF') {
+      personType = 'Colaborador';
+    }
+
+    const status: AccessRecord['status'] =
+      item.result === 'GRANTED' ? 'Exitoso' : 'Rechazado';
+
+    return {
+      id: item.id,
+      date: dateObj,
+      time: item.time,
+      personName: item.fullName,
+      personRut: item.rut,
+      personType,
+      accessType: 'Entrada', // solo registramos entradas
+      branchId: item.branchId,
+      branchName: item.branchName,
+      status,
+    };
+  }
+
+  // =======================
+  // Acciones de UI
+  // =======================
+  clearFilters(): void {
     this.filterForm.reset({
       branchId: this.isSuperAdmin ? null : this.currentUserBranchId,
       personType: 'all',
       searchText: '',
       startDate: null,
-      endDate: null
+      endDate: null,
     });
-    
-    // 🆕 También resetear los signals
+
     this.filterBranchId.set(this.isSuperAdmin ? null : this.currentUserBranchId);
     this.filterPersonType.set('all');
     this.filterSearchText.set('');
@@ -416,15 +388,15 @@ export class AccessReportComponent implements OnInit {
     this.filterEndDate.set(null);
   }
 
-  refreshData() {
+  refreshData(): void {
     this.loadAccessData();
   }
 
   /**
-   * 📥 EXPORTAR A EXCEL: Exporta TODOS los registros que cumplan los filtros
-   * NO limita a 20 registros, exporta el conjunto completo
+   * Exporta a CSV/Excel usando el endpoint del backend:
+   * GET /api/reports/access-logs/export
    */
-  exportToExcel() {
+  exportToExcel(): void {
     const startDate = this.filterStartDate();
     const endDate = this.filterEndDate();
 
@@ -433,127 +405,50 @@ export class AccessReportComponent implements OnInit {
       return;
     }
 
-    // Obtener filtros activos
-    const personType = this.filterPersonType();
-    const searchText = this.filterSearchText();
-    const selectedBranchId = this.filterBranchId();
+    const personTypeFilter = this.filterPersonType();
 
-    console.log('📊 Iniciando exportación con filtros:', {
-      personType,
-      searchText,
-      selectedBranchId,
-      startDate: this.formatDate(startDate),
-      endDate: this.formatDate(endDate)
+    const filters: AccessReportFilters = {
+      from: startDate,
+      to: endDate,
+      personType: personTypeFilter as PersonTypeFilter,
+    };
+
+    // Solo enviamos branchId explícito si el usuario es super admin
+    if (this.isSuperAdmin && this.filterBranchId()) {
+      filters.branchId = this.filterBranchId()!;
+    }
+
+    this.reports.exportAccessLogs(filters).subscribe({
+      next: (blob) => {
+        if (typeof window === 'undefined') {
+          return;
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        const startStr = this.formatDate(startDate);
+        const endStr = this.formatDate(endDate);
+
+        a.download = `Accesos_${startStr}_${endStr}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Error exportando reporte de accesos', err);
+        alert('Ocurrió un error al exportar el reporte.');
+      },
     });
-
-    // 🔍 FILTRAR DATOS - APLICAR TODOS LOS FILTROS (sin límite de 20)
-    const dataToExport = this.allAccessRecords().filter(record => {
-      const endOfDay = new Date(endDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      
-      // FILTRO 1: Rango de fechas (OBLIGATORIO)
-      const inDateRange = record.date >= startDate && record.date <= endOfDay;
-      if (!inDateRange) {
-        return false;
-      }
-      
-      // FILTRO 2: Sucursal (según permisos)
-      if (this.isSuperAdmin) {
-        if (selectedBranchId !== null && record.branchId !== selectedBranchId) {
-          return false;
-        }
-      } else {
-        if (this.currentUserBranchId !== null && record.branchId !== this.currentUserBranchId) {
-          return false;
-        }
-      }
-      
-      // FILTRO 3: Tipo de persona (Miembro/Colaborador/Todos)
-      if (personType && personType !== 'all' && record.personType !== personType) {
-        console.log(`❌ Excluido: ${record.personName} es ${record.personType}, filtro: ${personType}`);
-        return false;
-      }
-
-      // FILTRO 4: Búsqueda por nombre o RUT
-      if (searchText) {
-        const searchLower = searchText.toLowerCase();
-        const matchesName = record.personName.toLowerCase().includes(searchLower);
-        const matchesRut = record.personRut.includes(searchText);
-        if (!matchesName && !matchesRut) {
-          return false;
-        }
-      }
-      
-      console.log(`✅ Incluido: ${record.personName} (${record.personType})`);
-      return true;
-    });
-
-    console.log(`📊 Total registros a exportar: ${dataToExport.length}`);
-
-    if (dataToExport.length === 0) {
-      alert('No hay datos para exportar con los filtros aplicados.');
-      return;
-    }
-
-    // Preparar datos para Excel
-    const excelData = dataToExport.map(record => ({
-      'Fecha': this.formatDate(record.date),
-      'Hora': record.time,
-      'Nombre': record.personName,
-      'RUT': record.personRut,
-      'Tipo': record.personType,
-      'Acceso': record.accessType,
-      'Sucursal': record.branchName,
-      'Estado': record.status
-    }));
-
-    // Crear workbook
-    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(excelData);
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Reporte de Accesos');
-
-    // Ajustar ancho de columnas
-    const wscols = [
-      { wch: 12 }, // Fecha
-      { wch: 8 },  // Hora
-      { wch: 30 }, // Nombre
-      { wch: 15 }, // RUT
-      { wch: 12 }, // Tipo
-      { wch: 10 }, // Acceso
-      { wch: 20 }, // Sucursal
-      { wch: 10 }  // Estado
-    ];
-    ws['!cols'] = wscols;
-
-    // Generar nombre de archivo con información de filtros
-    let filenameParts: string[] = ['Accesos'];
-    
-    // Agregar sucursal al nombre
-    if (this.isSuperAdmin && selectedBranchId === null) {
-      filenameParts.push('TodasSucursales');
-    } else {
-      const branchName = this.getBranchName(selectedBranchId || this.currentUserBranchId);
-      filenameParts.push(branchName.replace(/\s+/g, ''));
-    }
-    
-    // Agregar tipo de persona si está filtrado
-    if (personType && personType !== 'all') {
-      filenameParts.push(personType + 's');
-    }
-    
-    // Agregar fechas
-    filenameParts.push(this.formatDate(startDate));
-    filenameParts.push(this.formatDate(endDate));
-    
-    const fileName = `${filenameParts.join('_')}.xlsx`;
-
-    console.log(`💾 Descargando archivo: ${fileName}`);
-
-    // Descargar archivo
-    XLSX.writeFile(wb, fileName);
   }
 
+  // =======================
+  // Helpers para el template
+  // =======================
   formatDate(date: Date): string {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      return '';
+    }
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
@@ -565,21 +460,21 @@ export class AccessReportComponent implements OnInit {
   }
 
   getAccessTypeIcon(accessType: string): string {
+    // Solo usamos Entrada, pero dejamos la lógica completa por si cambia
     return accessType === 'Entrada' ? 'login' : 'logout';
   }
 
-  getPersonTypeColor(personType: string): string {
-    return personType === 'Miembro' ? 'primary' : 'accent';
-  }
+  getBranchName(branchId: string | null): string {
+    if (!branchId) return 'Todas las Sucursales';
 
-  getBranchName(branchId: number | null): string {
-    if (branchId === null) return 'Todas las Sucursales';
-    const branch = this.availableBranches.find(b => b.id === branchId);
-    return branch ? branch.name : 'Sucursal Desconocida';
+    const branch = this.availableBranches.find((b) => b.id === branchId);
+    return branch ? branch.name : 'Sucursal';
   }
 
   getCurrentUserBranchName(): string {
-    if (this.currentUserBranchId === null) return 'Sin Sucursal';
+    if (!this.currentUserBranchId) {
+      return 'Sucursal actual';
+    }
     return this.getBranchName(this.currentUserBranchId);
   }
 }

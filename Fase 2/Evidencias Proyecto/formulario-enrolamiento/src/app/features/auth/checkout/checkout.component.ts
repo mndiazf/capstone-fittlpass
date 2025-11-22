@@ -8,17 +8,17 @@ import {
   Validators,
   AbstractControl,
   ValidationErrors,
-  FormControl
+  FormControl,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   AuthService,
-  CheckoutMembershipPayload
+  CheckoutMembershipPayload,
 } from '../../../core/services/auth.service';
 import {
   MembershipApi,
   MembershipCatalog,
-  BranchApi
+  BranchApi,
 } from '../../../core/services/membership-catalog';
 
 function samePassword(group: AbstractControl): ValidationErrors | null {
@@ -35,16 +35,16 @@ interface BranchVM {
 }
 
 interface MembershipVM {
-  code: string;           // ej: "MULTICLUB_ANUAL"
+  code: string; // ej: "MULTICLUB_ANUAL"
   name: string;
   description: string;
-  price: string;          // formateado CLP
-  rawPrice: number;       // monto numérico para el payload
-  durationLabel: string;  // "6 meses", "Periodo de prueba"
-  scopeLabel: string;     // "Multiclub (todas las sedes)"
-  usageLabel: string;     // "Hasta 5 asistencias por semana..."
-  scope: string;          // "MULTICLUB" | "ONECLUB" | ...
-  features: string[];     // lista para el resumen
+  price: string; // formateado CLP
+  rawPrice: number; // monto numérico para el payload
+  durationLabel: string; // "6 meses", "Periodo de prueba"
+  scopeLabel: string; // "Multiclub (todas las sedes)"
+  usageLabel: string; // "Hasta 5 asistencias por semana..."
+  scope: string; // "MULTICLUB" | "ONECLUB" | ...
+  features: string[]; // lista para el resumen
 }
 
 @Component({
@@ -52,7 +52,7 @@ interface MembershipVM {
   selector: 'app-checkout',
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './checkout.component.html',
-  styleUrls: ['./checkout.component.scss']
+  styleUrls: ['./checkout.component.scss'],
 })
 export class CheckoutComponent implements OnInit {
   f: FormGroup;
@@ -69,7 +69,7 @@ export class CheckoutComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private auth: AuthService,
-    private membershipCatalog: MembershipCatalog
+    private membershipCatalog: MembershipCatalog,
   ) {
     // Form de registro
     this.f = this.fb.group({
@@ -77,31 +77,51 @@ export class CheckoutComponent implements OnInit {
       middleName: [''],
       lastName: ['', [Validators.required]],
       secondLastName: [''],
-      rut: ['', [Validators.required, Validators.pattern(/^(\d{1,2}\.?\d{3}\.?\d{3}-[\dkK])$/)]],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^\+?56\s?9(\s?\d){8}$/)]],
-      passwordGroup: this.fb.group({
-        password: ['', [
+      rut: [
+        '',
+        [
           Validators.required,
-          Validators.minLength(8),
-          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]+$/)
-        ]],
-        confirm: ['', [Validators.required]]
-      }, { validators: samePassword }),
-      branchId: new FormControl<string | null>(null)
+          Validators.pattern(/^(\d{1,2}\.?\d{3}\.?\d{3}-[\dkK])$/),
+        ],
+      ],
+      email: ['', [Validators.required, Validators.email]],
+      phone: [
+        '',
+        [Validators.required, Validators.pattern(/^\+?56\s?9(\s?\d){8}$/)],
+      ],
+      passwordGroup: this.fb.group(
+        {
+          password: [
+            '',
+            [
+              Validators.required,
+              Validators.minLength(8),
+              Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[^\s]+$/),
+            ],
+          ],
+          confirm: ['', [Validators.required]],
+        },
+        { validators: samePassword },
+      ),
+      branchId: new FormControl<string | null>(null),
     });
 
     // Form de pago
     this.paymentForm = this.fb.group({
       cardNumber: ['', [Validators.required, Validators.minLength(16)]],
       cardName: ['', [Validators.required, Validators.minLength(3)]],
-      expiryDate: ['', [Validators.required, Validators.pattern(/^\d{2}\/\d{2}$/)]],
-      cvv: ['', [Validators.required, Validators.pattern(/^\d{3,4}$/)]]
+      expiryDate: [
+        '',
+        [Validators.required, Validators.pattern(/^\d{2}\/\d{2}$/)],
+      ],
+      cvv: ['', [Validators.required, Validators.pattern(/^\d{3,4}$/)]],
     });
   }
 
   ngOnInit() {
-    const membershipCode = this.route.snapshot.queryParams['plan'] as string | undefined;
+    const membershipCode = this.route.snapshot.queryParams['plan'] as
+      | string
+      | undefined;
 
     if (!membershipCode) {
       this.router.navigate(['/']);
@@ -111,7 +131,7 @@ export class CheckoutComponent implements OnInit {
     // Cargar catálogo y buscar el plan por code
     this.membershipCatalog.getMemberships().subscribe({
       next: (data: MembershipApi[]) => {
-        const api = data.find(m => m.code === membershipCode);
+        const api = data.find((m) => m.code === membershipCode);
         if (!api) {
           this.router.navigate(['/']);
           return;
@@ -119,42 +139,52 @@ export class CheckoutComponent implements OnInit {
 
         this.selectedMembership = this.mapApiToVM(api);
         this.applyBranchValidator();
-        this.loadBranches();  // ahora cargamos sucursales desde el endpoint
+        this.loadBranches(); // ahora cargamos sucursales desde el endpoint
       },
       error: (err) => {
         console.error('Error cargando membresía seleccionada', err);
         this.router.navigate(['/']);
-      }
+      },
     });
 
     // Formato RUT on-type
-    this.f.get('rut')?.valueChanges.subscribe(value => {
-      if (value) {
-        const formatted = this.formatRut(value);
-        if (formatted !== value) {
-          this.f.get('rut')?.setValue(formatted, { emitEvent: false });
+    this.f
+      .get('rut')
+      ?.valueChanges.subscribe((value) => {
+        if (value) {
+          const formatted = this.formatRut(value);
+          if (formatted !== value) {
+            this.f.get('rut')?.setValue(formatted, { emitEvent: false });
+          }
         }
-      }
-    });
+      });
 
     // Formatos de pago on-type
-    this.paymentForm.get('cardNumber')?.valueChanges.subscribe(value => {
-      if (value) {
-        const formatted = this.formatCardNumber(value);
-        if (formatted !== value) {
-          this.paymentForm.get('cardNumber')?.setValue(formatted, { emitEvent: false });
+    this.paymentForm
+      .get('cardNumber')
+      ?.valueChanges.subscribe((value) => {
+        if (value) {
+          const formatted = this.formatCardNumber(value);
+          if (formatted !== value) {
+            this.paymentForm
+              .get('cardNumber')
+              ?.setValue(formatted, { emitEvent: false });
+          }
         }
-      }
-    });
+      });
 
-    this.paymentForm.get('expiryDate')?.valueChanges.subscribe(value => {
-      if (value) {
-        const formatted = this.formatExpiryDate(value);
-        if (formatted !== value) {
-          this.paymentForm.get('expiryDate')?.setValue(formatted, { emitEvent: false });
+    this.paymentForm
+      .get('expiryDate')
+      ?.valueChanges.subscribe((value) => {
+        if (value) {
+          const formatted = this.formatExpiryDate(value);
+          if (formatted !== value) {
+            this.paymentForm
+              .get('expiryDate')
+              ?.setValue(formatted, { emitEvent: false });
+          }
         }
-      }
-    });
+      });
   }
 
   // ====== Branches desde endpoint ======
@@ -162,35 +192,59 @@ export class CheckoutComponent implements OnInit {
     this.membershipCatalog.getBranches().subscribe({
       next: (data: BranchApi[]) => {
         this.branches = data
-          .filter(b => b.active)
-          .map<BranchVM>(b => ({
+          .filter((b) => b.active)
+          .map<BranchVM>((b) => ({
             id: b.id,
             code: b.code,
             name: b.name,
-            address: b.address
+            address: b.address,
           }));
       },
       error: (err) => {
         console.error('Error cargando sucursales', err);
-      }
+      },
     });
   }
 
   // ===== Getters de registro =====
-  get firstName() { return this.f.get('firstName'); }
-  get lastName() { return this.f.get('lastName'); }
-  get rut() { return this.f.get('rut'); }
-  get email() { return this.f.get('email'); }
-  get phone() { return this.f.get('phone'); }
-  get passGroup() { return this.f.get('passwordGroup'); }
-  get password() { return this.f.get('passwordGroup.password'); }
-  get branchId() { return this.f.get('branchId'); }
+  get firstName() {
+    return this.f.get('firstName');
+  }
+  get lastName() {
+    return this.f.get('lastName');
+  }
+  get rut() {
+    return this.f.get('rut');
+  }
+  get email() {
+    return this.f.get('email');
+  }
+  get phone() {
+    return this.f.get('phone');
+  }
+  get passGroup() {
+    return this.f.get('passwordGroup');
+  }
+  get password() {
+    return this.f.get('passwordGroup.password');
+  }
+  get branchId() {
+    return this.f.get('branchId');
+  }
 
   // ===== Getters de pago =====
-  get cardNumber() { return this.paymentForm.get('cardNumber'); }
-  get cardName() { return this.paymentForm.get('cardName'); }
-  get expiryDate() { return this.paymentForm.get('expiryDate'); }
-  get cvv() { return this.paymentForm.get('cvv'); }
+  get cardNumber() {
+    return this.paymentForm.get('cardNumber');
+  }
+  get cardName() {
+    return this.paymentForm.get('cardName');
+  }
+  get expiryDate() {
+    return this.paymentForm.get('expiryDate');
+  }
+  get cvv() {
+    return this.paymentForm.get('cvv');
+  }
 
   /** ¿El plan seleccionado es tipo ONECLUB según el scope del backend? */
   get isOneClubSelected(): boolean {
@@ -200,7 +254,7 @@ export class CheckoutComponent implements OnInit {
   /** Nombre de sucursal por id */
   branchName(id?: string | null): string {
     if (!id) return 'Selecciona una';
-    const b = this.branches.find(x => x.id === id);
+    const b = this.branches.find((x) => x.id === id);
     return b ? b.name : '—';
   }
 
@@ -211,7 +265,7 @@ export class CheckoutComponent implements OnInit {
       ctrl.addValidators([Validators.required]);
     } else {
       ctrl.clearValidators();
-      ctrl.setValue(null);
+      ctrl.setValue(null, { emitEvent: false });
     }
     ctrl.updateValueAndValidity({ emitEvent: false });
   }
@@ -223,14 +277,14 @@ export class CheckoutComponent implements OnInit {
     const usageLabel = this.getUsageLabel(
       api.isUsageLimited,
       api.maxDaysPerPeriod,
-      api.periodUnit
+      api.periodUnit,
     );
 
     const features: string[] = [
       api.description,
       `Duración: ${durationLabel}`,
       `Alcance: ${scopeLabel}`,
-      usageLabel
+      usageLabel,
     ];
 
     return {
@@ -243,7 +297,7 @@ export class CheckoutComponent implements OnInit {
       scopeLabel,
       usageLabel,
       scope: api.scope,
-      features
+      features,
     };
   }
 
@@ -262,7 +316,7 @@ export class CheckoutComponent implements OnInit {
   private getUsageLabel(
     isUsageLimited: boolean,
     maxDaysPerPeriod: number | null,
-    periodUnit: 'WEEK' | 'MONTH' | null
+    periodUnit: 'WEEK' | 'MONTH' | null,
   ): string {
     if (!isUsageLimited) {
       return 'Acceso ilimitado durante la vigencia del plan';
@@ -318,7 +372,8 @@ export class CheckoutComponent implements OnInit {
     // ONECLUB: asegurar sucursal válida
     if (this.isOneClubSelected) {
       const raw = this.branchId?.value;
-      const normalized = raw && String(raw).trim().length > 0 ? String(raw) : null;
+      const normalized =
+        raw && String(raw).trim().length > 0 ? String(raw) : null;
       if (!normalized) {
         this.branchId?.markAsTouched();
         this.errorMsg = 'Debes seleccionar una sucursal para planes ONECLUB.';
@@ -349,35 +404,41 @@ export class CheckoutComponent implements OnInit {
     }
 
     // cardLast4 desde el número de tarjeta
-    const cleanCard = (this.cardNumber?.value || '').toString().replace(/\D/g, '');
+    const cleanCard = (this.cardNumber?.value || '')
+      .toString()
+      .replace(/\D/g, '');
     const cardLast4 = cleanCard.slice(-4) || '';
 
-    // branchId (solo obligatorio en ONECLUB)
+    // branchId:
+    // - ONECLUB → obligatorio
+    // - MULTICLUB → siempre null
     let branchIdVal: string | null = null;
     if (this.isOneClubSelected) {
       const raw = this.branchId?.value;
-      const normalized = raw && String(raw).trim().length > 0 ? String(raw) : null;
+      const normalized =
+        raw && String(raw).trim().length > 0 ? String(raw) : null;
       if (!normalized) {
         this.branchId?.markAsTouched();
         this.errorMsg = 'Debes seleccionar una sucursal para planes ONECLUB.';
         return;
       }
       branchIdVal = normalized;
+    } else {
+      branchIdVal = null; // MULTICLUB online → sin sucursal asociada
     }
 
     const membership = this.selectedMembership;
 
     const payload: CheckoutMembershipPayload = {
       planCode: membership.code,
-      // si no es ONECLUB puedes mandar null/undefined
-      ...(branchIdVal ? { branchId: branchIdVal } : {}),
+      branchId: branchIdVal, // 👈 siempre se manda: string o null
       user: {
         rut: (this.rut?.value || '').toString().trim(),
         email: (this.email?.value || '').toString().trim(),
         firstName: (this.firstName?.value || '').toString().trim(),
         lastName: (this.lastName?.value || '').toString().trim(),
-        secondLastName: (this.f.get('secondLastName')?.value || null),
-        middleName: (this.f.get('middleName')?.value || null),
+        secondLastName: this.f.get('secondLastName')?.value || null,
+        middleName: this.f.get('middleName')?.value || null,
         phone: (this.phone?.value || '').toString().trim(),
         password: (this.password?.value || '').toString(),
       },
@@ -385,7 +446,7 @@ export class CheckoutComponent implements OnInit {
         amount: membership.rawPrice,
         currency: 'CLP',
         cardLast4,
-      }
+      },
     };
 
     this.errorMsg = null;
@@ -403,8 +464,12 @@ export class CheckoutComponent implements OnInit {
       error: (err) => {
         console.error('Error en checkout de membresía', err);
         this.step = 'payment';
-        this.errorMsg = (err?.error?.message || err?.message || 'Error al procesar el pago').toString();
-      }
+        this.errorMsg = (
+          err?.error?.message ||
+          err?.message ||
+          'Error al procesar el pago'
+        ).toString();
+      },
     });
   }
 

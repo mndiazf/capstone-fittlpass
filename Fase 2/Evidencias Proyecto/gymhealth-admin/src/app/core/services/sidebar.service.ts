@@ -2,6 +2,7 @@
 
 import { Injectable, signal } from '@angular/core';
 import { MenuItem } from '../models/menu-item.interface';
+import { Auth } from '../services/auth/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,8 @@ export class SidebarService {
   activeItem = this.activeItemSignal.asReadonly();
   expandedItems = this.expandedItemsSignal.asReadonly();
 
-  mainMenuItems: MenuItem[] = [
+  // 🔹 Menú completo (catálogo)
+  private readonly allMenuItems: MenuItem[] = [
     { 
       id: 'dashboard', 
       icon: 'home', 
@@ -38,12 +40,6 @@ export class SidebarService {
           icon: 'person_search',
           label: 'Buscar Miembro',
           route: '/members/search'
-        },
-        {
-          id: 'member-block',
-          icon: 'gavel',
-          label: 'Infracciones',
-          route: '/members/block'
         }
       ]
     },
@@ -92,12 +88,6 @@ export class SidebarService {
           route: '/management/profiles'
         },
         {
-          id: 'management-staff-schedule',
-          icon: 'event_note',
-          label: 'Mantenedor de horarios',
-          route: '/management/staff-schedule'
-        },
-        {
           id: 'management-branch-schedule',
           icon: 'schedule',
           label: 'Horarios de Sucursal',
@@ -106,6 +96,9 @@ export class SidebarService {
       ]
     }
   ];
+
+  // 🔹 Menú que realmente ve el usuario (filtrado)
+  mainMenuItems: MenuItem[] = [];
 
   bottomMenuItems: MenuItem[] = [
     { 
@@ -117,6 +110,51 @@ export class SidebarService {
       badgeColor: 'warn' 
     }
   ];
+
+  constructor(private auth: Auth) {
+    // Inicial: construir menú según permisos del JWT (si hay payload en storage)
+    this.refreshMenuFromPermissions();
+  }
+
+  // =========================
+  // BUILD / REFRESH MENÚ
+  // =========================
+  refreshMenuFromPermissions(): void {
+    const codes = this.auth.permissionCodes; // ['dashboard', 'members', 'enrollment', ...]
+    const allowed = new Set<string>(codes);
+
+    this.mainMenuItems = this.allMenuItems
+      .map((item) => {
+        const children = item.children ?? [];
+
+        // Filtrar hijos por permiso (id === code)
+        const allowedChildren = children.filter((c) =>
+          allowed.has(c.id)
+        );
+
+        const hasOwnPermission = allowed.has(item.id);
+        const showItem = hasOwnPermission || allowedChildren.length > 0;
+
+        if (!showItem) {
+          return null;
+        }
+
+        return {
+          ...item,
+          children: allowedChildren.length > 0 ? allowedChildren : undefined
+        } as MenuItem;
+      })
+      .filter((item): item is MenuItem => item !== null);
+  }
+
+  // 🔸 Puedes llamar a esto manualmente tras login si quieres refrescar sin recargar la app
+  forceReloadMenu(): void {
+    this.refreshMenuFromPermissions();
+  }
+
+  // =========================
+  // CONTROL VISUAL
+  // =========================
 
   toggle(): void {
     this.isOpenSignal.update(value => !value);

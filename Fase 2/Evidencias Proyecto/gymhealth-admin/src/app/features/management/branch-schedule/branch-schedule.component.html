@@ -1,7 +1,6 @@
 <!-- src/app/features/management/branch-schedule/branch-schedule.component.html -->
 
 <div class="branch-schedule">
-  
   <!-- Header -->
   <div class="branch-schedule__header">
     <div class="header__content">
@@ -10,70 +9,73 @@
         Horarios de Sucursal
       </h1>
       <p class="header__subtitle">
-        Gestiona los horarios de apertura y cierre
+        Gestiona los horarios de apertura y cierre de tu sucursal
       </p>
     </div>
   </div>
 
-  <!-- ============================================ -->
-  <!-- CARD DE SUCURSAL ÚNICA (Admin Normal) -->
-  <!-- ============================================ -->
-  @if (!showBranchSelector() && scheduleService.selectedBranch(); as branch) {
+  <!-- Sucursal actual (JWT) -->
+  @if (currentBranch(); as branch) {
+
     <mat-card class="current-branch-card">
       <mat-card-content>
         <div class="current-branch">
           <mat-icon class="current-branch__icon">store</mat-icon>
+
           <div class="current-branch__info">
             <h3>{{ branch.name }}</h3>
-            <p>{{ branch.address }}, {{ branch.city }}, {{ branch.region }}</p>
+            <p>
+              {{ branch.address || 'Sucursal asignada' }}
+              <ng-container *ngIf="branch.city">
+                , {{ branch.city }}
+              </ng-container>
+              <ng-container *ngIf="branch.region">
+                , {{ branch.region }}
+              </ng-container>
+            </p>
+
+            <!-- Estado sucursal + botón abrir/cerrar -->
+            <!-- Estado sucursal + botón abrir/cerrar -->
+            @if (branchStatus(); as status) {
+              <div class="current-branch__status">
+                <mat-chip
+                  class="status-chip"
+                  [class.status-chip--open]="status.isOpen"
+                  [class.status-chip--closed]="!status.isOpen">
+                  <mat-icon>
+                    {{ status.isOpen ? 'lock_open' : 'lock' }}
+                  </mat-icon>
+                  {{ status.isOpen ? 'Sucursal abierta' : 'Sucursal cerrada' }}
+                </mat-chip>
+
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  class="branch-toggle-btn"
+                  [ngClass]="status.isOpen ? 'branch-toggle-btn--close' : 'branch-toggle-btn--open'"
+                  (click)="toggleBranchStatus()"
+                  [disabled]="isChangingBranchStatus()">
+                  <mat-icon>
+                    {{ status.isOpen ? 'lock' : 'lock_open' }}
+                  </mat-icon>
+                  {{ status.isOpen ? 'Cerrar sucursal' : 'Abrir sucursal' }}
+                </button>
+              </div>
+            } @else {
+              <div class="current-branch__status">
+                <mat-chip class="status-chip status-chip--unknown">
+                  <mat-icon>help_outline</mat-icon>
+                  Estado no disponible
+                </mat-chip>
+              </div>
+            }
+
           </div>
         </div>
       </mat-card-content>
     </mat-card>
-  }
 
-  <!-- ============================================ -->
-  <!-- SELECTOR DE SUCURSAL (Solo Super Admin) -->
-  <!-- ============================================ -->
-  @if (showBranchSelector() && scheduleService.selectedBranch(); as branch) {
-    <mat-card class="selector-card">
-      <mat-card-content>
-        <div class="selector-content">
-          <mat-icon class="selector-icon">store</mat-icon>
-          
-          <div class="selector-wrapper">
-            <mat-form-field appearance="outline" class="selector-field">
-              <mat-label>Seleccionar Sucursal</mat-label>
-              <mat-select 
-                [value]="branch"
-                (selectionChange)="onBranchSelected($event.value)">
-                @for (b of branches(); track b.id) {
-                  <mat-option [value]="b">
-                    <div class="branch-option">
-                      <span class="branch-option__name">{{ b.name }}</span>
-                      <span class="branch-option__address">{{ b.address }}, {{ b.city }}</span>
-                    </div>
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <div class="selected-branch-info">
-              <mat-icon>location_on</mat-icon>
-              <span>{{ branch.address }}, {{ branch.city }}, {{ branch.region }}</span>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  }
-
-  <!-- ============================================ -->
-  <!-- CONTENIDO PRINCIPAL (Horarios y Excepciones) -->
-  <!-- ============================================ -->
-  @if (scheduleService.selectedBranch()) {
-    
-    <!-- ========== HORARIOS REGULARES ========== -->
+    <!-- Horarios regulares -->
     <mat-card class="schedule-card">
       <mat-card-header>
         <mat-card-title>
@@ -86,36 +88,38 @@
       </mat-card-header>
 
       <mat-card-content>
-        <div class="schedule-table">
-          @for (schedule of schedules(); track schedule.id) {
-            <div class="schedule-row" [class.schedule-row--closed]="!schedule.isOpen">
-              
-              <!-- Día -->
-              <div class="schedule-row__day">
-                <mat-icon class="day-icon">calendar_today</mat-icon>
-                <span class="day-name">{{ dayNames[schedule.dayOfWeek] }}</span>
-              </div>
+        @if (isLoading()) {
+          <div class="loading-state">
+            <mat-icon class="loading-icon">hourglass_empty</mat-icon>
+            <p>Cargando horarios...</p>
+          </div>
+        } @else {
+          <div class="schedule-table">
+            @for (schedule of schedules(); track schedule.dayOfWeek) {
+              <div class="schedule-row"
+                   [class.schedule-row--closed]="!schedule.openTime && !schedule.closeTime">
 
-              <!-- Toggle Abierto/Cerrado -->
-              <div class="schedule-row__toggle">
-                <mat-slide-toggle
-                  [checked]="schedule.isOpen"
-                  (change)="onScheduleToggle(schedule, $event.checked)"
-                  color="primary">
-                  {{ schedule.isOpen ? 'Abierto' : 'Cerrado' }}
-                </mat-slide-toggle>
-              </div>
+                <!-- Día -->
+                <div class="schedule-row__day">
+                  <mat-icon class="day-icon">calendar_today</mat-icon>
+                  <span class="day-name">
+                    {{ dayNames[schedule.dayOfWeek] }}
+                  </span>
+                </div>
 
-              <!-- Horarios -->
-              @if (schedule.isOpen) {
+                <!-- Horarios (si no hay hora => día sin horario) -->
                 <div class="schedule-row__times">
                   <mat-form-field appearance="outline" class="time-field">
                     <mat-label>Apertura</mat-label>
-                    <input 
-                      matInput 
+                    <input
+                      matInput
                       type="time"
-                      [value]="schedule.openingTime || ''"
-                      (change)="onTimeChange(schedule, 'openingTime', $any($event.target).value)">
+                      [value]="schedule.openTime || ''"
+                      (change)="onTimeChange(
+                        schedule,
+                        'openTime',
+                        $any($event.target).value
+                      )" />
                     <mat-icon matPrefix>login</mat-icon>
                   </mat-form-field>
 
@@ -123,252 +127,43 @@
 
                   <mat-form-field appearance="outline" class="time-field">
                     <mat-label>Cierre</mat-label>
-                    <input 
-                      matInput 
+                    <input
+                      matInput
                       type="time"
-                      [value]="schedule.closingTime || ''"
-                      (change)="onTimeChange(schedule, 'closingTime', $any($event.target).value)">
+                      [value]="schedule.closeTime || ''"
+                      (change)="onTimeChange(
+                        schedule,
+                        'closeTime',
+                        $any($event.target).value
+                      )" />
                     <mat-icon matPrefix>logout</mat-icon>
                   </mat-form-field>
-                </div>
-              } @else {
-                <div class="schedule-row__closed-label">
-                  <mat-icon>block</mat-icon>
-                  <span>Sin servicio este día</span>
-                </div>
-              }
-
-            </div>
-          }
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- ========== EXCEPCIONES ========== -->
-    <mat-card class="exceptions-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>event_busy</mat-icon>
-          Excepciones y Días Especiales
-        </mat-card-title>
-        <mat-card-subtitle>
-          Configura horarios especiales para días festivos, mantenciones o eventos
-        </mat-card-subtitle>
-      </mat-card-header>
-
-      <mat-card-content>
-        
-        <!-- Botón agregar excepción -->
-        @if (!showExceptionForm()) {
-          <button 
-            mat-raised-button 
-            color="primary" 
-            (click)="toggleExceptionForm()"
-            class="add-exception-btn">
-            <mat-icon>add</mat-icon>
-            Agregar Excepción
-          </button>
-        }
-
-        <!-- Formulario nueva excepción -->
-        @if (showExceptionForm()) {
-          <div class="exception-form">
-            <div class="exception-form__header">
-              <h3>Nueva Excepción</h3>
-              <button mat-icon-button (click)="toggleExceptionForm()">
-                <mat-icon>close</mat-icon>
-              </button>
-            </div>
-
-            <form [formGroup]="exceptionForm" (ngSubmit)="onSubmitException()">
-              
-              <!-- Fecha -->
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="form-field--full">
-                  <mat-label>Fecha</mat-label>
-                  <input 
-                    matInput 
-                    [matDatepicker]="picker"
-                    formControlName="date"
-                    [min]="minDate">
-                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                  <mat-datepicker #picker></mat-datepicker>
-                </mat-form-field>
-              </div>
-
-              <!-- Tipo y Estado -->
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="form-field--half">
-                  <mat-label>Tipo de Excepción</mat-label>
-                  <mat-select formControlName="exceptionType">
-                    @for (type of exceptionTypes; track type) {
-                      <mat-option [value]="type">
-                        {{ exceptionTypeLabels[type] }}
-                      </mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
-
-                <div class="form-field--half toggle-container">
-                  <mat-slide-toggle 
-                    formControlName="isOpen"
-                    color="primary">
-                    {{ exceptionForm.get('isOpen')?.value ? 'Sucursal Abierta' : 'Sucursal Cerrada' }}
-                  </mat-slide-toggle>
-                </div>
-              </div>
-
-              <!-- Horarios (si está abierto) -->
-              @if (exceptionForm.get('isOpen')?.value) {
-                <div class="form-row">
-                  <mat-form-field appearance="outline" class="form-field--half">
-                    <mat-label>Hora Apertura</mat-label>
-                    <input matInput type="time" formControlName="openingTime">
-                    <mat-icon matPrefix>login</mat-icon>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="form-field--half">
-                    <mat-label>Hora Cierre</mat-label>
-                    <input matInput type="time" formControlName="closingTime">
-                    <mat-icon matPrefix>logout</mat-icon>
-                  </mat-form-field>
-                </div>
-              }
-
-              <!-- Motivo -->
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="form-field--full">
-                  <mat-label>Motivo / Descripción</mat-label>
-                  <textarea 
-                    matInput 
-                    formControlName="reason"
-                    rows="3"
-                    placeholder="Ej: Feriado nacional, Mantención de instalaciones, etc."></textarea>
-                </mat-form-field>
-              </div>
-
-              <!-- Acciones -->
-              <div class="form-actions">
-                <button 
-                  mat-button 
-                  type="button"
-                  (click)="toggleExceptionForm()">
-                  Cancelar
-                </button>
-                <button 
-                  mat-raised-button 
-                  color="primary"
-                  type="submit"
-                  [disabled]="exceptionForm.invalid">
-                  <mat-icon>save</mat-icon>
-                  Guardar Excepción
-                </button>
-              </div>
-            </form>
-          </div>
-        }
-
-        <!-- Lista de excepciones -->
-        @if (exceptions().length > 0) {
-          <div class="exceptions-list">
-            <h4 class="exceptions-list__title">Excepciones Programadas</h4>
-            
-            @for (exception of exceptions(); track exception.id) {
-              <div class="exception-item" [class.exception-item--past]="isDateInPast(exception.date)">
-                
-                <!-- Fecha -->
-                <div class="exception-item__date">
-                  <mat-icon class="date-icon">event</mat-icon>
-                  <div class="date-info">
-                    <span class="date-info__day">{{ formatDate(exception.date) }}</span>
-                    @if (isDateInPast(exception.date)) {
-                      <mat-chip class="past-chip">Pasado</mat-chip>
-                    }
-                  </div>
-                </div>
-
-                <!-- Detalles -->
-                <div class="exception-item__details">
-                  <div class="detail-row">
-                    <mat-chip 
-                      class="status-chip"
-                      [class.status-chip--open]="exception.isOpen"
-                      [class.status-chip--closed]="!exception.isOpen">
-                      <mat-icon>{{ exception.isOpen ? 'lock_open' : 'lock' }}</mat-icon>
-                      {{ exception.isOpen ? 'Abierto' : 'Cerrado' }}
-                    </mat-chip>
-
-                    <mat-chip class="type-chip">
-                      {{ exceptionTypeLabels[exception.exceptionType] }}
-                    </mat-chip>
-                  </div>
-
-                  @if (exception.isOpen && exception.openingTime && exception.closingTime) {
-                    <div class="exception-times">
-                      <mat-icon>schedule</mat-icon>
-                      <span>{{ exception.openingTime }} - {{ exception.closingTime }}</span>
-                    </div>
-                  }
-
-                  <p class="exception-reason">{{ exception.reason }}</p>
-
-                  <div class="exception-meta">
-                    <span class="meta-info">
-                      <mat-icon>person</mat-icon>
-                      {{ exception.createdBy }}
-                    </span>
-                    <span class="meta-info">
-                      <mat-icon>access_time</mat-icon>
-                      {{ exception.createdAt | date: 'dd/MM/yyyy HH:mm' }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Acciones -->
-                <div class="exception-item__actions">
-                  <button 
-                    mat-icon-button 
-                    color="warn"
-                    (click)="deleteException(exception)"
-                    matTooltip="Eliminar excepción">
-                    <mat-icon>delete</mat-icon>
-                  </button>
                 </div>
               </div>
             }
           </div>
-        } @else if (!showExceptionForm()) {
-          <div class="empty-state">
-            <mat-icon>event_available</mat-icon>
-            <p>No hay excepciones programadas</p>
-            <span>Los horarios regulares se aplicarán todos los días</span>
+
+          <!-- Botón guardar -->
+          <div class="schedule-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="saveSchedules()"
+              [disabled]="isSaving()">
+              <mat-icon>save</mat-icon>
+              Guardar horarios
+            </button>
           </div>
         }
-
       </mat-card-content>
     </mat-card>
 
-  }
-
-  <!-- ============================================ -->
-  <!-- ESTADOS ESPECIALES -->
-  <!-- ============================================ -->
-  
-  <!-- Sin sucursal seleccionada -->
-  @if (!scheduleService.selectedBranch() && !isLoading()) {
+  } @else if (!isLoading()) {
+    <!-- Sin sucursal asignada en el token -->
     <div class="empty-state-main">
-      <mat-icon>store</mat-icon>
-      <h3>Selecciona una sucursal</h3>
-      <p>Elige una sucursal para gestionar sus horarios de apertura</p>
+      <mat-icon>error</mat-icon>
+      <h3>No se encontró una sucursal asignada</h3>
+      <p>Revisa tus credenciales o vuelve a iniciar sesión.</p>
     </div>
   }
-
-  <!-- Loading -->
-  @if (isLoading()) {
-    <div class="loading-state">
-      <mat-icon class="loading-icon">hourglass_empty</mat-icon>
-      <p>Cargando horarios...</p>
-    </div>
-  }
-
 </div>

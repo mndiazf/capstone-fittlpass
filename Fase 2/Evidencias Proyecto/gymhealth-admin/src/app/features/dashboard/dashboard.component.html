@@ -5,49 +5,29 @@
     <!-- Header -->
     <div class="dashboard__header">
       <h1 class="dashboard__title">Bienvenido a GymHealth</h1>
-      <p class="dashboard__subtitle">Panel de Control</p>
+      <p class="dashboard__subtitle">
+        Panel de Control - Resumen de hoy
+        <span *ngIf="summary() as s"> ({{ s.date }})</span>
+      </p>
     </div>
 
-    <!-- Occupancy Card -->
-    <div class="dashboard__occupancy">
-      <mat-card class="occupancy-card">
-        <div class="occupancy-card__header">
-          <div class="occupancy-card__title-section">
-            <mat-icon class="occupancy-card__icon">people</mat-icon>
-            <div>
-              <h3 class="occupancy-card__title">Ocupación Actual</h3>
-              <p class="occupancy-card__subtitle">{{ getOccupancyStatus() }}</p>
-            </div>
-          </div>
-          <div class="occupancy-card__stats">
-            <span class="occupancy-card__current">{{ branchOccupancy().current }}</span>
-            <span class="occupancy-card__separator">/</span>
-            <span class="occupancy-card__capacity">{{ branchOccupancy().capacity }}</span>
-          </div>
-        </div>
-        
-        <div class="occupancy-card__progress">
-          <mat-progress-bar 
-            mode="determinate" 
-            [value]="branchOccupancy().percentage"
-            [ngClass]="'progress-bar--' + getOccupancyColor()">
-          </mat-progress-bar>
-          <span class="occupancy-card__percentage">{{ branchOccupancy().percentage.toFixed(1) }}%</span>
-        </div>
-
-        <div class="occupancy-card__footer">
-          <mat-icon>info</mat-icon>
-          <span>Actualizado en tiempo real</span>
+    <!-- Mensaje de error -->
+    <div *ngIf="hasError()" class="dashboard__error">
+      <mat-card>
+        <div class="dashboard__error-content">
+          <mat-icon>error_outline</mat-icon>
+          <span>Ocurrió un error al cargar el dashboard. Intenta nuevamente.</span>
         </div>
       </mat-card>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="dashboard__stats">
-      <mat-card 
-        *ngFor="let stat of stats" 
+    <!-- Statistics Cards (basadas en el endpoint) -->
+    <div class="dashboard__stats" *ngIf="!hasError()">
+      <mat-card
+        *ngFor="let stat of stats()"
         class="stat-card"
-        [ngClass]="'stat-card--' + stat.color">
+        [ngClass]="'stat-card--' + stat.color"
+      >
         <div class="stat-card__header">
           <mat-icon class="stat-card__icon">{{ stat.icon }}</mat-icon>
           <span class="stat-card__badge">{{ stat.badge }}</span>
@@ -58,27 +38,51 @@
     </div>
 
     <!-- Recent Activity -->
-    <div class="dashboard__content">
+    <div class="dashboard__content" *ngIf="!hasError()">
       <mat-card class="content-card">
         <div class="content-card__header">
-          <h2 class="content-card__title">Actividad Reciente</h2>
-          <mat-icon class="content-card__refresh">refresh</mat-icon>
+          <h2 class="content-card__title">Actividad Reciente de Hoy</h2>
+          <button
+            mat-icon-button
+            class="content-card__refresh"
+            (click)="loadDashboardData()"
+            [disabled]="isLoading()"
+            aria-label="Actualizar actividad"
+          >
+            <mat-icon>refresh</mat-icon>
+          </button>
         </div>
-        
-        <div class="activity-list">
-          <div 
-            *ngFor="let activity of activities" 
+
+        <div class="activity-list" *ngIf="activities().length > 0; else noActivity">
+          <div
+            *ngFor="let activity of activities()"
             class="activity-item"
-            [ngClass]="'activity-item--' + activity.type">
-            <div [ngClass]="'activity-item__icon activity-item__icon--' + activity.type">
+            [ngClass]="'activity-item--' + activity.type.toLowerCase()"
+          >
+            <div
+              [ngClass]="
+                'activity-item__icon activity-item__icon--' +
+                activity.type.toLowerCase()
+              "
+            >
               <mat-icon>{{ activity.icon }}</mat-icon>
             </div>
             <div class="activity-item__content">
               <p class="activity-item__title">{{ activity.title }}</p>
-              <p class="activity-item__time">{{ activity.time }}</p>
+              <p class="activity-item__time">
+                {{ activity.subtitle }} ·
+                {{ activity.timestamp | date: 'HH:mm' }}
+              </p>
             </div>
           </div>
         </div>
+
+        <ng-template #noActivity>
+          <div class="activity-list activity-list--empty">
+            <mat-icon>info</mat-icon>
+            <p>No hay actividad registrada hoy todavía.</p>
+          </div>
+        </ng-template>
       </mat-card>
     </div>
   </div>

@@ -1,10 +1,10 @@
-<!-- member-search.component.html -->
-
 <div class="member-search">
   <div class="member-search__header">
     <div>
       <h1 class="member-search__title">Búsqueda de Miembros</h1>
-      <p class="member-search__subtitle">Busca y gestiona información de miembros del gimnasio</p>
+      <p class="member-search__subtitle">
+        Busca y gestiona información de miembros del gimnasio
+      </p>
     </div>
   </div>
 
@@ -17,25 +17,31 @@
         <p>Ingresa el RUT, nombre, email o teléfono del miembro</p>
 
         <div class="search-input-group">
-          <mat-form-field appearance="outline" floatLabel="always" class="input-field">
+          <mat-form-field
+            appearance="outline"
+            floatLabel="always"
+            class="input-field"
+          >
             <mat-label>RUT / Nombre / Email</mat-label>
             <mat-icon matPrefix>search</mat-icon>
-            <input 
-              matInput 
+            <input
+              matInput
               [formControl]="searchControl"
               placeholder="Ej: 12.345.678-9, Juan Pérez..."
               (input)="onRutInput($event)"
               (keyup.enter)="searchMember(searchControl.value || '')"
               [disabled]="isSearching()"
-              maxlength="50">
+              maxlength="50"
+            />
           </mat-form-field>
 
-          <button 
-            mat-raised-button 
-            color="primary" 
+          <button
+            mat-raised-button
+            color="primary"
             (click)="searchMember(searchControl.value || '')"
             [disabled]="isSearching() || !searchControl.valid"
-            class="search-button">
+            class="search-button"
+          >
             @if (!isSearching()) {
               <mat-icon>search</mat-icon>
             }
@@ -61,173 +67,33 @@
           </div>
         </div>
 
-        <form [formGroup]="contactForm">
-          <!-- Información de Contacto -->
-          <div class="info-section">
-            <div class="section-header">
-              <h3>
-                <mat-icon>contact_mail</mat-icon>
-                Información de Contacto
-              </h3>
-              @if (isEditing()) {
-                <span class="edit-badge">
-                  <mat-icon>edit</mat-icon>
-                  Editando
-                </span>
-              }
-            </div>
-
-            <div class="info-grid">
-              <div class="info-item" [class.editing]="isEditing()">
-                <mat-icon>email</mat-icon>
-                <div class="info-content">
-                  @if (!isEditing()) {
-                    <div>
-                      <span class="label">Email</span>
-                      <span class="value">{{ selectedMember()!.email }}</span>
-                    </div>
-                  } @else {
-                    <mat-form-field appearance="outline" class="edit-field">
-                      <mat-label>Email</mat-label>
-                      <input 
-                        matInput 
-                        formControlName="email"
-                        type="email"
-                        placeholder="ejemplo@correo.com">
-                      @if (contactForm.get('email')?.hasError('required') && contactForm.get('email')?.touched) {
-                        <mat-error>El email es requerido</mat-error>
-                      }
-                      @if (contactForm.get('email')?.hasError('email') && contactForm.get('email')?.touched) {
-                        <mat-error>Email inválido</mat-error>
-                      }
-                    </mat-form-field>
-                  }
-                </div>
-              </div>
-
-              <div class="info-item" [class.editing]="isEditing()">
-                <mat-icon>phone</mat-icon>
-                <div class="info-content">
-                  @if (!isEditing()) {
-                    <div>
-                      <span class="label">Teléfono</span>
-                      <span class="value">{{ selectedMember()!.telefono }}</span>
-                    </div>
-                  } @else {
-                    <mat-form-field appearance="outline" class="edit-field">
-                      <mat-label>Teléfono</mat-label>
-                      <input 
-                        matInput 
-                        formControlName="telefono"
-                        placeholder="+56 9 1234 5678"
-                        (input)="formatPhoneNumber($event, 'telefono')">
-                      @if (contactForm.get('telefono')?.hasError('required') && contactForm.get('telefono')?.touched) {
-                        <mat-error>El teléfono es requerido</mat-error>
-                      }
-                      @if (contactForm.get('telefono')?.hasError('pattern') && contactForm.get('telefono')?.touched) {
-                        <mat-error>Formato: +56 9 1234 5678</mat-error>
-                      }
-                    </mat-form-field>
-                  }
-                </div>
-              </div>
-            </div>
-
-            @if (needsDataUpdate() && !isEditing()) {
-              <div class="warning-box">
-                <mat-icon>warning</mat-icon>
-                <span>Datos desactualizados hace {{ getMonthsSinceUpdate() }} meses</span>
-              </div>
-            }
+        <!-- Información de Contacto (solo lectura) -->
+        <div class="info-section">
+          <div class="section-header">
+            <h3>
+              <mat-icon>contact_mail</mat-icon>
+              Información de Contacto
+            </h3>
           </div>
 
-          <!-- Contacto de Emergencia -->
-          <div class="info-section">
-            <div class="section-header">
-              <h3>
-                <mat-icon>emergency</mat-icon>
-                Contacto de Emergencia
-              </h3>
-              @if (isEditing()) {
-                <mat-checkbox formControlName="tieneContactoEmergencia" class="emergency-checkbox">
-                  Tiene contacto
-                </mat-checkbox>
-              }
+          <div class="info-grid">
+            <div class="info-item">
+              <mat-icon>email</mat-icon>
+              <div>
+                <span class="label">Email</span>
+                <span class="value">{{ selectedMember()!.email }}</span>
+              </div>
             </div>
 
-            @if (!isEditing()) {
-              @if (selectedMember()!.tieneContactoEmergencia) {
-                <div class="info-grid">
-                  <div class="info-item">
-                    <mat-icon>person</mat-icon>
-                    <div>
-                      <span class="label">Nombre</span>
-                      <span class="value">{{ selectedMember()!.contactoEmergenciaNombre }}</span>
-                    </div>
-                  </div>
-                  <div class="info-item">
-                    <mat-icon>phone</mat-icon>
-                    <div>
-                      <span class="label">Teléfono</span>
-                      <span class="value">{{ selectedMember()!.contactoEmergenciaTelefono }}</span>
-                    </div>
-                  </div>
-                </div>
-              } @else {
-                <div class="membership-warning">
-                  <mat-icon>warning</mat-icon>
-                  <div>
-                    <h3>Sin Contacto Registrado</h3>
-                    <p>No hay información de contacto de emergencia</p>
-                    <button mat-raised-button color="primary" (click)="requestDataUpdate()">
-                      Solicitar actualización
-                    </button>
-                  </div>
-                </div>
-              }
-            } @else {
-              @if (contactForm.get('tieneContactoEmergencia')?.value) {
-                <div class="info-grid">
-                  <div class="info-item editing">
-                    <mat-icon>person</mat-icon>
-                    <div class="info-content">
-                      <mat-form-field appearance="outline" class="edit-field">
-                        <mat-label>Nombre Completo</mat-label>
-                        <input 
-                          matInput 
-                          formControlName="contactoEmergenciaNombre"
-                          placeholder="Ej: María Pérez">
-                        @if (contactForm.get('contactoEmergenciaNombre')?.hasError('required') && contactForm.get('contactoEmergenciaNombre')?.touched) {
-                          <mat-error>El nombre es requerido</mat-error>
-                        }
-                      </mat-form-field>
-                    </div>
-                  </div>
-
-                  <div class="info-item editing">
-                    <mat-icon>phone</mat-icon>
-                    <div class="info-content">
-                      <mat-form-field appearance="outline" class="edit-field">
-                        <mat-label>Teléfono</mat-label>
-                        <input 
-                          matInput 
-                          formControlName="contactoEmergenciaTelefono"
-                          placeholder="+56 9 8765 4321"
-                          (input)="formatPhoneNumber($event, 'contactoEmergenciaTelefono')">
-                        @if (contactForm.get('contactoEmergenciaTelefono')?.hasError('required') && contactForm.get('contactoEmergenciaTelefono')?.touched) {
-                          <mat-error>El teléfono es requerido</mat-error>
-                        }
-                        @if (contactForm.get('contactoEmergenciaTelefono')?.hasError('pattern') && contactForm.get('contactoEmergenciaTelefono')?.touched) {
-                          <mat-error>Formato: +56 9 1234 5678</mat-error>
-                        }
-                      </mat-form-field>
-                    </div>
-                  </div>
-                </div>
-              }
-            }
+            <div class="info-item">
+              <mat-icon>phone</mat-icon>
+              <div>
+                <span class="label">Teléfono</span>
+                <span class="value">{{ selectedMember()!.telefono || '-' }}</span>
+              </div>
+            </div>
           </div>
-        </form>
+        </div>
 
         <!-- Membresía -->
         <div class="info-section">
@@ -238,7 +104,9 @@
           <div class="member-status">
             <div class="status-item">
               <span class="status-label">Estado:</span>
-              <mat-chip [class]="'status--' + getStatusColor(selectedMember()!.estadoMembresia)">
+              <mat-chip
+                [class]="'status--' + getStatusColor(selectedMember()!.estadoMembresia)"
+              >
                 {{ selectedMember()!.estadoMembresia }}
                 <span class="status-indicator">
                   {{ selectedMember()!.estadoMembresia === 'ACTIVA' ? '●' : '○' }}
@@ -250,14 +118,20 @@
               <span class="status-value">{{ selectedMember()!.tipoMembresia }}</span>
             </div>
           </div>
+
           <div class="info-grid">
             <div class="info-item" [class.warning]="getDaysUntilExpiration() <= 30">
               <mat-icon>event</mat-icon>
               <div>
                 <span class="label">Vencimiento</span>
-                <span class="value">{{ formatDate(selectedMember()!.fechaVencimiento) }}</span>
-                @if (getDaysUntilExpiration() <= 30) {
+                <span class="value">
+                  {{ formatDate(selectedMember()!.fechaVencimiento) }}
+                </span>
+                @if (getDaysUntilExpiration() <= 30 && getDaysUntilExpiration() > 0) {
                   <span class="hint">Vence en {{ getDaysUntilExpiration() }} días</span>
+                }
+                @if (getDaysUntilExpiration() <= 0 && selectedMember()!.fechaVencimiento) {
+                  <span class="hint">Membresía vencida</span>
                 }
               </div>
             </div>
@@ -265,10 +139,35 @@
               <mat-icon>payments</mat-icon>
               <div>
                 <span class="label">Último pago</span>
-                <span class="value">{{ formatDate(selectedMember()!.ultimoPago) }}</span>
+                <span class="value">
+                  {{ formatDate(selectedMember()!.ultimoPago) }}
+                </span>
               </div>
             </div>
           </div>
+
+          <!-- Plan limitado por días -->
+          @if (hasLimitedPlan()) {
+            <div class="limited-plan">
+              <div class="info-item">
+                <mat-icon>calendar_today</mat-icon>
+                <div>
+                  <span class="label">Uso de días</span>
+                  @if (!isWithoutDays()) {
+                    <span class="value">
+                      Días usados: {{ getUsedDays() }} /
+                      Días disponibles: {{ getAvailableDays() }}
+                    </span>
+                  } @else {
+                    <span class="value warning">
+                      Todos los días disponibles de la membresía ya fueron utilizados.
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
           @if (hasDebt()) {
             <div class="lock-warning">
               <mat-icon>account_balance_wallet</mat-icon>
@@ -295,7 +194,9 @@
               <div>
                 <span class="label">Último acceso</span>
                 @if (selectedMember()!.ultimoAcceso) {
-                  <span class="value">{{ formatDateTime(selectedMember()!.ultimoAcceso!) }}</span>
+                  <span class="value">
+                    {{ formatDateTime(selectedMember()!.ultimoAcceso!) }}
+                  </span>
                 } @else {
                   <span class="value no-data">Sin registros</span>
                 }
@@ -305,18 +206,60 @@
               <mat-icon>trending_up</mat-icon>
               <div>
                 <span class="label">Visitas del mes</span>
-                <span class="value">{{ selectedMember()!.totalAccesosUltimoMes }} accesos</span>
+                <span class="value">
+                  {{ selectedMember()!.totalAccesosUltimoMes }} accesos
+                </span>
               </div>
             </div>
           </div>
+
+          <!-- Estado de bloqueo -->
           @if (isBlocked()) {
             <div class="lock-warning">
               <mat-icon>block</mat-icon>
               <div>
-                <h3>Bloqueos Activos</h3>
-                <p>Este usuario tiene {{ selectedMember()!.bloqueosActivos }} bloqueo(s) activo(s)</p>
-                <button mat-raised-button color="warn">
-                  Ver detalles de bloqueos
+                <h3>Usuario bloqueado</h3>
+                <p>
+                  Motivo del bloqueo:
+                  <strong>
+                    {{
+                      selectedMember()!.motivoBloqueo
+                        || 'Bloqueo manual desde backoffice'
+                    }}
+                  </strong>
+                </p>
+                <p class="lock-status">
+                  Estado de acceso actual:
+                  <strong>{{ selectedMember()!.accessStatus }}</strong>
+                </p>
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="unblockMember()"
+                  [disabled]="isSaving()"
+                >
+                  <mat-icon>lock_open</mat-icon>
+                  Desbloquear
+                </button>
+              </div>
+            </div>
+          } @else {
+            <div class="lock-info">
+              <mat-icon>verified_user</mat-icon>
+              <div>
+                <h3>Acceso habilitado</h3>
+                <p>
+                  Este usuario puede ingresar normalmente al gimnasio.
+                  Si es necesario, puedes bloquear su acceso.
+                </p>
+                <button
+                  mat-raised-button
+                  color="warn"
+                  (click)="blockMember()"
+                  [disabled]="isSaving()"
+                >
+                  <mat-icon>block</mat-icon>
+                  Bloquear usuario
                 </button>
               </div>
             </div>
@@ -332,17 +275,50 @@
           @if (accessHistory().length > 0) {
             <div class="timeline">
               @for (access of accessHistory(); track access.id) {
-                <div class="timeline-item" [class.exit]="access.tipo === 'SALIDA'">
-                  <div class="timeline-dot" [class.exit]="access.tipo === 'SALIDA'">
-                    <mat-icon>{{ access.tipo === 'ENTRADA' ? 'login' : 'logout' }}</mat-icon>
+                <div
+                  class="timeline-item"
+                  [class.exit]="access.tipo === 'SALIDA'"
+                >
+                  <div
+                    class="timeline-dot"
+                    [class.exit]="access.tipo === 'SALIDA'"
+                    [class.granted]="access.resultado === 'GRANTED'"
+                    [class.denied]="access.resultado === 'DENIED'"
+                  >
+                    <mat-icon>
+                      {{
+                        access.tipo === 'ENTRADA'
+                          ? 'login'
+                          : 'logout'
+                      }}
+                    </mat-icon>
                   </div>
                   <div class="timeline-content">
                     <div class="timeline-header">
                       <span class="timeline-type">{{ access.tipo }}</span>
                       <span class="timeline-time">{{ access.hora }}</span>
                     </div>
-                    <span class="timeline-location">{{ access.sucursal }}</span>
-                    <span class="timeline-date">{{ formatDate(access.fecha) }}</span>
+                    <span class="timeline-location">
+                      {{ access.sucursal }}
+                    </span>
+                    <span class="timeline-date">
+                      {{ formatDate(access.fecha) }}
+                    </span>
+                    <span
+                      class="timeline-result"
+                      [class.timeline-result--granted]="
+                        access.resultado === 'GRANTED'
+                      "
+                      [class.timeline-result--denied]="
+                        access.resultado === 'DENIED'
+                      "
+                    >
+                      {{
+                        access.resultado === 'GRANTED'
+                          ? 'Acceso PERMITIDO'
+                          : 'Acceso DENEGADO'
+                      }}
+                    </span>
                   </div>
                 </div>
               }
@@ -360,40 +336,15 @@
 
         <!-- ACCIONES -->
         <div class="member-actions">
-          <button 
-            mat-stroked-button 
-            class="search-another-btn" 
+          <button
+            mat-stroked-button
+            class="search-another-btn"
             (click)="clearSearch()"
-            [disabled]="isSaving()">
+            [disabled]="isSaving()"
+          >
             <mat-icon>arrow_back</mat-icon>
             Buscar Otro
           </button>
-
-          @if (!isEditing()) {
-            <button 
-              mat-raised-button 
-              color="primary"
-              (click)="enableEdit()">
-              <mat-icon>edit</mat-icon>
-              Modificar
-            </button>
-          } @else {
-            <button 
-              mat-stroked-button 
-              (click)="cancelEdit()"
-              [disabled]="isSaving()">
-              <mat-icon>close</mat-icon>
-              Cancelar
-            </button>
-            <button 
-              mat-raised-button 
-              color="primary"
-              (click)="saveChanges()"
-              [disabled]="contactForm.invalid || isSaving()">
-              <mat-icon>{{ isSaving() ? 'hourglass_empty' : 'save' }}</mat-icon>
-              {{ isSaving() ? 'Guardando...' : 'Guardar' }}
-            </button>
-          }
         </div>
       </div>
     </mat-card>

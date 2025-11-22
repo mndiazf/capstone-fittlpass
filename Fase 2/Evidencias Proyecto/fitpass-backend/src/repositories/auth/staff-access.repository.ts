@@ -1,4 +1,3 @@
-// src/repositories/auth/staff-access.repository.ts
 import { query } from '../../config/db';
 
 export interface StaffRoleRow {
@@ -31,26 +30,28 @@ export interface ProfilePermissionRow {
 
 export class PgStaffAccessRepository {
   /**
-   * Roles (app_user_role + user_role + branch)
+   * "Roles" derivados de perfiles (app_user_profile + user_profile + branch)
+   * Mantiene la interfaz StaffRoleRow pero mapea cada perfil como un rol STAFF.
    */
   async findRolesByUserId(userId: string): Promise<StaffRoleRow[]> {
     const sql = `
       SELECT
-        aur.branch_id,
-        b.code  AS branch_code,
-        b."name" AS branch_name,
-        ur.id   AS role_id,
-        ur.code AS role_code,
-        ur."name" AS role_name,
-        ur.role_kind
-      FROM public.app_user_role aur
-      JOIN public.user_role ur
-        ON ur.id = aur.role_id
+        ap.branch_id,
+        b.code        AS branch_code,
+        b."name"      AS branch_name,
+        p.id          AS role_id,
+        p."name"      AS role_code,
+        p."name"      AS role_name,
+        'STAFF'::varchar(5) AS role_kind
+      FROM public.app_user_profile ap
+      JOIN public.user_profile p
+        ON p.id = ap.profile_id
       LEFT JOIN public.branch b
-        ON b.id = aur.branch_id
-      WHERE aur.user_id = $1
-        AND aur.active = true
+        ON b.id = ap.branch_id
+      WHERE ap.user_id = $1
+        AND ap.active = true
     `;
+
     const result = await query<StaffRoleRow>(sql, [userId]);
     return result.rows;
   }
@@ -91,15 +92,17 @@ export class PgStaffAccessRepository {
     const sql = `
       SELECT
         upp.profile_id,
-        p.code      AS permission_code,
-        p."name"    AS permission_name,
-        COALESCE(upp.can_view, true)  AS can_view,
-        COALESCE(upp.can_edit, false) AS can_edit
+        p.code   AS permission_code,
+        p."name" AS permission_name,
+        -- tu tabla no tiene can_view/can_edit: devolvemos constantes
+        true  AS can_view,
+        false AS can_edit
       FROM public.user_profile_permission upp
       JOIN public.ui_permission p
         ON p.id = upp.permission_id
       WHERE upp.profile_id = ANY($1::varchar[])
     `;
+
     const result = await query<ProfilePermissionRow>(sql, [profileIds]);
     return result.rows;
   }

@@ -1,11 +1,24 @@
-// src/services/auth.service.ts
+// src/services/auth/auth.service.ts
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PgUserRepository } from '../../repositories/user/user.repository';
-import { PgUserMembershipRepository, UserMembershipRow } from '../../repositories/membership/user-membership.repository';
-import { MembershipPlan, PgMembershipPlanRepository } from '../../repositories/membership/membership-plan.repository';
-import { MembershipPaymentRow, PgMembershipPaymentRepository } from '../../repositories/membership/membership-payment.repository';
 
+import { PgUserRepository } from '../../repositories/user/user.repository';
+import {
+  PgUserMembershipRepository,
+  UserMembershipRowWithBranch,
+} from '../../repositories/membership/user-membership.repository';
+import {
+  MembershipPlan,
+  PgMembershipPlanRepository,
+} from '../../repositories/membership/membership-plan.repository';
+import {
+  MembershipPaymentRow,
+  PgMembershipPaymentRepository,
+} from '../../repositories/membership/membership-payment.repository';
+import {
+  MembershipUsageService,
+  MembershipUsageSummary,
+} from '../membership/membership-usage.service';
 
 export interface LoginInput {
   emailOrRut: string;
@@ -18,6 +31,7 @@ export class AuthService {
     private readonly userMembershipRepo: PgUserMembershipRepository,
     private readonly planRepo: PgMembershipPlanRepository,
     private readonly membershipPaymentRepo: PgMembershipPaymentRepository,
+    private readonly membershipUsageService: MembershipUsageService,
   ) {}
 
   public async login(input: LoginInput): Promise<{ token: string }> {
@@ -29,14 +43,17 @@ export class AuthService {
       throw new Error('INVALID_CREDENTIALS');
     }
 
+    // ⚠️ Aquí puedes filtrar STAFF vs NO STAFF si quieres que este login
+    // sólo funcione para miembros (no staff), p.ej. consultando app_user_profile.
+
     // 2) Validar password
     const passwordOk = await bcrypt.compare(password, user.password_hash);
     if (!passwordOk) {
       throw new Error('INVALID_CREDENTIALS');
     }
 
-    // 3) Buscar membresía ACTIVA
-    const membership: UserMembershipRow | null =
+    // 3) Buscar membresía ACTIVA (incluyendo datos de sucursal)
+    const membership: UserMembershipRowWithBranch | null =
       await this.userMembershipRepo.findActiveByUserId(user.id);
 
     if (!membership) {
@@ -55,7 +72,17 @@ export class AuthService {
     const payment: MembershipPaymentRow | null =
       await this.membershipPaymentRepo.findLastByMembershipId(membership.id);
 
-    // 6) JWT
+    // 6) Uso de membresía limitada (TRIAL, etc.) desde membership_day_usage
+    let membershipUsage: MembershipUsageSummary | null = null;
+    if (plan.isUsageLimited) {
+      membershipUsage =
+        await this.membershipUsageService.buildUsageForMembership(
+          membership.id,
+          plan,
+        );
+    }
+
+    // 7) JWT
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) throw new Error('JWT_SECRET_NOT_CONFIGURED');
 
@@ -92,12 +119,15 @@ export class AuthService {
         planName: plan.name,
         scope: plan.planScope,
         branchId: membership.branch_id,
+        branchName: membership.branch_name,
+        branchCode: membership.branch_code,
         startDate: membership.start_date,
         endDate: membership.end_date,
         status: membership.status,
+        usage: membershipUsage, // 👈 resumen de uso (membership_day_usage)
       },
 
-      // Si no hay pago, va null (no debería pasar en flujo normal)
+      // Si no hay pago, va null
       payment: payment
         ? {
             id: payment.id,

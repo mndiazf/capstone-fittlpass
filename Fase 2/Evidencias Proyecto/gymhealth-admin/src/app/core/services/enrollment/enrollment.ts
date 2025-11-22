@@ -1,5 +1,3 @@
-// src/app/core/services/enrollment-service.ts
-
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, map } from 'rxjs';
@@ -22,14 +20,15 @@ export interface MemberApiResponse {
   lastName?: string;
   secondLastName?: string | null;
 
-  membershipType: string;
-  membershipName: string;
+  // Datos de membresía (pueden venir null si no tiene)
+  membershipType: string | null;   // plan_code
+  membershipName: string | null;   // plan_name
   membershipStatus: 'active' | 'inactive' | 'expired' | string;
-  membershipScope: 'ONECLUB' | 'MULTICLUB' | string;
+  membershipScope: 'ONECLUB' | 'MULTICLUB' | null | string;
   membershipBranchId: string | null;
   membershipBranchName: string | null;
-  membershipStart: string | null; // ISO string
-  membershipEnd: string | null;   // ISO string
+  membershipStart: string | null;  // 'YYYY-MM-DD' (o ISO)
+  membershipEnd: string | null;    // 'YYYY-MM-DD' (o ISO)
 
   // Último enrolamiento (si lo agregas en el backend más adelante)
   lastEnrollment?: string | null;
@@ -55,12 +54,12 @@ export interface MemberUiModel {
   secondLastName?: string | null;
 
   // Label legible de la membresía
-  membershipType: string;
-  membershipName: string;
+  membershipType: string | null;
+  membershipName: string | null;
   membership?: string;  // usado como "memberData.membership" en el HTML
 
   membershipStatus: 'active' | 'inactive' | 'expired' | string;
-  membershipScope: 'ONECLUB' | 'MULTICLUB' | string;
+  membershipScope: 'ONECLUB' | 'MULTICLUB' | null | string;
   membershipBranchId: string | null;
   membershipBranchName: string | null;
   membershipStart: Date | null;
@@ -157,7 +156,7 @@ export class Enrollment {
   // ======================
 
   private mapApiToUiModel(api: MemberApiResponse): MemberUiModel {
-    // Derivar firstName / lastName si no vienen
+    // Derivar firstName / lastName si no vienen desglosados
     let firstName = api.firstName;
     let lastName = api.lastName;
 
@@ -167,9 +166,39 @@ export class Enrollment {
       lastName = lastName || parts.slice(1).join(' ');
     }
 
+    // Parseo de fechas
+    const membershipStart = api.membershipStart
+      ? new Date(api.membershipStart)
+      : null;
+    const membershipEnd = api.membershipEnd
+      ? new Date(api.membershipEnd)
+      : null;
+
+    // 🔥 Regla extra en el front:
+    // - Si hay fecha de término y HOY > end_date → expired,
+    //   aunque membershipStatus venga como 'active'.
+    let normalizedStatus = api.membershipStatus;
+    if (membershipEnd) {
+      const today = new Date();
+      const end = new Date(
+        membershipEnd.getFullYear(),
+        membershipEnd.getMonth(),
+        membershipEnd.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
+      if (today.getTime() > end.getTime()) {
+        normalizedStatus = 'expired';
+      }
+    }
+
     // Label de membresía que usas en el template como "membership"
     const membershipLabel =
-      api.membershipName || api.membershipType || 'Sin membresía';
+      api.membershipName ||
+      api.membershipType ||
+      (normalizedStatus === 'expired' ? 'Membresía vencida' : 'Sin membresía');
 
     return {
       id: api.id,
@@ -187,12 +216,12 @@ export class Enrollment {
       membershipName: api.membershipName,
       membership: membershipLabel,
 
-      membershipStatus: api.membershipStatus,
-      membershipScope: api.membershipScope,
+      membershipStatus: normalizedStatus,
+      membershipScope: api.membershipScope ?? null,
       membershipBranchId: api.membershipBranchId,
       membershipBranchName: api.membershipBranchName,
-      membershipStart: api.membershipStart ? new Date(api.membershipStart) : null,
-      membershipEnd: api.membershipEnd ? new Date(api.membershipEnd) : null,
+      membershipStart,
+      membershipEnd,
 
       lastEnrollment: api.lastEnrollment ? new Date(api.lastEnrollment) : null,
 

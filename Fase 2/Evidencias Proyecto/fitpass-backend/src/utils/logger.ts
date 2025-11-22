@@ -8,6 +8,10 @@ const info = (...args: LogArg[]): void => {
   console.log('[INFO]', ...args);
 };
 
+const warn = (...args: LogArg[]): void => {
+  console.warn('[WARN]', ...args);
+};
+
 const error = (...args: LogArg[]): void => {
   console.error('[ERROR]', ...args);
 };
@@ -18,4 +22,4 @@ const debug = (...args: LogArg[]): void => {
   }
 };
 
-export const logger = { info, error, debug };
+export const logger = { info, warn, error, debug };

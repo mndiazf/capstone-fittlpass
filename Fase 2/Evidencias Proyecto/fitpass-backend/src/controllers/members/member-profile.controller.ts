@@ -1,4 +1,3 @@
-// src/controllers/member/member-profile.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../../utils/logger';
 import { MemberProfileService } from '../../services/members/member-profile.service';
@@ -30,20 +29,12 @@ export class MemberProfileController {
         branchId
       );
 
-      if (!profile) {
-        res.status(404).json({
-          message: 'No se encontró un usuario válido para ese RUT y sucursal'
-        });
-        return;
-      }
-
       res.status(200).json(profile);
     } catch (err) {
       logger.error('Error en GET /members/profile-by-rut', err);
 
       if (err instanceof Error) {
-        // Por si el servicio lanza errores específicos
-        if (err.message === 'USER_NOT_FOUND') {
+        if (err.message === 'MEMBER_NOT_FOUND') {
           res.status(404).json({ message: 'Usuario no encontrado' });
           return;
         }
@@ -51,14 +42,14 @@ export class MemberProfileController {
         if (err.message === 'MEMBERSHIP_NOT_ALLOWED_FOR_BRANCH') {
           res.status(403).json({
             message:
-              'La membresía del usuario no es válida para esta sucursal'
+              'La membresía del usuario no es válida para esta sucursal',
           });
           return;
         }
       }
 
       res.status(500).json({
-        message: 'Error al obtener el perfil del usuario por RUT'
+        message: 'Error al obtener el perfil del usuario por RUT',
       });
     }
   };

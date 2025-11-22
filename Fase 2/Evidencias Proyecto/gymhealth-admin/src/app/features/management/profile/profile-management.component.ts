@@ -1,8 +1,13 @@
 // src/app/features/management/profile-management/profile-management.component.ts
 
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+} from '@angular/forms';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,20 +18,110 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-interface Permission {
-  id: string;
+import {
+  PermissionDto,
+  ProfileDto,
+  ProfileManagement,
+} from '../../../core/services/profiles/profile-management';
+import { Auth } from '../../../core/services/auth/auth';
+
+// === Configuración de UI local basada en "code" ===
+
+const REQUIRED_PERMISSION_CODES = ['dashboard', 'notifications'];
+
+const PERMISSION_UI_CONFIG: Record<
+  string,
+  { icon: string; isParent?: boolean; parentCode?: string }
+> = {
+  // Dashboard (OBLIGATORIO)
+  dashboard: {
+    icon: 'home',
+  },
+
+  // Miembros (padre)
+  members: {
+    icon: 'group',
+    isParent: true,
+  },
+  enrollment: {
+    icon: 'face',
+    parentCode: 'members',
+  },
+  'member-search': {
+    icon: 'person_search',
+    parentCode: 'members',
+  },
+  'member-block': {
+    icon: 'gavel',
+    parentCode: 'members',
+  },
+
+  // Ventas y pagos
+  salesandpayment: {
+    icon: 'point_of_sale',
+    isParent: true,
+  },
+  'presential-sale': {
+    icon: 'store',
+    parentCode: 'salesandpayment',
+  },
+
+  // Reportes
+  reports: {
+    icon: 'assessment',
+    isParent: true,
+  },
+  'access-report': {
+    icon: 'login',
+    parentCode: 'reports',
+  },
+
+  // Mantenedor
+  management: {
+    icon: 'settings',
+    isParent: true,
+  },
+  'management-users': {
+    icon: 'person',
+    parentCode: 'management',
+  },
+  'management-profiles': {
+    icon: 'admin_panel_settings',
+    parentCode: 'management',
+  },
+  'management-staff-schedule': {
+    icon: 'event_note',
+    parentCode: 'management',
+  },
+  'management-branch-schedule': {
+    icon: 'schedule',
+    parentCode: 'management',
+  },
+
+  // Notificaciones (OBLIGATORIO)
+  notifications: {
+    icon: 'notifications',
+  },
+};
+
+// ===== Tipos de la vista =====
+
+interface PermissionVm {
+  id: string; // UUID backend
+  code: string;
   name: string;
-  description: string;
+  description: string | null;
   icon: string;
   isParent?: boolean;
-  parentId?: string;
+  parentCode?: string;
 }
 
-interface Profile {
+interface ProfileVm {
   id: string;
+  branchId: string;
   name: string;
   color: string;
-  permissions: string[];
+  permissions: PermissionVm[];
 }
 
 @Component({
@@ -42,283 +137,241 @@ interface Profile {
     MatInputModule,
     MatCardModule,
     MatCheckboxModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './profile-management.component.html',
-  styleUrls: ['./profile-management.component.scss']
+  styleUrls: ['./profile-management.component.scss'],
 })
-export class ProfileManagementComponent {
+export class ProfileManagementComponent implements OnInit {
   profileForm: FormGroup;
-  profiles = signal<Profile[]>([]);
-  selectedPermissions = signal<string[]>([]);
-  editingProfile: Profile | null = null;
+
+  // estado
+  profiles = signal<ProfileVm[]>([]);
+  availablePermissions = signal<PermissionVm[]>([]);
+  selectedPermissions = signal<string[]>([]); // IDs
+
+  editingProfile: ProfileVm | null = null;
   displayedColumns = ['name', 'permissions', 'actions'];
 
-  // 🔒 Permisos obligatorios (no se pueden desmarcar)
-  readonly REQUIRED_PERMISSIONS = ['dashboard', 'notifications'];
+  loading = false;
+  saving = false;
 
-  // 🎯 Permisos basados en el sidebar real
-  availablePermissions = signal<Permission[]>([
-    // Dashboard (OBLIGATORIO)
-    { 
-      id: 'dashboard', 
-      name: 'Dashboard ⭐', 
-      description: 'Acceso al panel principal (OBLIGATORIO para todos)',
-      icon: 'home',
-      isParent: false
-    },
-    
-    // Miembros (Menú Padre)
-    { 
-      id: 'members', 
-      name: '👥 Miembros', 
-      description: 'Acceso completo al módulo de gestión de miembros',
-      icon: 'group',
-      isParent: true
-    },
-    { 
-      id: 'enrollment', 
-      name: 'Enrolamiento', 
-      description: 'Registrar rostros para acceso facial',
-      icon: 'face',
-      isParent: false,
-      parentId: 'members'
-    },
-    { 
-      id: 'member-search', 
-      name: 'Buscar Miembro', 
-      description: 'Buscar y consultar información de miembros',
-      icon: 'person_search',
-      isParent: false,
-      parentId: 'members'
-    },
-    { 
-      id: 'member-block', 
-      name: 'Infracciones', 
-      description: 'Gestionar bloqueos e infracciones de miembros',
-      icon: 'gavel',
-      isParent: false,
-      parentId: 'members'
-    },
-    
-    // Ventas y Pagos (Menú Padre)
-    { 
-      id: 'salesandpayment', 
-      name: '💰 Ventas y Pagos', 
-      description: 'Acceso completo al módulo de ventas y pagos',
-      icon: 'point_of_sale',
-      isParent: true
-    },
-    { 
-      id: 'presential-sale', 
-      name: 'Venta Presencial', 
-      description: 'Realizar ventas presenciales en el gimnasio',
-      icon: 'store',
-      isParent: false,
-      parentId: 'salesandpayment'
-    },
-    
-    // Reportes (Menú Padre)
-    { 
-      id: 'reports', 
-      name: '📊 Reportes', 
-      description: 'Acceso completo al módulo de reportes',
-      icon: 'assessment',
-      isParent: true
-    },
-    { 
-      id: 'access-report', 
-      name: 'Reporte de Accesos', 
-      description: 'Ver y exportar registros de acceso al gimnasio',
-      icon: 'login',
-      isParent: false,
-      parentId: 'reports'
-    },
-    
-    // Mantenedor (Menú Padre)
-    { 
-      id: 'management', 
-      name: '⚙️ Mantenedor', 
-      description: 'Acceso completo al módulo de mantenedores',
-      icon: 'settings',
-      isParent: true
-    },
-    { 
-      id: 'management-users', 
-      name: 'Mantenedor de Usuarios', 
-      description: 'Crear, editar y eliminar usuarios del sistema',
-      icon: 'person',
-      isParent: false,
-      parentId: 'management'
-    },
-    { 
-      id: 'management-profiles', 
-      name: 'Mantenedor de Perfiles', 
-      description: 'Gestionar perfiles y permisos',
-      icon: 'admin_panel_settings',
-      isParent: false,
-      parentId: 'management'
-    },
-    { 
-      id: 'management-staff-schedule', 
-      name: 'Mantenedor de Horarios', 
-      description: 'Gestionar horarios del personal',
-      icon: 'event_note',
-      isParent: false,
-      parentId: 'management'
-    },
-    { 
-      id: 'management-branch-schedule', 
-      name: 'Horarios de Sucursal', 
-      description: 'Configurar horarios de apertura de sucursales',
-      icon: 'schedule',
-      isParent: false,
-      parentId: 'management'
-    },
-    
-    // Notificaciones (OBLIGATORIO)
-    { 
-      id: 'notifications', 
-      name: 'Notificaciones ⭐', 
-      description: 'Ver y gestionar notificaciones (OBLIGATORIO para todos)',
-      icon: 'notifications',
-      isParent: false
-    }
-  ]);
+  // IDs de permisos obligatorios (llenados al cargar permisos)
+  private requiredPermissionIds: string[] = [];
 
-  constructor(private fb: FormBuilder) {
+  // sucursal actual del admin (del JWT)
+  private currentBranchId: string | null = null;
+
+  constructor(
+    private fb: FormBuilder,
+    private profileApi: ProfileManagement,
+    private auth: Auth
+  ) {
     this.profileForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(3)]]
+      name: ['', [Validators.required, Validators.minLength(3)]],
     });
-    this.loadProfiles();
-    
-    // 🔒 Inicializar con permisos obligatorios
-    this.selectedPermissions.set([...this.REQUIRED_PERMISSIONS]);
   }
 
-  loadProfiles() {
-    const stored = localStorage.getItem('gymhealth_profiles');
-    if (stored) {
-      this.profiles.set(JSON.parse(stored));
+  ngOnInit(): void {
+    this.loadPermissionsAndProfiles();
+  }
+
+  // =======================
+  // Carga inicial
+  // =======================
+
+  private loadPermissionsAndProfiles(): void {
+    this.loading = true;
+
+    const branch = this.auth.currentBranch;
+    if (!branch) {
+      console.error('No hay sucursal en el JWT');
+      this.loading = false;
+      alert(
+        'No se encontró una sucursal asociada al usuario. Reintenta el login o contacta al administrador.'
+      );
       return;
     }
-    
-    const defaultProfiles: Profile[] = [
-      { 
-        id: '1', 
-        name: 'Super Administrador', 
-        color: 'purple',
-        permissions: this.availablePermissions().map(p => p.id) // Todos los permisos
+
+    this.currentBranchId = branch.id;
+
+    this.profileApi.getAllPermissions().subscribe({
+      next: (perms) => {
+        this.setAvailablePermissions(perms);
+        // una vez que tenemos permisos, cargamos perfiles de la sucursal
+        this.loadProfilesFromApi(branch.id);
       },
-      { 
-        id: '2', 
-        name: 'Recepcionista', 
-        color: 'cyan',
-        permissions: [
-          'dashboard',
-          'members',
-          'enrollment',
-          'member-search',
-          'salesandpayment',
-          'presential-sale',
-          'notifications'
-        ]
+      error: (err) => {
+        console.error('Error al cargar permisos', err);
+        this.loading = false;
+        alert('Error al cargar permisos.');
       },
-      { 
-        id: '3', 
-        name: 'Gerente de Sucursal', 
-        color: 'orange',
-        permissions: [
-          'dashboard',
-          'members',
-          'enrollment',
-          'member-search',
-          'member-block',
-          'salesandpayment',
-          'presential-sale',
-          'reports',
-          'access-report',
-          'management-branch-schedule',
-          'notifications'
-        ]
+    });
+  }
+
+  private setAvailablePermissions(perms: PermissionDto[]): void {
+    const mapped: PermissionVm[] = perms.map((p) => {
+      const config = PERMISSION_UI_CONFIG[p.code] ?? { icon: 'check_box' };
+      return {
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        description: p.description,
+        icon: config.icon,
+        isParent: config.isParent,
+        parentCode: config.parentCode,
+      };
+    });
+
+    this.availablePermissions.set(mapped);
+
+    // inicializar permisos obligatorios
+    const requiredIds = mapped
+      .filter((p) => REQUIRED_PERMISSION_CODES.includes(p.code))
+      .map((p) => p.id);
+
+    this.requiredPermissionIds = requiredIds;
+    this.selectedPermissions.set([...requiredIds]);
+  }
+
+  private loadProfilesFromApi(branchId: string): void {
+    this.profileApi.getAllProfiles(branchId).subscribe({
+      next: (data) => {
+        const vms = data.map((p, index) => this.mapProfileDtoToVm(p, index));
+        this.profiles.set(vms);
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar perfiles', err);
+        this.loading = false;
+        alert('Error al cargar perfiles.');
+      },
+    });
+  }
+
+  private mapProfileDtoToVm(dto: ProfileDto, index: number): ProfileVm {
+    const allPerms = this.availablePermissions();
+
+    const permsVm: PermissionVm[] = dto.permissions.map((perm) => {
+      const meta = allPerms.find((p) => p.id === perm.id);
+      if (meta) {
+        return meta;
       }
-    ];
-    
-    this.profiles.set(defaultProfiles);
-    localStorage.setItem('gymhealth_profiles', JSON.stringify(defaultProfiles));
+      // fallback si no está en la lista actual
+      const config = PERMISSION_UI_CONFIG[perm.code] ?? { icon: 'check_box' };
+      return {
+        id: perm.id,
+        code: perm.code,
+        name: perm.name,
+        description: perm.description,
+        icon: config.icon,
+        isParent: config.isParent,
+        parentCode: config.parentCode,
+      };
+    });
+
+    return {
+      id: dto.id,
+      branchId: dto.branchId,
+      name: dto.name,
+      color: this.pickColor(index),
+      permissions: permsVm,
+    };
   }
 
-  /**
-   * 🔄 Al seleccionar un permiso padre, auto-selecciona todos sus hijos
-   * Al des-seleccionar un hijo, verifica si des-seleccionar el padre
-   * 🔒 Los permisos obligatorios no se pueden desmarcar
-   */
-  togglePermission(permId: string, checked: boolean) {
-    // 🔒 Prevenir desmarcar permisos obligatorios
-    if (this.REQUIRED_PERMISSIONS.includes(permId) && !checked) {
-      // No hacer nada, mantener el permiso marcado
+  private pickColor(index: number): string {
+    const palette = ['purple', 'cyan', 'orange', 'blue', 'green', 'pink'];
+    return palette[index % palette.length];
+  }
+
+  // =======================
+  // UI permisos
+  // =======================
+
+  getGroupedPermissions(): { parent: PermissionVm | null; children: PermissionVm[] }[] {
+    const all = this.availablePermissions();
+    const groups: { parent: PermissionVm | null; children: PermissionVm[] }[] =
+      [];
+
+    // independientes (sin padre y no marcados como parent)
+    const independent = all.filter((p) => !p.parentCode && !p.isParent);
+    if (independent.length > 0) {
+      groups.push({ parent: null, children: independent });
+    }
+
+    // padres
+    const parents = all.filter((p) => p.isParent);
+    parents.forEach((parent) => {
+      const children = all.filter((p) => p.parentCode === parent.code);
+      groups.push({ parent, children });
+    });
+
+    return groups;
+  }
+
+  togglePermission(permId: string, checked: boolean): void {
+    const current = this.selectedPermissions();
+    const perms = this.availablePermissions();
+    const permission = perms.find((p) => p.id === permId);
+    if (!permission) return;
+
+    // no permitir desmarcar obligatorios
+    if (!checked && this.requiredPermissionIds.includes(permId)) {
       return;
     }
 
-    const permission = this.availablePermissions().find(p => p.id === permId);
-    
     if (checked) {
-      // Agregar el permiso seleccionado
-      const updated = [...this.selectedPermissions(), permId];
-      
-      // Si es un padre, agregar todos sus hijos automáticamente
-      if (permission?.isParent) {
-        const children = this.availablePermissions()
-          .filter(p => p.parentId === permId)
-          .map(p => p.id);
-        
-        children.forEach(childId => {
-          if (!updated.includes(childId)) {
-            updated.push(childId);
-          }
-        });
+      const updated = new Set(current);
+      updated.add(permId);
+
+      // si es padre, marcar todos los hijos
+      if (permission.isParent) {
+        const children = perms.filter((p) => p.parentCode === permission.code);
+        children.forEach((c) => updated.add(c.id));
       }
-      
-      // Si es un hijo, agregar también el padre si no está
-      if (permission?.parentId && !updated.includes(permission.parentId)) {
-        updated.push(permission.parentId);
-      }
-      
-      this.selectedPermissions.set(updated);
-    } else {
-      let updated = this.selectedPermissions().filter(id => id !== permId);
-      
-      // Si es un padre, remover todos sus hijos
-      if (permission?.isParent) {
-        const children = this.availablePermissions()
-          .filter(p => p.parentId === permId)
-          .map(p => p.id);
-        
-        updated = updated.filter(id => !children.includes(id));
-      }
-      
-      // Si es un hijo, verificar si remover el padre
-      if (permission?.parentId) {
-        const siblings = this.availablePermissions()
-          .filter(p => p.parentId === permission.parentId && p.id !== permId);
-        
-        const hasOtherChildrenSelected = siblings.some(sibling => 
-          updated.includes(sibling.id)
-        );
-        
-        // Si no hay otros hijos seleccionados, remover el padre
-        if (!hasOtherChildrenSelected) {
-          updated = updated.filter(id => id !== permission.parentId);
+
+      // si es hijo, marcar padre si existe
+      if (permission.parentCode) {
+        const parent = perms.find((p) => p.code === permission.parentCode);
+        if (parent) {
+          updated.add(parent.id);
         }
       }
-      
-      // 🔒 Asegurar que los permisos obligatorios siempre estén
-      this.REQUIRED_PERMISSIONS.forEach(reqId => {
+
+      this.selectedPermissions.set(Array.from(updated));
+    } else {
+      let updated = current.filter((id) => id !== permId);
+
+      // si es padre, desmarcar todos los hijos
+      if (permission.isParent) {
+        const children = perms.filter((p) => p.parentCode === permission.code);
+        const childrenIds = children.map((c) => c.id);
+        updated = updated.filter((id) => !childrenIds.includes(id));
+      }
+
+      // si es hijo, ver si hay hermanos marcados; si no, desmarcar padre
+      if (permission.parentCode) {
+        const siblings = perms.filter(
+          (p) => p.parentCode === permission.parentCode && p.id !== permId
+        );
+        const hasSiblingSelected = siblings.some((s) =>
+          updated.includes(s.id)
+        );
+        if (!hasSiblingSelected) {
+          const parent = perms.find((p) => p.code === permission.parentCode);
+          if (parent) {
+            updated = updated.filter((id) => id !== parent.id);
+          }
+        }
+      }
+
+      // asegurar que los obligatorios sigan presentes
+      this.requiredPermissionIds.forEach((reqId) => {
         if (!updated.includes(reqId)) {
           updated.push(reqId);
         }
       });
-      
+
       this.selectedPermissions.set(updated);
     }
   }
@@ -327,130 +380,154 @@ export class ProfileManagementComponent {
     return this.selectedPermissions().includes(permId);
   }
 
-  /**
-   * 🔒 Verificar si un permiso es obligatorio (no se puede desmarcar)
-   */
   isPermissionRequired(permId: string): boolean {
-    return this.REQUIRED_PERMISSIONS.includes(permId);
+    return this.requiredPermissionIds.includes(permId);
   }
 
-  /**
-   * 📋 Obtener permisos agrupados por categoría para mejor visualización
-   */
-  getGroupedPermissions(): { parent: Permission | null; children: Permission[] }[] {
-    const groups: { parent: Permission | null; children: Permission[] }[] = [];
-    
-    // Permisos sin padre (independientes)
-    const independentPerms = this.availablePermissions()
-      .filter(p => !p.parentId && !p.isParent);
-    
-    if (independentPerms.length > 0) {
-      groups.push({ parent: null, children: independentPerms });
-    }
-    
-    // Permisos con estructura padre-hijo
-    const parents = this.availablePermissions().filter(p => p.isParent);
-    
-    parents.forEach(parent => {
-      const children = this.availablePermissions()
-        .filter(p => p.parentId === parent.id);
-      
-      groups.push({ parent, children });
-    });
-    
-    return groups;
-  }
+  // =======================
+  // CRUD Perfiles
+  // =======================
 
-  saveProfile() {
+  saveProfile(): void {
     if (this.profileForm.invalid) {
       alert('Por favor completa el formulario correctamente');
       return;
     }
-    
-    // Verificar que haya al menos un permiso además de los obligatorios
-    const nonRequiredPerms = this.selectedPermissions()
-      .filter(p => !this.REQUIRED_PERMISSIONS.includes(p));
-    
-    if (nonRequiredPerms.length === 0) {
-      alert('Debes seleccionar al menos un permiso adicional además de Dashboard y Notificaciones');
+
+    if (!this.currentBranchId) {
+      alert(
+        'No hay sucursal activa en la sesión. Vuelve a iniciar sesión o selecciona una sucursal.'
+      );
+      return;
+    }
+
+    const allPerms = this.availablePermissions();
+    const selectedIds = this.selectedPermissions();
+
+    const selectedPerms = allPerms.filter((p) => selectedIds.includes(p.id));
+    const nonRequiredSelected = selectedPerms.filter(
+      (p) => !REQUIRED_PERMISSION_CODES.includes(p.code)
+    );
+
+    if (nonRequiredSelected.length === 0) {
+      alert(
+        'Debes seleccionar al menos un permiso adicional además de los obligatorios.'
+      );
       return;
     }
 
     const formData = this.profileForm.value;
-    
-    // 🔒 Asegurar que los permisos obligatorios estén incluidos
-    const finalPermissions = [...new Set([
-      ...this.REQUIRED_PERMISSIONS,
-      ...this.selectedPermissions()
-    ])];
-    
+    const finalPermissionIds = Array.from(new Set(selectedIds));
+
+    this.saving = true;
+
     if (this.editingProfile) {
-      const updated = this.profiles().map(p =>
-        p.id === this.editingProfile!.id
-          ? { ...p, ...formData, permissions: finalPermissions }
-          : p
-      );
-      this.profiles.set(updated);
+      this.profileApi
+        .updateProfile(this.editingProfile.id, {
+          name: formData.name,
+          permissionIds: finalPermissionIds,
+        })
+        .subscribe({
+          next: (updatedDto) => {
+            const current = this.profiles();
+            const index = current.findIndex(
+              (p) => p.id === this.editingProfile!.id
+            );
+            if (index >= 0) {
+              const vm = this.mapProfileDtoToVm(updatedDto, index);
+              const copy = [...current];
+              copy[index] = vm;
+              this.profiles.set(copy);
+            }
+            this.resetForm();
+            this.saving = false;
+          },
+          error: (err) => {
+            console.error('Error al actualizar perfil', err);
+            this.saving = false;
+            alert('Error al actualizar perfil.');
+          },
+        });
     } else {
-      const newProfile: Profile = {
-        id: Date.now().toString(),
-        color: 'purple',
-        ...formData,
-        permissions: finalPermissions
-      };
-      this.profiles.set([...this.profiles(), newProfile]);
+      this.profileApi
+        .createProfile({
+          branchId: this.currentBranchId,
+          name: formData.name,
+          permissionIds: finalPermissionIds,
+        })
+        .subscribe({
+          next: (createdDto) => {
+            const current = this.profiles();
+            const vm = this.mapProfileDtoToVm(createdDto, current.length);
+            this.profiles.set([...current, vm]);
+            this.resetForm();
+            this.saving = false;
+          },
+          error: (err) => {
+            console.error('Error al crear perfil', err);
+            this.saving = false;
+            alert('Error al crear perfil.');
+          },
+        });
     }
-    
-    localStorage.setItem('gymhealth_profiles', JSON.stringify(this.profiles()));
-    this.resetForm();
   }
 
-  editProfile(profile: Profile) {
+  editProfile(profile: ProfileVm): void {
     this.editingProfile = profile;
-    this.profileForm.patchValue(profile);
+    this.profileForm.patchValue({ name: profile.name });
     this.profileForm.markAsPristine();
     this.profileForm.markAsUntouched();
-    
-    // 🔒 Asegurar que los permisos obligatorios estén siempre incluidos al editar
-    const permissionsWithRequired = [...new Set([
-      ...this.REQUIRED_PERMISSIONS,
-      ...profile.permissions
-    ])];
-    
-    this.selectedPermissions.set(permissionsWithRequired);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const selectedIds = profile.permissions.map((p) => p.id);
+    const withRequired = Array.from(
+      new Set([...this.requiredPermissionIds, ...selectedIds])
+    );
+    this.selectedPermissions.set(withRequired);
   }
 
-  deleteProfile(profile: Profile) {
+  deleteProfile(profile: ProfileVm): void {
     if (!confirm(`¿Eliminar el perfil "${profile.name}"?`)) return;
-    this.profiles.set(this.profiles().filter(p => p.id !== profile.id));
-    localStorage.setItem('gymhealth_profiles', JSON.stringify(this.profiles()));
+
+    this.profileApi.deleteProfile(profile.id).subscribe({
+      next: () => {
+        const updated = this.profiles().filter((p) => p.id !== profile.id);
+        this.profiles.set(updated);
+      },
+      error: (err) => {
+        console.error('Error al eliminar perfil', err);
+        alert('Error al eliminar perfil.');
+      },
+    });
   }
 
-  cancelEdit() {
+  cancelEdit(): void {
     this.resetForm();
   }
 
-  resetForm() {
+  resetForm(): void {
     this.editingProfile = null;
     this.profileForm.reset();
     this.profileForm.markAsPristine();
     this.profileForm.markAsUntouched();
-    Object.keys(this.profileForm.controls).forEach(key => {
+    Object.keys(this.profileForm.controls).forEach((key) => {
       this.profileForm.get(key)?.setErrors(null);
     });
-    
-    // 🔒 Resetear a solo los permisos obligatorios
-    this.selectedPermissions.set([...this.REQUIRED_PERMISSIONS]);
+
+    // volver a solo permisos obligatorios
+    this.selectedPermissions.set([...this.requiredPermissionIds]);
   }
 
+  // =======================
+  // Helpers UI
+  // =======================
+
   getPermissionName(id: string): string {
-    const perm = this.availablePermissions().find(p => p.id === id);
+    const perm = this.availablePermissions().find((p) => p.id === id);
     return perm?.name || id;
   }
 
   getPermissionDescription(id: string): string {
-    const perm = this.availablePermissions().find(p => p.id === id);
+    const perm = this.availablePermissions().find((p) => p.id === id);
     return perm?.description || '';
   }
 
@@ -461,7 +538,7 @@ export class ProfileManagementComponent {
       orange: '#F97316',
       blue: '#3b82f6',
       green: '#22c55e',
-      pink: '#ec4899'
+      pink: '#ec4899',
     };
     return map[color] ?? '#9747FF';
   }
