@@ -70,7 +70,7 @@ Gym Health`;
         <li>Usuario: ${user.email}</li>
         <li>Contraseña provisional: <code>${tempPassword}</code></li>
       </ul>
-      <p>Te recomendamos iniciar sesión y cambiar tu contraseña lo antes posible.</p>
+      <p>Te recomendamos que el enrolamiento facial se realiza exclusivamente de manera presencial en la sucursal.</p>
       <p>Atentamente,<br/>Gym Health</p>
     `;
 
