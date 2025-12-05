@@ -8,8 +8,8 @@
     </div>
   </div>
 
-  <!-- 1. BÚSQUEDA -->
-  @if (!selectedMember() || isSearching()) {
+  <!-- 1. BUSCADOR (solo si NO hay miembro seleccionado) -->
+  @if (!selectedMember()) {
     <mat-card class="step-card">
       <div class="search-section">
         <mat-icon class="section-icon">person_search</mat-icon>
@@ -22,38 +22,71 @@
             floatLabel="always"
             class="input-field"
           >
-            <mat-label>RUT / Nombre / Email</mat-label>
+            <mat-label>RUT o nombre</mat-label>
             <mat-icon matPrefix>search</mat-icon>
             <input
               matInput
               [formControl]="searchControl"
-              placeholder="Ej: 12.345.678-9, Juan Pérez..."
-              (input)="onRutInput($event)"
-              (keyup.enter)="searchMember(searchControl.value || '')"
-              [disabled]="isSearching()"
+              placeholder="Ej: 12.345.678-9 o Juan Pérez"
+              (input)="onSearchInput($event)"
+              (keyup.enter)="onEnter()"
+              [disabled]="isSaving()"
               maxlength="50"
             />
           </mat-form-field>
-
-          <button
-            mat-raised-button
-            color="primary"
-            (click)="searchMember(searchControl.value || '')"
-            [disabled]="isSearching() || !searchControl.valid"
-            class="search-button"
-          >
-            @if (!isSearching()) {
-              <mat-icon>search</mat-icon>
-            }
-            {{ isSearching() ? 'Buscando...' : 'Buscar' }}
-          </button>
         </div>
+
+        <!-- Lista de resultados / sugerencias -->
+        @if (isSearching()) {
+          <p class="search-hint">Buscando miembros...</p>
+        }
+
+        @if (!isSearching() && searchResults().length > 0) {
+          <div class="search-results">
+            @for (member of searchResults(); track member.id) {
+              <button
+                type="button"
+                class="search-result-item"
+                (click)="selectMember(member)"
+              >
+                <div class="result-main">
+                  <span class="result-name">
+                    {{ member.nombre }} {{ member.apellido }}
+                  </span>
+                  <span class="result-rut">
+                    RUT: {{ member.rut }}
+                  </span>
+                </div>
+                <div class="result-extra">
+                  <span class="result-email">{{ member.email }}</span>
+                  <span
+                    class="result-status"
+                    [class.result-status--activa]="member.estadoMembresia === 'ACTIVA'"
+                    [class.result-status--vencida]="member.estadoMembresia === 'VENCIDA'"
+                  >
+                    {{ member.estadoMembresia }}
+                  </span>
+                </div>
+              </button>
+            }
+          </div>
+        }
+
+        @if (
+          !isSearching()
+          && (searchControl.value || '').trim().length >= 2
+          && searchResults().length === 0
+        ) {
+          <p class="search-hint">
+            No se encontraron miembros para ese criterio.
+          </p>
+        }
       </div>
     </mat-card>
   }
 
-  <!-- 2. INFORMACIÓN DEL MIEMBRO -->
-  @if (selectedMember() && !isSearching()) {
+  <!-- 2. INFORMACIÓN DEL MIEMBRO SELECCIONADO -->
+  @if (selectedMember()) {
     <mat-card class="step-card">
       <div class="member-section">
         <div class="member-header">
@@ -343,7 +376,7 @@
             [disabled]="isSaving()"
           >
             <mat-icon>arrow_back</mat-icon>
-            Buscar Otro
+            Limpiar búsqueda
           </button>
         </div>
       </div>

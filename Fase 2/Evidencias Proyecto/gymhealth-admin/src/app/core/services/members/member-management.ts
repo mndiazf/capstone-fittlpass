@@ -119,12 +119,13 @@ interface AccessHistoryApiDto {
   providedIn: 'root',
 })
 export class MemberManagement {
-  // 👇 sin environment, URL directa (ajústala si usas proxy o puerto distinto)
+  // 👇 Base del backend de admin (ajusta si usas proxy/env)
+  // Endpoint final: GET {apiBase}/members/search
   private readonly apiBase = 'http://localhost:3000/api/admin';
 
   constructor(
     private http: HttpClient,
-    private auth: Auth,          // <--- inyectamos Auth
+    private auth: Auth,
   ) {}
 
   /**
@@ -132,16 +133,24 @@ export class MemberManagement {
    * GET /api/admin/members/search?query=...&limit=...&branchId=...
    *
    * branchId se obtiene desde la sesión del admin (currentBranch.id)
+   * y se manda como query param para aplicar la lógica ONECLUB / MULTICLUB.
    */
   searchMembers(params: {
     query: string;
     limit?: number;
   }): Observable<MemberSearchResponse> {
+    const trimmed = params.query.trim();
+
+    // 👇 Match con lo que hicimos en el backend: no buscar con menos de 2 caracteres
+    if (!trimmed || trimmed.length < 2) {
+      return of({ total: 0, members: [] });
+    }
+
     const branch = this.auth.currentBranch;
     const branchId = branch?.id ?? null;
 
     let httpParams = new HttpParams()
-      .set('query', params.query)
+      .set('query', trimmed)
       .set('limit', (params.limit ?? 10).toString());
 
     if (branchId) {

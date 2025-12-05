@@ -119,11 +119,16 @@ export class AccessReportService {
       ? row.created_at
       : new Date(row.created_at);
 
-    const date = d.toLocaleDateString('es-CL'); // 16-11-2025
-    const time = d.toLocaleTimeString('es-CL', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    // --- FORMATEO MANUAL, SIN AM/PM NI ESPACIOS RAROS ---
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+
+    const date = `${day}-${month}-${year}`; // 16-11-2025
+    const time = `${hours}:${minutes}`;     // 01:49
 
     const resultLabel: 'Exitoso' | 'Rechazado' =
       row.result === 'GRANTED' ? 'Exitoso' : 'Rechazado';
@@ -144,4 +149,5 @@ export class AccessReportService {
       reason: row.reason,
     };
   }
+
 }

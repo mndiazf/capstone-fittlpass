@@ -57,10 +57,10 @@ export class MemberSearchComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private themeService = inject(ThemeService);
 
-  // Control de búsqueda
+  // Control de búsqueda (mínimo 2 caracteres)
   searchControl = new FormControl('', [
     Validators.required,
-    Validators.minLength(3),
+    Validators.minLength(2),
   ]);
 
   // Estados
@@ -68,6 +68,10 @@ export class MemberSearchComponent implements OnInit {
   isSaving = signal(false);
   selectedMember = signal<Member | null>(null);
   accessHistory = signal<AccessHistory[]>([]);
+  searchResults = signal<Member[]>([]);
+
+  // timeout para debounce manual
+  private searchTimeout: any;
 
   // Computed
   hasDebt = computed(() => {
@@ -106,90 +110,72 @@ export class MemberSearchComponent implements OnInit {
     return !!member?.sinDiasDisponibles;
   }
 
-  // ====== Búsqueda por RUT / texto ======
-  onRutInput(event: any): void {
-    const input = event.target;
-    const cursorPosition = input.selectionStart;
+  // ====== Búsqueda por RUT / texto (autocomplete) ======
+  onSearchInput(event: any): void {
+    const input = event.target as HTMLInputElement;
     const oldValue = input.value;
+    const cursorPosition = input.selectionStart ?? oldValue.length;
     const oldLength = oldValue.length;
 
-    const formatted = this.rutService.formatRut(oldValue);
-    this.searchControl.setValue(formatted, { emitEvent: false });
+    const rutCharsRegex = /^[0-9.\-kK]*$/;
 
-    const newLength = formatted.length;
-    const diff = newLength - oldLength;
-    const newPosition = cursorPosition + diff;
+    if (rutCharsRegex.test(oldValue)) {
+      // Es "tipo RUT": formateamos
+      const formatted = this.rutService.formatRut(oldValue);
+      this.searchControl.setValue(formatted, { emitEvent: false });
 
-    setTimeout(() => {
-      input.setSelectionRange(newPosition, newPosition);
-    }, 0);
-  }
+      const newLength = formatted.length;
+      const diff = newLength - oldLength;
+      const newPosition = cursorPosition + diff;
 
-  searchMember(query: string): void {
-    if (!query || query.trim().length < 3) {
-      this.snackBar.open('Debes ingresar al menos 3 caracteres', 'Cerrar', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-      });
+      setTimeout(() => {
+        input.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    } else {
+      // No es RUT: dejamos el valor tal cual en el formControl
+      this.searchControl.setValue(oldValue, { emitEvent: false });
+    }
+
+    const value = this.searchControl.value ?? '';
+    const trimmed = value.trim();
+
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+
+    if (trimmed.length < 2) {
+      this.isSearching.set(false);
+      this.searchResults.set([]);
+      // no tocamos selectedMember aquí
+      this.accessHistory.set([]);
       return;
     }
 
     this.isSearching.set(true);
+    this.searchTimeout = setTimeout(() => {
+      this.performSearch(trimmed);
+    }, 300);
+  }
 
-    let searchQuery = query.trim();
-    const cleanedQuery = this.rutService.cleanRut(query);
+  private performSearch(term: string): void {
+    let searchQuery = term;
+    const cleanedQuery = this.rutService.cleanRut(term);
 
     if (/^[0-9kK]+$/.test(cleanedQuery)) {
-      if (!this.rutService.validateRut(query)) {
-        this.snackBar.open(
-          '❌ RUT inválido. Por favor verifica el dígito verificador.',
-          'Cerrar',
-          {
-            duration: 4000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top',
-            panelClass: ['error-snackbar'],
-          },
-        );
-        this.isSearching.set(false);
-        return;
-      }
       searchQuery = cleanedQuery;
     }
 
     this.memberService
-      .searchMembers({ query: searchQuery, limit: 1 })
+      .searchMembers({ query: searchQuery, limit: 10 })
       .subscribe({
         next: (response) => {
-          if (response.members && response.members.length > 0) {
-            const member = response.members[0];
-            this.selectedMember.set(member);
-            this.loadAccessHistory(member.id);
-
-            this.snackBar.open('✅ Miembro encontrado', 'Cerrar', {
-              duration: 2000,
-              horizontalPosition: 'end',
-              verticalPosition: 'top',
-              panelClass: ['success-snackbar'],
-            });
-          } else {
-            this.selectedMember.set(null);
-            this.snackBar.open(
-              'No se encontró ningún miembro con esa información',
-              'Cerrar',
-              {
-                duration: 4000,
-                horizontalPosition: 'end',
-                verticalPosition: 'top',
-                panelClass: ['warning-snackbar'],
-              },
-            );
-          }
+          this.searchResults.set(response.members);
           this.isSearching.set(false);
         },
         error: (error) => {
           console.error('Error al buscar miembro:', error);
+          this.searchResults.set([]);
+          this.isSearching.set(false);
           this.snackBar.open(
             '❌ Error al buscar el miembro. Intenta nuevamente.',
             'Cerrar',
@@ -200,9 +186,35 @@ export class MemberSearchComponent implements OnInit {
               panelClass: ['error-snackbar'],
             },
           );
-          this.isSearching.set(false);
         },
       });
+  }
+
+  onEnter(): void {
+    const results = this.searchResults();
+    if (results.length > 0) {
+      this.selectMember(results[0]);
+    }
+  }
+
+  /**
+   * Seleccionar un miembro de la lista de resultados
+   * 👉 aquí seteamos selectedMember y limpiamos resultados;
+   *    el input desaparecerá por el @if del template.
+   */
+  selectMember(member: Member): void {
+    this.selectedMember.set(member);
+    this.searchResults.set([]);
+    this.isSearching.set(false);
+
+    this.loadAccessHistory(member.id);
+
+    this.snackBar.open('✅ Miembro seleccionado', 'Cerrar', {
+      duration: 2000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      panelClass: ['success-snackbar'],
+    });
   }
 
   private loadAccessHistory(memberId: string): void {
@@ -220,13 +232,12 @@ export class MemberSearchComponent implements OnInit {
   // ====== Acciones de UI ======
   clearSearch(): void {
     this.searchControl.reset();
-    this.selectedMember.set(null);
+    this.searchResults.set([]);
+    this.selectedMember.set(null);   // 👈 hace reaparecer el input
     this.accessHistory.set([]);
+    this.isSearching.set(false);
   }
 
-  /**
-   * Bloquear miembro
-   */
   blockMember(): void {
     const member = this.selectedMember();
     if (!member) return;
@@ -268,9 +279,6 @@ export class MemberSearchComponent implements OnInit {
     });
   }
 
-  /**
-   * Desbloquear miembro
-   */
   unblockMember(): void {
     const member = this.selectedMember();
     if (!member) return;

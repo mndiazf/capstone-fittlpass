@@ -24,6 +24,12 @@ import {
   Checkout,
 } from '../../../core/services/checkout/checkout';
 
+// 👇 Importamos Member + MemberManagement
+import {
+  Member,
+  MemberManagement,
+} from '../../../core/services/members/member-management';
+
 // ============================================
 // TIPOS PARA POS
 // ============================================
@@ -138,12 +144,15 @@ interface SaleData {
 export class PresentialSaleComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // El flujo parte en selección de producto
-  currentStep: Step = 'membership';
+  // 🔁 El flujo parte en CLIENTE
+  currentStep: Step = 'new-client';
 
   // Catálogo
   memberships: MembershipWithUI[] = [];
   selectedMembership: MembershipWithUI | null = null;
+
+  // Info de miembro existente (si se encuentra por RUT)
+  existingMember: Member | null = null;
 
   // Sucursal activa desde JWT en localStorage (venta presencial SIEMPRE en esta sucursal)
   private activeBranchId: string | null = null;
@@ -151,6 +160,8 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
   // Fechas
   today = '';
   startDate = '';
+  minStartDate = '';
+  maxStartDate = '';
   daysCount = 1;
 
   // Formulario de cliente NUEVO (único flujo)
@@ -204,7 +215,7 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
     connectionDelay: 1500,
     cardReadingDelay: 2000,
     processingDelay: 2500,
-    successRate: 90,
+    successRate: 100, // ya no se usa, pero lo dejamos en 100%
   };
 
   constructor(
@@ -212,7 +223,8 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
     private router: Router,
     private rutService: RutService,
     private membershipCatalog: MembershipCatalog,
-    private checkoutService: Checkout
+    private checkoutService: Checkout,
+    private memberService: MemberManagement // 👈 nuevo servicio
   ) {
     // SOLO campos que usa el backend presencial
     this.clientForm = this.fb.group({
@@ -228,8 +240,11 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const today = new Date();
-    this.today = today.toISOString().split('T')[0];
-    this.startDate = this.today;
+    const isoToday = today.toISOString().split('T')[0];
+    this.today = isoToday;
+
+    // Rango inicial: hoy → hoy + 30 días
+    this.updateStartDateRangeFrom(isoToday);
 
     this.posProgress$
       .pipe(takeUntil(this.destroy$))
@@ -358,15 +373,25 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
     return this.calculateEndDate();
   }
 
+  // Actualiza startDate + min/max (hasta 30 días hacia adelante)
+  private updateStartDateRangeFrom(baseISO: string): void {
+    this.minStartDate = baseISO;
+    const baseDate = new Date(baseISO);
+    const max = new Date(baseDate);
+    max.setDate(max.getDate() + 30);
+    this.maxStartDate = max.toISOString().split('T')[0];
+    this.startDate = baseISO;
+  }
+
   // ==========================
   // STEP INDICATOR
   // ==========================
   getStepNumber(): number {
     switch (this.currentStep) {
-      case 'membership':
-        return 1; // Producto
       case 'new-client':
-        return 2; // Cliente
+        return 1; // Cliente
+      case 'membership':
+        return 2; // Producto
       case 'summary':
         return 3; // Resumen
       case 'payment':
@@ -382,7 +407,7 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
   // ==========================
   startNewSale(): void {
     this.resetSaleData();
-    this.currentStep = 'membership';
+    this.currentStep = 'new-client';
   }
 
   cancelSale(): void {
@@ -392,23 +417,23 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
       )
     ) {
       this.resetSaleData();
-      this.currentStep = 'membership';
+      this.currentStep = 'new-client';
       this.router.navigate(['/dashboard']);
     }
   }
 
   goBack(): void {
     switch (this.currentStep) {
-      case 'membership':
+      case 'new-client':
         this.router.navigate(['/dashboard']);
         break;
 
-      case 'new-client':
-        this.currentStep = 'membership';
+      case 'membership':
+        this.currentStep = 'new-client';
         break;
 
       case 'summary':
-        this.currentStep = 'new-client';
+        this.currentStep = 'membership';
         break;
 
       case 'payment':
@@ -438,6 +463,10 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
     this.posError = null;
     this.membershipCode = '';
     this.daysCount = 1;
+    this.existingMember = null;
+
+    // reestablecer rango de fechas desde hoy
+    this.updateStartDateRangeFrom(this.today);
   }
 
   // ==========================
@@ -454,7 +483,7 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
   }
 
   // ==========================
-  // FORMULARIO CLIENTE NUEVO
+  // FORMULARIO CLIENTE NUEVO + AUTOCOMPLETE POR RUT
   // ==========================
   onRutInput(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -471,6 +500,84 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
       input.setSelectionRange(newPosition, newPosition);
     });
   }
+
+  // Cuando termina de escribir el RUT (blur) → buscar miembro y autocompletar
+  onRutBlur(): void {
+    const control = this.clientForm.get('rut');
+    if (!control?.value) return;
+
+    const rutValue = control.value;
+    if (!this.rutService.validateRut(rutValue)) {
+      return;
+    }
+
+    const cleaned = this.rutService.cleanRut
+      ? this.rutService.cleanRut(rutValue)
+      : rutValue;
+
+    this.memberService
+      .searchMembers({ query: cleaned, limit: 1 })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resp) => {
+          if (resp.members && resp.members.length > 0) {
+            const member = resp.members[0] as Member;
+            this.existingMember = member;
+            this.patchFormWithMember(member);
+            this.updateStartDateFromMember(member);
+          }
+        },
+        error: (err) => {
+          console.error('Error buscando miembro por RUT', err);
+        },
+      });
+  }
+
+  private patchFormWithMember(member: Member): void {
+    this.clientForm.patchValue(
+      {
+        firstName: (member as any).nombre ?? '',
+        secondName: (member as any).segundoNombre ?? '',
+        lastName: (member as any).apellido ?? '',
+        secondLastName: (member as any).segundoApellido ?? '',
+        rut: (member as any).rut ?? '',
+        email: (member as any).email ?? '',
+        phone: (member as any).telefono ?? '',
+      },
+      { emitEvent: false }
+    );
+  }
+
+private updateStartDateFromMember(member: Member): void {
+  const expiration = (member as any).fechaVencimiento;
+
+  if (expiration) {
+    const expirationDate = new Date(expiration);
+    const todayDate = new Date(this.today);
+
+    // Normalizamos a medianoche para comparar solo por fecha
+    expirationDate.setHours(0, 0, 0, 0);
+    todayDate.setHours(0, 0, 0, 0);
+
+    let baseDate: Date;
+
+    if (expirationDate < todayDate) {
+      // 🔴 Membresía vencida → puede partir desde hoy
+      baseDate = todayDate;
+    } else {
+      // 🟢 Membresía vigente → parte el día siguiente al vencimiento
+      baseDate = new Date(expirationDate);
+      baseDate.setDate(baseDate.getDate() + 1);
+    }
+
+    const baseISO = baseDate.toISOString().split('T')[0];
+    this.updateStartDateRangeFrom(baseISO);
+  } else {
+    // Sin fecha de vencimiento → usamos hoy
+    this.updateStartDateRangeFrom(this.today);
+  }
+}
+
 
   private rutValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
@@ -551,7 +658,8 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
     };
 
     this.isSubmitting = false;
-    this.currentStep = 'summary';
+    // 👇 Luego de cliente, pasamos a selección de producto
+    this.currentStep = 'membership';
   }
 
   // ==========================
@@ -575,7 +683,7 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
   }
 
   // ==========================
-  // MEMBRESÍA → CLIENTE
+  // MEMBRESÍA → RESUMEN
   // ==========================
   confirmMembership(): void {
     if (!this.selectedMembership) {
@@ -603,7 +711,7 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
       price,
     };
 
-    this.currentStep = 'new-client';
+    this.currentStep = 'summary';
   }
 
   // ==========================
@@ -828,7 +936,7 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
   }
 
   // ==========================
-  // POS SIMULADO
+  // POS SIMULADO (SIEMPRE ÉXITO)
   // ==========================
   private processTransaction(
     request: POSTransactionRequest
@@ -880,6 +988,7 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
     );
   }
 
+  // 👇 SIEMPRE ÉXITO (sin random fail)
   private simulateProcessingPhase(
     request: POSTransactionRequest
   ): Observable<void> {
@@ -889,18 +998,6 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
       70,
       '🏦'
     );
-
-    const willSucceed = Math.random() * 100 < this.posConfig.successRate;
-
-    if (!willSucceed) {
-      return timer(this.posConfig.processingDelay / 2).pipe(
-        switchMap(() => {
-          const errorType = this.getRandomError();
-          this.emitProgress('failed', errorType, 100, '❌');
-          return throwError(() => ({ error: errorType, message: errorType }));
-        })
-      );
-    }
 
     return timer(this.posConfig.processingDelay / 2).pipe(
       tap(() => {
@@ -981,16 +1078,6 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
     return brands[cardType] || 'Desconocida';
   }
 
-  private getRandomError(): string {
-    const errors = [
-      'Tarjeta rechazada por el banco',
-      'Fondos insuficientes',
-      'Tarjeta inválida o vencida',
-      'Tiempo de espera agotado',
-    ];
-    return errors[Math.floor(Math.random() * errors.length)];
-  }
-
   private emitProgress(
     state: POSSimulationState,
     message: string,
@@ -1024,6 +1111,8 @@ export class PresentialSaleComponent implements OnInit, OnDestroy {
           }, 2000);
         },
         error: (error) => {
+          // En teoría no debería ocurrir con la simulación siempre exitosa,
+          // pero dejamos el manejo por si acaso.
           this.posError =
             error.message || 'Error desconocido en la transacción';
           this.isProcessing = false;

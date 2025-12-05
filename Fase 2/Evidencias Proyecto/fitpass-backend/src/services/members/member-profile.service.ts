@@ -1,8 +1,10 @@
+// src/services/members/member-profile.service.ts
 import {
   AppUserRow,
   FaceEnrollmentRow,
   MemberProfileRepository,
   MembershipRow,
+  SearchMemberRow,
 } from '../../repositories/members/member-profile.repository';
 
 export interface MemberProfileDto {
@@ -50,9 +52,6 @@ export class MemberProfileService {
     const membership: MembershipRow | null =
       await this.repo.findMembershipForUserAndBranch(user.id, branchId);
 
-    // 👉 Regla que me pediste:
-    //    si NO hay membresía válida para ese branchId,
-    //    no devolvemos el usuario, disparamos error.
     if (!membership) {
       const err: any = new Error('MEMBERSHIP_NOT_ALLOWED_FOR_BRANCH');
       err.status = 403;
@@ -64,6 +63,89 @@ export class MemberProfileService {
       await this.repo.findLastFaceEnrollment(user.id);
 
     // 4) Mapear membershipStatus con override por fecha de vencimiento
+    const profile = this.buildProfileDtoFromRows(user, membership, face);
+    return profile;
+  }
+
+  /**
+   * Búsqueda incremental por term (RUT o nombre) filtrando por branchId.
+   * Usado para autocompletar.
+   */
+  public async searchProfiles(
+    term: string,
+    branchId: string,
+    limit = 10
+  ): Promise<MemberProfileDto[]> {
+    const normalizedRut = this.normalizeRut(term);
+
+    // 1) Obtenemos filas combinadas (usuario + "mejor" membership para esa branch)
+    const rows: SearchMemberRow[] =
+      await this.repo.searchMembersByTermAndBranch(
+        term,
+        normalizedRut,
+        branchId,
+        limit
+      );
+
+    if (rows.length === 0) {
+      return [];
+    }
+
+    // 2) Para evitar N+1 fuerte, podríamos optimizar más adelante.
+    // Por ahora: por cada user_id buscamos su último face_enrollment.
+    const uniqueUserIds = [...new Set(rows.map(r => r.user_id))];
+
+    const faceByUser = new Map<string, FaceEnrollmentRow | null>();
+    await Promise.all(
+      uniqueUserIds.map(async (userId) => {
+        const face = await this.repo.findLastFaceEnrollment(userId);
+        faceByUser.set(userId, face);
+      })
+    );
+
+    // 3) Mapear rows → MemberProfileDto (usando la misma lógica que getProfileByRutAndBranch)
+    const profiles: MemberProfileDto[] = rows.map((row) => {
+      const user: AppUserRow = {
+        id: row.user_id,
+        rut: row.rut,
+        email: row.email,
+        phone: row.phone,
+        first_name: row.first_name,
+        middle_name: row.middle_name,
+        last_name: row.last_name,
+        second_last_name: row.second_last_name,
+        access_status: row.access_status,
+        status: row.user_status,
+      };
+
+      const membership: MembershipRow = {
+        membership_id: row.membership_id,
+        membership_status: row.membership_status,
+        start_date: row.start_date,
+        end_date: row.end_date,
+        branch_id: row.branch_id,
+        branch_name: row.branch_name,
+        plan_code: row.plan_code,
+        plan_name: row.plan_name,
+        plan_scope: row.plan_scope,
+      };
+
+      const face = faceByUser.get(row.user_id) ?? null;
+
+      return this.buildProfileDtoFromRows(user, membership, face);
+    });
+
+    return profiles;
+  }
+
+  // ===== Helpers compartidos =====
+
+  private buildProfileDtoFromRows(
+    user: AppUserRow,
+    membership: MembershipRow | null,
+    face: FaceEnrollmentRow | null
+  ): MemberProfileDto {
+    // 4) Mapear membershipStatus con override por fecha de vencimiento
     let membershipStatus: 'active' | 'expired' | 'inactive' = 'inactive';
     let membershipType: string | null = null;
     let membershipName: string | null = null;
@@ -73,25 +155,25 @@ export class MemberProfileService {
     let membershipStart: string | null = null;
     let membershipEnd: string | null = null;
 
-    // aquí membership SIEMPRE existe (ya filtramos antes)
-    membershipType = membership.plan_code;
-    membershipName = membership.plan_name;
-    membershipScope = membership.plan_scope;
-    membershipBranchId = membership.branch_id;
-    membershipBranchName = membership.branch_name;
-    membershipStart = membership.start_date;
-    membershipEnd = membership.end_date;
+    if (membership) {
+      membershipType = membership.plan_code;
+      membershipName = membership.plan_name;
+      membershipScope = membership.plan_scope;
+      membershipBranchId = membership.branch_id;
+      membershipBranchName = membership.branch_name;
+      membershipStart = membership.start_date;
+      membershipEnd = membership.end_date;
 
-    const todayStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-    const endDateStr = membership.end_date;                  // 'YYYY-MM-DD'
+      const todayStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+      const endDateStr = membership.end_date;                  // 'YYYY-MM-DD'
 
-    if (endDateStr < todayStr) {
-      // fecha ya vencida → marcar como expired aunque en BD diga ACTIVE
-      membershipStatus = 'expired';
-    } else if (membership.membership_status === 'EXPIRED') {
-      membershipStatus = 'expired';
-    } else {
-      membershipStatus = 'active';
+      if (endDateStr < todayStr) {
+        membershipStatus = 'expired';
+      } else if (membership.membership_status === 'EXPIRED') {
+        membershipStatus = 'expired';
+      } else {
+        membershipStatus = 'active';
+      }
     }
 
     // 5) Estado de enrolamiento / bloqueo

@@ -1,3 +1,4 @@
+// src/app/features/members/enrollment/enrollment.component.ts
 import {
   Component,
   inject,
@@ -18,11 +19,20 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 
 import { RutService } from '../../../core/services/rut.service';
-import { RutFormatDirective } from '../../../shared/directives/rut-format.directive';
 import {
   Enrollment,
   MemberUiModel,
 } from '../../../core/services/enrollment/enrollment';
+
+import { Subject, Subscription, of } from 'rxjs';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  catchError,
+  finalize,
+  map,
+} from 'rxjs/operators';
 
 @Component({
   selector: 'app-enrollment',
@@ -37,7 +47,6 @@ import {
     MatIconModule,
     MatProgressSpinnerModule,
     MatChipsModule,
-    RutFormatDirective,
   ],
   templateUrl: './enrollment.component.html',
   styleUrls: ['./enrollment.component.scss'],
@@ -51,6 +60,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   currentTheme: string = 'dark';
   private themeObserver?: MutationObserver;
@@ -64,9 +74,15 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     | 'success'
     | 'error' = 'search';
 
-  searchRut = '';
+  // 🔍 Término de búsqueda (RUT o nombre)
+  searchTerm = '';
   isSearching = false;
   searchError = '';
+
+  // Resultados de la búsqueda incremental
+  searchResults: MemberUiModel[] = [];
+  private searchTerm$ = new Subject<string>();
+  private searchSub?: Subscription;
 
   memberData: MemberUiModel | null = null;
 
@@ -93,6 +109,7 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentTheme =
       document.documentElement.getAttribute('data-theme') || 'dark';
     this.observeThemeChanges();
+    this.setupSearchStream();
   }
 
   ngAfterViewInit(): void {
@@ -116,44 +133,88 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // =========================
-  // BUSCAR POR RUT (BACKEND)
+  // STREAM DE BÚSQUEDA
   // =========================
+  private setupSearchStream(): void {
+    this.searchSub = this.searchTerm$
+      .pipe(
+        map((term) => term.trim()),
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((term) => {
+          this.searchError = '';
+          this.memberData = null;
+
+          if (term.length < 2) {
+            this.searchResults = [];
+            return of<MemberUiModel[]>([]);
+          }
+
+          this.isSearching = true;
+
+          return this.enrollmentSvc.searchMembers(term, 10).pipe(
+            catchError((err: any) => {
+              this.searchError =
+                err?.error?.message ||
+                err?.message ||
+                'Error al buscar miembros.';
+              return of<MemberUiModel[]>([]);
+            }),
+            finalize(() => {
+              this.isSearching = false;
+            }),
+          );
+        }),
+      )
+      .subscribe((results) => {
+        this.searchResults = results;
+
+        if (
+          !results.length &&
+          this.searchTerm.trim().length >= 2 &&
+          !this.searchError
+        ) {
+          this.searchError =
+            'No se encontraron miembros para el término ingresado.';
+        }
+      });
+  }
+
+  // Cuando cambia el input (ngModelChange)
+  onSearchTermChange(value: string): void {
+    this.searchTerm = value;
+    this.searchTerm$.next(value);
+  }
+
+  // Para Enter o botón "Buscar" (dispara la misma lógica)
   searchMember(): void {
     this.searchError = '';
     this.memberData = null;
 
-    const rutError = this.rutService.getErrorMessage(this.searchRut);
-    if (rutError) {
-      this.searchError = rutError;
+    const term = this.searchTerm.trim();
+    if (term.length < 2) {
+      this.searchError = 'Ingresa al menos 2 caracteres para buscar.';
       return;
     }
 
-    this.isSearching = true;
+    this.searchTerm$.next(term);
+  }
 
-    // ✅ Enviar SIEMPRE el RUT formateado xx.xxx.xxx-X
-    const formattedRut = this.rutService.formatRut(this.searchRut);
-    this.searchRut = formattedRut; // reflejar formato en el input
+  // Cuando el usuario selecciona un miembro de la lista
+  selectMember(member: MemberUiModel): void {
+    // Formateamos el RUT para mostrarlo bonito
+    member.rut = this.rutService.formatRut(member.rut);
 
-    this.enrollmentSvc.getProfileByRut(formattedRut).subscribe({
-      next: (member) => {
-        // Normalizamos también el RUT de respuesta
-        member.rut = this.rutService.formatRut(member.rut);
-        this.memberData = member;
+    this.memberData = member;
+    this.operationType =
+      member.enrollmentStatus === 'enrolled' ? 'update' : 'new';
 
-        this.operationType =
-          member.enrollmentStatus === 'enrolled' ? 'update' : 'new';
+    // Rellenar el input con algo representativo
+    this.searchTerm = `${member.rut} - ${member.fullName}`;
 
-        this.currentView = 'member-info';
-        this.isSearching = false;
-      },
-      error: (err: any) => {
-        this.searchError =
-          err?.error?.message ||
-          err?.message ||
-          'Error al buscar el miembro.';
-        this.isSearching = false;
-      },
-    });
+    this.currentView = 'member-info';
+    this.searchResults = [];
+    this.searchError = '';
   }
 
   // =========================
@@ -266,14 +327,23 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
   // =========================
   reset(): void {
     this.stopCamera();
-    this.searchRut = '';
+    this.searchTerm = '';
     this.searchError = '';
+    this.searchResults = [];
     this.memberData = null;
     this.capturedImage = '';
     this.currentView = 'search';
     this.operationType = 'new';
     this.errorMessage = '';
     this.successMessage = '';
+
+    // Re-enfocar el input al resetear
+    setTimeout(() => {
+      const input = this.searchInput?.nativeElement;
+      if (input) {
+        input.focus();
+      }
+    }, 0);
   }
 
   /**
@@ -364,6 +434,9 @@ export class EnrollmentComponent implements OnInit, AfterViewInit, OnDestroy {
     this.stopCamera();
     if (this.themeObserver) {
       this.themeObserver.disconnect();
+    }
+    if (this.searchSub) {
+      this.searchSub.unsubscribe();
     }
   }
 }

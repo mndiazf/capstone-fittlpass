@@ -172,7 +172,7 @@ export class PgMemberManagementRepository implements MemberManagementRepository 
             ),
             ' ',
             ''
-          ) = $1
+          ) LIKE $1 || '%'   -- 👈 AUTOCOMPLETE POR RUT PARCIAL
           OR u.email ILIKE '%' || $2 || '%'
           OR u.first_name ILIKE '%' || $2 || '%'
           OR u.last_name ILIKE '%' || $2 || '%'

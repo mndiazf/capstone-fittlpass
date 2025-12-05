@@ -1,4 +1,3 @@
-// src/controllers/members/member-management.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { MemberManagementService } from '../../services/members/member-management.service';
 import { logger } from '../../utils/logger';

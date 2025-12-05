@@ -4,11 +4,11 @@
 #include <ESP32Servo.h>
 
 // ===== WiFi =====
-const char* WIFI_SSID = "Manolo";
-const char* WIFI_PASS = "Manolo12321x#";
+const char* WIFI_SSID = "mano";
+const char* WIFI_PASS = "hola12321x";
 
 // ===== MQTT (tu PC Windows con Mosquitto) =====
-const char* MQTT_HOST = "192.168.1.83";   // <- IP de tu PC
+const char* MQTT_HOST = "10.91.239.208";   // <- IP de tu PC
 const uint16_t MQTT_PORT = 1883;
 const char* MQTT_CLIENTID = "esp32-door1";
 const char* TOPIC_CMD   = "access/door1/cmd";   // recibe "OPEN" o JSON

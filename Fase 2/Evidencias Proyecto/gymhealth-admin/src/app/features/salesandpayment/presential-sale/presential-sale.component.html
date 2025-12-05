@@ -1,5 +1,5 @@
 <!-- presential-sale.component.html - Angular 20 -->
-<!-- Flujo: 1) Producto → 2) Cliente → 3) Resumen → 4) Pago -->
+<!-- Flujo: 1) Cliente → 2) Producto → 3) Resumen → 4) Pago -->
 
 <div class="presential-sale-container">
   <!-- Header -->
@@ -21,24 +21,27 @@
   @if (currentStep !== 'success') {
     <div class="step-indicator-wrapper">
       <div class="step-indicator">
+        <!-- Paso 1: Cliente -->
         <div
           class="step"
           [class.active]="getStepNumber() === 1"
           [class.completed]="getStepNumber() > 1">
           <div class="step-number">{{ getStepNumber() > 1 ? '✓' : '1' }}</div>
-          <span class="step-label">Producto</span>
+          <span class="step-label">Cliente</span>
         </div>
         <div class="step-line" [class.completed]="getStepNumber() > 1"></div>
 
+        <!-- Paso 2: Producto -->
         <div
           class="step"
           [class.active]="getStepNumber() === 2"
           [class.completed]="getStepNumber() > 2">
           <div class="step-number">{{ getStepNumber() > 2 ? '✓' : '2' }}</div>
-          <span class="step-label">Cliente</span>
+          <span class="step-label">Producto</span>
         </div>
         <div class="step-line" [class.completed]="getStepNumber() > 2"></div>
 
+        <!-- Paso 3: Resumen -->
         <div
           class="step"
           [class.active]="getStepNumber() === 3"
@@ -48,6 +51,7 @@
         </div>
         <div class="step-line" [class.completed]="getStepNumber() > 3"></div>
 
+        <!-- Paso 4: Pago -->
         <div class="step" [class.active]="getStepNumber() === 4">
           <div class="step-number">4</div>
           <span class="step-label">Pago</span>
@@ -58,7 +62,7 @@
 
   <!-- Content Area -->
   <div class="content-area">
-    <!-- FORMULARIO NUEVO CLIENTE (ÚNICO FLUJO DE CLIENTE) -->
+    <!-- 1) FORMULARIO CLIENTE (PRIMER PASO) -->
     @if (currentStep === 'new-client') {
       <div class="screen">
         <div class="form-card">
@@ -67,6 +71,24 @@
           <form [formGroup]="clientForm" (ngSubmit)="submitClientForm()">
             <div class="form-section">
               <div class="form-grid">
+                <!-- RUT PRIMERO -->
+                <div class="form-group">
+                  <label class="form-label required">RUT/DNI</label>
+                  <input
+                    type="text"
+                    class="form-input"
+                    formControlName="rut"
+                    placeholder="12.345.678-9"
+                    (input)="onRutInput($event)"
+                    (blur)="onRutBlur()"
+                    [class.error]="isFieldInvalid('rut')" />
+                  @if (isFieldInvalid('rut')) {
+                    <div class="error-message">
+                      {{ getFieldError('rut') }}
+                    </div>
+                  }
+                </div>
+
                 <div class="form-group">
                   <label class="form-label required">Primer Nombre</label>
                   <input
@@ -113,22 +135,6 @@
                     class="form-input"
                     formControlName="secondLastName"
                     placeholder="González" />
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label required">RUT/DNI</label>
-                  <input
-                    type="text"
-                    class="form-input"
-                    formControlName="rut"
-                    placeholder="12.345.678-9"
-                    (input)="onRutInput($event)"
-                    [class.error]="isFieldInvalid('rut')" />
-                  @if (isFieldInvalid('rut')) {
-                    <div class="error-message">
-                      {{ getFieldError('rut') }}
-                    </div>
-                  }
                 </div>
 
                 <div class="form-group">
@@ -183,7 +189,7 @@
       </div>
     }
 
-    <!-- SELECCIÓN DE PRODUCTO / MEMBRESÍA (PRIMERA PANTALLA DEL FLUJO) -->
+    <!-- 2) SELECCIÓN DE PRODUCTO / MEMBRESÍA -->
     @if (currentStep === 'membership') {
       <div class="screen">
         <!-- Grid de membresías -->
@@ -246,7 +252,8 @@
                   type="date"
                   class="form-input"
                   [(ngModel)]="startDate"
-                  [min]="today" />
+                  [min]="minStartDate"
+                  [max]="maxStartDate" />
               </div>
 
               <div class="form-group">
@@ -304,7 +311,7 @@
       </div>
     }
 
-    <!-- RESUMEN DE VENTA -->
+    <!-- 3) RESUMEN DE VENTA -->
     @if (currentStep === 'summary') {
       <div class="screen">
         <div class="summary-card">
@@ -399,7 +406,7 @@
       </div>
     }
 
-    <!-- PROCESO DE PAGO -->
+    <!-- 4) PROCESO DE PAGO -->
     @if (currentStep === 'payment') {
       <div class="screen">
         <div class="payment-total-banner">
@@ -497,7 +504,8 @@
           <div class="action-buttons">
             <button
               class="btn btn-outline"
-              (click)="goBack()"
+              (click)="goBack()
+              "
               [disabled]="isProcessing">
               ← Volver
             </button>
@@ -575,7 +583,7 @@
       </div>
     }
 
-    <!-- MODAL POS -->
+    <!-- MODAL POS (igual, pero ahora el flujo interno siempre aprueba) -->
     @if (showPOSModal) {
       <div class="pos-modal-overlay" (click)="cancelPOSTransaction()">
         <div class="pos-modal" (click)="$event.stopPropagation()">

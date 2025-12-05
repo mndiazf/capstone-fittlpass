@@ -11,7 +11,7 @@ const service = new MemberManagementService(repo);
 const controller = new MemberManagementController(service);
 
 // Búsqueda de miembros
-// GET /api/admin/members/search?query=...&limit=1
+// GET /api/admin/members/search?query=...&limit=1&branchId=...
 router.get('/members/search', controller.searchMembers);
 
 // Historial de accesos

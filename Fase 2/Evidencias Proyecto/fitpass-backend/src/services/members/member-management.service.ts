@@ -28,7 +28,7 @@ export interface MemberDto {
   bloqueosActivos: number;
 
   // Estado de acceso / bloqueo
-  accessStatus: AccessStatus;    // 'NO_ENROLADO' | 'ACTIVO' | 'BLOQUEADO'
+  accessStatus: AccessStatus; // 'NO_ENROLADO' | 'ACTIVO' | 'BLOQUEADO'
   estaBloqueado: boolean;
   motivoBloqueo: string | null;
 
@@ -66,6 +66,8 @@ export class MemberManagementService {
    * - MULTICLUB: visible desde cualquier sucursal.
    * - ONECLUB: solo visible si um.branch_id = branchId.
    * - Sin branchId: comportamiento anterior (sin filtro por sucursal).
+   *
+   * Ajuste: si el término tiene menos de 2 caracteres → no buscamos (evita ruido en autocomplete).
    */
   public async searchMembers(
     term: string,
@@ -73,7 +75,7 @@ export class MemberManagementService {
     branchId: string | null,
   ): Promise<MemberDto[]> {
     const trimmed = term.trim();
-    if (!trimmed) {
+    if (!trimmed || trimmed.length < 2) {
       return [];
     }
 
@@ -220,11 +222,11 @@ export class MemberManagementService {
 
     return {
       id: row.id,
-      tipo: 'ENTRADA',           // sigues sin flag de salida → todo ENTRADA
+      tipo: 'ENTRADA', // sigues sin flag de salida → todo ENTRADA
       sucursal: row.branch_name,
       fecha: date,
       hora,
-      resultado: row.result,     // GRANTED / DENIED
+      resultado: row.result, // GRANTED / DENIED
     };
   }
 }

@@ -1,3 +1,4 @@
+// src/app/core/services/enrollment/enrollment.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, map } from 'rxjs';
@@ -5,7 +6,7 @@ import { Auth } from '../auth/auth';
 
 /**
  * Respuesta cruda que entrega el backend:
- * GET /api/members/profile-by-rut?rut=...&branchId=...
+ * GET /api/members/search?term=...&branchId=...&limit=10
  */
 export interface MemberApiResponse {
   id: string;
@@ -86,10 +87,12 @@ export class Enrollment {
   ) {}
 
   /**
-   * Busca el perfil del miembro por RUT, usando la branch del admin logueado.
-   * GET /api/members/profile-by-rut?rut=20.059.049-K&branchId=branch-scl-centro
+   * Búsqueda de miembros por término libre (RUT o nombre),
+   * usando la branch del admin logueado.
+   *
+   * GET /api/members/search?term=...&branchId=branch-scl-centro&limit=10
    */
-  getProfileByRut(rut: string): Observable<MemberUiModel> {
+  searchMembers(term: string, limit: number = 10): Observable<MemberUiModel[]> {
     const branch = this.auth.currentBranch;
     if (!branch) {
       return throwError(
@@ -100,11 +103,12 @@ export class Enrollment {
       );
     }
 
-    const url = `${this.apiBaseUrl}/members/profile-by-rut`;
+    const url = `${this.apiBaseUrl}/members/search`;
 
-    const params = new HttpParams()
-      .set('rut', rut)
-      .set('branchId', branch.id);
+    let params = new HttpParams()
+      .set('term', term)
+      .set('branchId', branch.id)
+      .set('limit', String(limit));
 
     let headers = new HttpHeaders();
     const token = this.auth.token;
@@ -113,8 +117,8 @@ export class Enrollment {
     }
 
     return this.http
-      .get<MemberApiResponse>(url, { params, headers })
-      .pipe(map((api) => this.mapApiToUiModel(api)));
+      .get<MemberApiResponse[]>(url, { params, headers })
+      .pipe(map((apiList) => apiList.map((api) => this.mapApiToUiModel(api))));
   }
 
   // ======================================================
@@ -228,5 +232,37 @@ export class Enrollment {
       enrollmentStatus: api.enrollmentStatus,
       enrollmentLocked: api.enrollmentLocked,
     };
+  }
+
+    /**
+   * Busca el perfil del miembro por RUT, usando la branch del admin logueado.
+   * GET /api/members/profile-by-rut?rut=20.059.049-K&branchId=branch-scl-centro
+   */
+  getProfileByRut(rut: string): Observable<MemberUiModel> {
+    const branch = this.auth.currentBranch;
+    if (!branch) {
+      return throwError(
+        () =>
+          new Error(
+            'No hay sucursal seleccionada en el contexto del administrador',
+          ),
+      );
+    }
+
+    const url = `${this.apiBaseUrl}/members/profile-by-rut`;
+
+    const params = new HttpParams()
+      .set('rut', rut)
+      .set('branchId', branch.id);
+
+    let headers = new HttpHeaders();
+    const token = this.auth.token;
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    return this.http
+      .get<MemberApiResponse>(url, { params, headers })
+      .pipe(map((api) => this.mapApiToUiModel(api)));
   }
 }
